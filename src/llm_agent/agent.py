@@ -1,12 +1,13 @@
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Dict
 
 from .tools import Tool
+from ..store import DataStore
 
 
 class Agent:
     def __init__(self, name: str = "LLM-Agent"):
         self.name = name
-        self.tools: dict[str, Tool] = {}
+        self.tools: Dict[str, Tool] = {}
 
     def register_tool(self, tool: Tool) -> None:
         self.tools[tool.name] = tool
