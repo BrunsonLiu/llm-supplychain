@@ -1,0 +1,26 @@
+# 供应链智能体依赖
+
+# 核心
+numpy>=1.21.0
+pydantic>=2.0.0
+pyyaml>=6.0
+
+# LLM（OpenAI 兼容 SDK，可接 DeepSeek/Moonshot/vLLM 等）
+openai>=1.0.0
+
+# 嵌入模型（可选）
+# sentence-transformers>=2.2.0
+
+# 向量存储（可选，大规模检索时启用）
+# faiss-cpu>=1.7.0
+
+# API 服务
+fastapi>=0.104.0
+uvicorn>=0.24.0
+requests>=2.28.0
+
+# 混合检索
+rank-bm25>=0.2.2
+
+# 开发/测试
+pytest>=7.0.0

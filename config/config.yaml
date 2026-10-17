@@ -1,0 +1,49 @@
+# 供应链智能体配置文件
+
+# LLM 配置（支持任何 OpenAI 兼容端点）
+llm:
+  provider: "mock"          # 默认 mock 开箱即用；配置了 API Key 后改 openai
+  model: "gpt-4o-mini"      # OpenAI 用 gpt-4o-mini；DeepSeek 用 deepseek-chat
+  api_key: ""               # 也可设环境变量 OPENAI_API_KEY（推荐，避免密钥入库）
+  base_url: null            # DeepSeek: https://api.deepseek.com
+  temperature: 0.3
+  max_tokens: 2000
+
+# 嵌入模型配置
+embeddings:
+  provider: "mock"          # 可选: openai, huggingface, mock
+  model: "text-embedding-3-small"
+  huggingface_model: "sentence-transformers/all-MiniLM-L6-v2"
+  api_key: ""
+
+# 向量存储配置
+vectorstore:
+  type: "memory"            # 可选: memory, faiss
+  dimension: 1536
+  persist_path: "./data/vectorstore"
+
+# 文本分割配置
+text_splitter:
+  type: "recursive"         # 可选: recursive, character, markdown
+  chunk_size: 500
+  chunk_overlap: 100
+
+# 检索配置
+retriever:
+  type: "vector"            # 可选: vector, multi_query
+  top_k: 3
+  use_multi_query: false
+  num_queries: 3
+
+# RAG 链配置
+chain:
+  type: "rag"               # 可选: rag, conversational, decision, agentic
+  return_source_documents: true
+  max_iterations: 3
+
+# 数据路径
+paths:
+  data_dir: "./data"
+  documents_dir: "./data/documents"
+  vectorstore_dir: "./data/vectorstore"
+  output_dir: "./output"
