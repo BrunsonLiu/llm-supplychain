@@ -21,7 +21,7 @@ from supply.fulfillment import FulfillmentInstance  # noqa: E402
 from supply.network import WarehouseLayout  # noqa: E402
 
 
-def _instance() -> E2EInstance:
+def _instance(promises=(2, 2)) -> E2EInstance:
     fulfillment = FulfillmentInstance(
         order_ids=["O0", "O1"],
         destinations=["United Kingdom", "Germany"],
@@ -35,7 +35,7 @@ def _instance() -> E2EInstance:
         ship_cost=np.ones((2, 2), dtype=float),
         fixed_ship_cost=5.0,
         transit_days=np.full((2, 2), 2, dtype=np.int64),
-        promise_days=np.array([2, 2], dtype=np.int64),
+        promise_days=np.array(promises, dtype=np.int64),
         late_penalty_per_unit_day=0.5,
         unmet_penalty_per_unit=6.0,
         meta={},
@@ -70,6 +70,23 @@ def test_static_quote_preserves_base_promises() -> None:
         quote_policy="static",
     )
     assert flow.promise_days.tolist() == [2, 2]
+
+
+def test_accept_cutoff_rejects_long_promises() -> None:
+    instance = _instance(promises=(5, 5))
+    flow = prepare_flow(
+        instance,
+        np.array([0, 1], dtype=np.int64),
+        "none",
+        milp_time=1.0,
+        workers=1,
+        quote_policy="static",
+        accept_cutoff_days=3,
+    )
+    assert flow.accepted.tolist() == [False, False]
+    assert flow.rejected_units == 10
+    assert flow.days == []
+    assert flow.remaining.sum() == 0
 
 
 def test_atp_quote_produces_tiers() -> None:
@@ -154,4 +171,4 @@ if __name__ == "__main__":
             else:
                 func()
             print(f"[OK] {name}")
-    print("4 rolling quote tests passed")
+    print("5 rolling quote tests passed")
