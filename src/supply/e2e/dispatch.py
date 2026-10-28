@@ -167,6 +167,7 @@ class DispatchCell:
     duration_noise: float = 0.0
     pickers_per_dc: Optional[int] = None
     load_minutes: float = DEFAULT_LOAD_MINUTES
+    max_days: int = DEFAULT_MAX_DAYS
     max_hold_minutes: float = DEFAULT_MAX_HOLD_MINUTES
     dispatch_cost: float = DEFAULT_DISPATCH_COST
     holding_cost_per_order_hour: float = DEFAULT_HOLDING_COST
@@ -188,6 +189,8 @@ class DispatchCell:
             raise ValueError("每 DC 拣货员数量必须为正")
         if self.load_minutes < 0:
             raise ValueError("装车截止提前量不能为负")
+        if int(self.max_days) < 0:
+            raise ValueError("发车天数上限不能为负")
         if self.max_hold_minutes < 0:
             raise ValueError("最长等待时间不能为负")
         if self.dispatch_cost < 0 or self.holding_cost_per_order_hour < 0:
@@ -204,6 +207,7 @@ class DispatchCell:
             policy=self.policy if self.policy != "none" else "promise",
             departures=self.departures,
             load_minutes=self.load_minutes,
+            max_days=self.max_days,
             min_load=self.min_load,
             capacity=self.capacity,
             max_hold_minutes=self.max_hold_minutes,
@@ -226,6 +230,7 @@ class DispatchCell:
             "duration_noise": float(self.duration_noise),
             "pickers_per_dc": self.pickers_per_dc,
             "load_minutes": float(self.load_minutes),
+            "max_days": int(self.max_days),
             "max_hold_minutes": float(self.max_hold_minutes),
             "dispatch_cost": float(self.dispatch_cost),
             "holding_cost_per_order_hour": float(self.holding_cost_per_order_hour),

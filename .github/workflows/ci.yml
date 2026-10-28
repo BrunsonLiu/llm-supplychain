@@ -132,6 +132,11 @@ jobs:
           PYTHONPATH: src:.
         run: python tests/test_e2e_rolling.py
 
+      - name: Run rolling end-to-end tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_e2e_rolling_e2e.py
+
       - name: Run function-agent tests
         env:
           PYTHONPATH: src:.
@@ -221,6 +226,11 @@ jobs:
         env:
           PYTHONPATH: src:.
         run: python scripts/run_e2e_rolling.py --orders 80 --milp-time 2 --service-time 1 --workers 2 --baseline-milp-time 3 --baseline-service-time 2 --out-dir /tmp/rolling-bench
+
+      - name: Run rolling end-to-end benchmark
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_rolling_e2e.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time 3 --baseline-service-time 2 --workers 2 --out-dir /tmp/rolling-e2e-bench
 
       - name: Install optional UI dependency
         run: pip install "streamlit>=1.49"
