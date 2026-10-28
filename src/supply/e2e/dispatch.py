@@ -50,6 +50,10 @@ DEFAULT_MAX_DAYS = 3
 DEFAULT_MAX_HOLD_MINUTES = 1440.0
 DEFAULT_DISPATCH_COST = 220.0
 DEFAULT_HOLDING_COST = 0.15
+DEFAULT_DOORS_PER_DC = 0
+DEFAULT_DOOR_WINDOW_MINUTES = 600.0
+DEFAULT_DOCK_LOAD_MINUTES = 75.0
+DEFAULT_DOCK_LOAD_PER_TICKET = 0.5
 DISPATCH_POLICIES = ("none", "immediate", "hold", "promise")
 
 DISPATCH_METRICS: Dict[str, str] = {
@@ -89,6 +93,10 @@ class DispatchConfig:
     max_hold_minutes: float = DEFAULT_MAX_HOLD_MINUTES
     dispatch_cost: float = DEFAULT_DISPATCH_COST
     holding_cost_per_order_hour: float = DEFAULT_HOLDING_COST
+    doors_per_dc: int = DEFAULT_DOORS_PER_DC
+    door_window_minutes: float = DEFAULT_DOOR_WINDOW_MINUTES
+    dock_load_minutes: float = DEFAULT_DOCK_LOAD_MINUTES
+    dock_load_per_ticket: float = DEFAULT_DOCK_LOAD_PER_TICKET
     hold_day: int = 0
 
     def __post_init__(self) -> None:
@@ -113,6 +121,12 @@ class DispatchConfig:
             raise ValueError("最长等待时间不能为负")
         if self.dispatch_cost < 0 or self.holding_cost_per_order_hour < 0:
             raise ValueError("发车/等待成本不能为负")
+        if int(self.doors_per_dc) < 0:
+            raise ValueError("门位数量不能为负")
+        if self.door_window_minutes <= 0:
+            raise ValueError("门位可用窗口必须为正")
+        if self.dock_load_minutes < 0 or self.dock_load_per_ticket < 0:
+            raise ValueError("装车分钟不能为负")
         if not 0 <= int(self.hold_day) <= int(self.max_days):
             raise ValueError("hold_day 必须落在发车天数范围内")
         object.__setattr__(self, "departures", slots)
@@ -132,6 +146,10 @@ class DispatchConfig:
             "max_hold_minutes": float(self.max_hold_minutes),
             "dispatch_cost": float(self.dispatch_cost),
             "holding_cost_per_order_hour": float(self.holding_cost_per_order_hour),
+            "doors_per_dc": int(self.doors_per_dc),
+            "door_window_minutes": float(self.door_window_minutes),
+            "dock_load_minutes": float(self.dock_load_minutes),
+            "dock_load_per_ticket": float(self.dock_load_per_ticket),
             "hold_day": int(self.hold_day),
         }
 
@@ -152,6 +170,10 @@ class DispatchCell:
     max_hold_minutes: float = DEFAULT_MAX_HOLD_MINUTES
     dispatch_cost: float = DEFAULT_DISPATCH_COST
     holding_cost_per_order_hour: float = DEFAULT_HOLDING_COST
+    doors_per_dc: int = DEFAULT_DOORS_PER_DC
+    door_window_minutes: float = DEFAULT_DOOR_WINDOW_MINUTES
+    dock_load_minutes: float = DEFAULT_DOCK_LOAD_MINUTES
+    dock_load_per_ticket: float = DEFAULT_DOCK_LOAD_PER_TICKET
 
     def __post_init__(self) -> None:
         if self.policy not in DISPATCH_POLICIES:
@@ -170,6 +192,12 @@ class DispatchCell:
             raise ValueError("最长等待时间不能为负")
         if self.dispatch_cost < 0 or self.holding_cost_per_order_hour < 0:
             raise ValueError("发车/等待成本不能为负")
+        if int(self.doors_per_dc) < 0:
+            raise ValueError("门位数量不能为负")
+        if self.door_window_minutes <= 0:
+            raise ValueError("门位可用窗口必须为正")
+        if self.dock_load_minutes < 0 or self.dock_load_per_ticket < 0:
+            raise ValueError("装车分钟不能为负")
 
     def config(self) -> DispatchConfig:
         return DispatchConfig(
@@ -181,6 +209,10 @@ class DispatchCell:
             max_hold_minutes=self.max_hold_minutes,
             dispatch_cost=self.dispatch_cost,
             holding_cost_per_order_hour=self.holding_cost_per_order_hour,
+            doors_per_dc=self.doors_per_dc,
+            door_window_minutes=self.door_window_minutes,
+            dock_load_minutes=self.dock_load_minutes,
+            dock_load_per_ticket=self.dock_load_per_ticket,
         )
 
     def as_dict(self) -> Dict[str, Any]:
@@ -197,6 +229,10 @@ class DispatchCell:
             "max_hold_minutes": float(self.max_hold_minutes),
             "dispatch_cost": float(self.dispatch_cost),
             "holding_cost_per_order_hour": float(self.holding_cost_per_order_hour),
+            "doors_per_dc": int(self.doors_per_dc),
+            "door_window_minutes": float(self.door_window_minutes),
+            "dock_load_minutes": float(self.dock_load_minutes),
+            "dock_load_per_ticket": float(self.dock_load_per_ticket),
         }
 
 
@@ -266,6 +302,9 @@ class DispatchPlay:
     departures: List[Departure]
     tickets: List[ScheduledTicket]
     unshipped: List[str]
+    door_minutes_used: float = 0.0
+    door_capacity_minutes: float = 0.0
+    door_blocked: int = 0
 
 
 @dataclass
@@ -338,6 +377,8 @@ def dispatch_tickets(
 
     departures: List[Departure] = []
     scheduled: List[ScheduledTicket] = []
+    door_used: Dict[Tuple[str, int], float] = {}
+    door_blocked = 0
     for day, minute, cutoff in departure_slots(config):
         available = [t for t in pending if t.pick_end <= cutoff + EPS]
         if not available:
@@ -355,6 +396,16 @@ def dispatch_tickets(
             if not _should_dispatch(config, ordered, day, last_of_day, slot_minute):
                 continue
             batch = ordered[: int(config.capacity)]
+            load_minutes = config.dock_load_minutes + config.dock_load_per_ticket * len(
+                batch
+            )
+            if config.doors_per_dc > 0:
+                used = door_used.get((dc, day), 0.0)
+                capacity = config.doors_per_dc * config.door_window_minutes
+                if used + load_minutes > capacity + EPS:
+                    door_blocked += 1
+                    continue
+                door_used[(dc, day)] = used + load_minutes
             waits = [slot_minute - ticket.pick_end for ticket in batch]
             index = len(departures)
             departures.append(
@@ -395,11 +446,22 @@ def dispatch_tickets(
         if not pending:
             break
 
+    active_days = max((row.day for row in departures), default=0) + 1
+    n_dcs = len({ticket.dc for ticket in records})
+    door_capacity = (
+        config.doors_per_dc
+        * config.door_window_minutes
+        * n_dcs
+        * active_days
+    )
     return DispatchPlay(
         config=config,
         departures=departures,
         tickets=scheduled,
         unshipped=[ticket.ticket for ticket in pending],
+        door_minutes_used=float(sum(door_used.values())),
+        door_capacity_minutes=float(door_capacity),
+        door_blocked=int(door_blocked),
     )
 
 
@@ -489,6 +551,19 @@ def _dispatch_metrics(
         "holding_cost": float(holding_cost),
         "dock_cost": float(dispatch_cost + holding_cost),
         "unshipped_tickets": float(len(play.unshipped)),
+        "door_minutes_used": float(play.door_minutes_used),
+        "door_capacity_minutes": float(play.door_capacity_minutes),
+        "door_utilization": (
+            float(play.door_minutes_used / play.door_capacity_minutes)
+            if play.door_capacity_minutes
+            else 0.0
+        ),
+        "door_blocked": float(play.door_blocked),
+        "load_minutes_per_departure": (
+            float(play.door_minutes_used / departures)
+            if departures and play.config.doors_per_dc > 0
+            else 0.0
+        ),
     }
 
 
@@ -551,6 +626,11 @@ def _control_metrics(pick_result: E2EResult) -> Dict[str, float]:
         "holding_cost": 0.0,
         "dock_cost": 0.0,
         "unshipped_tickets": 0.0,
+        "door_minutes_used": 0.0,
+        "door_capacity_minutes": 0.0,
+        "door_utilization": 0.0,
+        "door_blocked": 0.0,
+        "load_minutes_per_departure": 0.0,
     }
 
 

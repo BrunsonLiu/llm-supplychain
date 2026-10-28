@@ -103,6 +103,10 @@ from .dispatch import (
     DEFAULT_CAPACITY,
     DEFAULT_DEPARTURES,
     DEFAULT_DISPATCH_COST,
+    DEFAULT_DOCK_LOAD_MINUTES,
+    DEFAULT_DOCK_LOAD_PER_TICKET,
+    DEFAULT_DOORS_PER_DC,
+    DEFAULT_DOOR_WINDOW_MINUTES,
     DEFAULT_HOLDING_COST,
     DEFAULT_LOAD_MINUTES,
     DEFAULT_MAX_DAYS,
@@ -127,6 +131,7 @@ from .dispatch import (
     ticket_records,
 )
 from .dispatch_report import build_dispatch_report, write_dispatch_report
+from .dock_report import build_dock_report, write_dock_report
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -258,9 +263,15 @@ __all__ = [
     "write_empirical_report",
     "build_dispatch_report",
     "write_dispatch_report",
+    "build_dock_report",
+    "write_dock_report",
     "DEFAULT_CAPACITY",
     "DEFAULT_DEPARTURES",
     "DEFAULT_DISPATCH_COST",
+    "DEFAULT_DOCK_LOAD_MINUTES",
+    "DEFAULT_DOCK_LOAD_PER_TICKET",
+    "DEFAULT_DOORS_PER_DC",
+    "DEFAULT_DOOR_WINDOW_MINUTES",
     "DEFAULT_HOLDING_COST",
     "DEFAULT_LOAD_MINUTES",
     "DEFAULT_MAX_DAYS",
