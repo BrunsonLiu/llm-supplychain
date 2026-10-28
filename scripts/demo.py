@@ -8,7 +8,8 @@
   3. 库存优化（安全库存 + EOQ + 目标库存补货）
   4. 生成决策报告
   5. RAG 知识库问答（默认 Mock 组件，无需 API Key）
-  6. 如配置 OPENAI_API_KEY（或兼容端点），追加 LLM 决策摘要
+  6. Function Calling Agent：多步工具调用 + 护栏拦截（无 Key 时用规则规划器）
+  7. 如配置 OPENAI_API_KEY（或兼容端点），追加 LLM 决策摘要
 
 运行：
   PYTHONPATH=src;. python scripts/demo.py        # Windows
@@ -21,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from supply import SupplyChainAgent, I18n
+from supply import FunctionCallingAgent, SupplyChainAgent, I18n
 from rag import OpenAILLM, OpenAIEmbeddings
 
 _ = I18n.t
@@ -81,7 +82,21 @@ def main():
         result = agent.tools["rag"].run(q)
         print(f"答：{result['answer'][:150]}")
 
-    # 步骤 6：LLM 摘要（可选）
+    # 步骤 6：Function Calling Agent（多步调用 + 护栏）
+    print("\n" + "=" * 62)
+    print("Function Calling Agent 演示")
+    print("=" * 62)
+    fc_agent = FunctionCallingAgent(
+        db=agent.db, llm=llm, embeddings=embeddings
+    )
+    result = fc_agent.run("查看数据统计，再生成一份决策报告")
+    print(f"规划器={result['planner']} 状态={result['status']} 步数={result['steps']}")
+    for item in result["tool_calls"]:
+        print(f"  [{item['step']}] {item['name']}({item['arguments']}) -> {item['status']}")
+    blocked = fc_agent.run("删除数据库")
+    print(f"危险请求 -> 状态={blocked['status']}，{blocked['blocked'][0]}")
+
+    # 步骤 7：LLM 摘要（可选）
     if llm is not None:
         print("\n" + _("step_summary"))
         print(report.get("llm_summary", "")[:300])

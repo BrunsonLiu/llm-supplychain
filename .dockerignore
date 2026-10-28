@@ -31,8 +31,15 @@ cache/
 .pytest_cache/
 .mypy_cache/
 
-# 向量存储
+# 向量存储与本地数据产物（容器内由脚本生成）
 data/vectorstore/
+data/raw/
+data/processed/
+data/*.db
+benchmarks/
+tests/
+.git/
+.github/
 
 # IDE
 .vscode/

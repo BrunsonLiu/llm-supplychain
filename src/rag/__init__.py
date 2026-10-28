@@ -7,6 +7,7 @@ RAG (Retrieval-Augmented Generation) 项目
 - 向量嵌入
 - 向量存储
 - 检索
+- 检索质量评估（Recall@k / MRR）
 - LLM集成
 - RAG链
 """
@@ -40,6 +41,9 @@ from .retrievers import (
     BaseRetriever,
     VectorRetriever,
     MultiQueryRetriever,
+    TitleBoostRetriever,
+    first_heading,
+    lexical_terms,
 )
 from .llms import (
     BaseLLM,
@@ -52,6 +56,15 @@ from .chains import (
     ConversationalRAGChain,
     DecisionRAGChain,
     AgenticRAGChain,
+)
+from .evaluation import (
+    RetrievalCase,
+    RetrievalCaseResult,
+    RetrievalReport,
+    first_relevant_rank,
+    recall_at_k,
+    mrr_at_k,
+    evaluate_queries,
 )
 from .utils import (
     get_logger,
@@ -102,6 +115,9 @@ __all__ = [
     'BaseRetriever',
     'VectorRetriever',
     'MultiQueryRetriever',
+    'TitleBoostRetriever',
+    'first_heading',
+    'lexical_terms',
     'BaseLLM',
     'LLMResponse',
     'OpenAILLM',
@@ -110,6 +126,13 @@ __all__ = [
     'ConversationalRAGChain',
     'DecisionRAGChain',
     'AgenticRAGChain',
+    'RetrievalCase',
+    'RetrievalCaseResult',
+    'RetrievalReport',
+    'first_relevant_rank',
+    'recall_at_k',
+    'mrr_at_k',
+    'evaluate_queries',
     'get_logger',
     'LoggerConfig',
     'PerformanceLogger',

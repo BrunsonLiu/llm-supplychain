@@ -1,0 +1,612 @@
+{
+  "generated_at": "2026-10-27T17:59:33.685364+00:00",
+  "embedding": "mock",
+  "title_boost": 0.3,
+  "documents": 2,
+  "chunks": 34,
+  "queries": 15,
+  "k_values": [
+    1,
+    3,
+    5
+  ],
+  "table_k": 3,
+  "retrievers": {
+    "vector": {
+      "metrics": {
+        "recall@1": 0.8666666666666667,
+        "recall@3": 0.9,
+        "recall@5": 1.0,
+        "mrr@5": 0.9166666666666666,
+        "hit_rate@3": 0.9333333333333333
+      },
+      "cases": [
+        {
+          "query": "安全库存怎么计算",
+          "relevant": [
+            "1. 安全库存（Safety Stock）"
+          ],
+          "retrieved": [
+            "4. 服务水平（Service Level）",
+            "2. 再订货点（Reorder Point）",
+            "二、库存管理",
+            "1. 安全库存（Safety Stock）",
+            "3. 库存周转率"
+          ],
+          "matched": [
+            "1. 安全库存（Safety Stock）"
+          ],
+          "first_rank": 4,
+          "recall": 1.0,
+          "reciprocal_rank": 0.25
+        },
+        {
+          "query": "什么时候该补货",
+          "relevant": [
+            "2. 再订货点（Reorder Point）"
+          ],
+          "retrieved": [
+            "2. 再订货点（Reorder Point）",
+            "3. 经济订货批量（EOQ）",
+            "2. 订货提前期（Lead Time）",
+            "四、采购决策参考",
+            "1. 供应商选择应综合评估：价格、质量合格率、交付准时率、财务稳定性、"
+          ],
+          "matched": [
+            "2. 再订货点（Reorder Point）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "经济订货批量的公式",
+          "relevant": [
+            "3. 经济订货批量（EOQ）"
+          ],
+          "retrieved": [
+            "3. 经济订货批量（EOQ）",
+            "2. 大批量订货可降低单位订货成本，但推高持有成本和滞销风险；小批量多",
+            "2. 再订货点（Reorder Point）",
+            "1. 安全库存（Safety Stock）",
+            "2. 订货提前期（Lead Time）"
+          ],
+          "matched": [
+            "3. 经济订货批量（EOQ）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "提高服务水平会怎样",
+          "relevant": [
+            "4. 服务水平（Service Level）"
+          ],
+          "retrieved": [
+            "4. 服务水平（Service Level）",
+            "2. 服务质量：评估供应商的服务水平",
+            "2. 指数平滑法（Exponential Smoothing）",
+            "1. 安全库存（Safety Stock）",
+            "1. 移动平均法（Moving Average）"
+          ],
+          "matched": [
+            "4. 服务水平（Service Level）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "ABC 分类法怎么用",
+          "relevant": [
+            "5. ABC 分类法"
+          ],
+          "retrieved": [
+            "5. ABC 分类法",
+            "2. 分散投资：不要把所有鸡蛋放在一个篮子里",
+            "一、需求预测方法",
+            "1. 移动平均法（Moving Average）",
+            "3. 线性趋势法（Linear Trend）"
+          ],
+          "matched": [
+            "5. ABC 分类法"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "牛鞭效应是什么",
+          "relevant": [
+            "1. 牛鞭效应（Bullwhip Effect）"
+          ],
+          "retrieved": [
+            "1. 牛鞭效应（Bullwhip Effect）",
+            "3. 交付能力：考察供应商的交付记录",
+            "1. 供应商选择应综合评估：价格、质量合格率、交付准时率、财务稳定性、",
+            "3. 促销期需求激增具有前置透支效应（需求前移），促销后的预测应剔除",
+            "1. 安全库存（Safety Stock）"
+          ],
+          "matched": [
+            "1. 牛鞭效应（Bullwhip Effect）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "提前期对库存的影响",
+          "relevant": [
+            "2. 订货提前期（Lead Time）"
+          ],
+          "retrieved": [
+            "2. 订货提前期（Lead Time）",
+            "2. 再订货点（Reorder Point）",
+            "1. 安全库存（Safety Stock）",
+            "二、库存管理",
+            "4. 服务水平（Service Level）"
+          ],
+          "matched": [
+            "2. 订货提前期（Lead Time）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "库存周转率低意味着什么",
+          "relevant": [
+            "3. 库存周转率"
+          ],
+          "retrieved": [
+            "3. 库存周转率",
+            "二、库存管理",
+            "2. 再订货点（Reorder Point）",
+            "4. 服务水平（Service Level）",
+            "1. 安全库存（Safety Stock）"
+          ],
+          "matched": [
+            "3. 库存周转率"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "如何评估预测误差",
+          "relevant": [
+            "5. 预测误差评估"
+          ],
+          "retrieved": [
+            "5. 预测误差评估",
+            "1. 风险评估：投资前必须评估风险承受能力",
+            "一、需求预测方法",
+            "4. 定期评估：定期评估投资组合表现",
+            "4. 集成预测（Ensemble）"
+          ],
+          "matched": [
+            "5. 预测误差评估"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "移动平均法适合什么场景",
+          "relevant": [
+            "1. 移动平均法（Moving Average）"
+          ],
+          "retrieved": [
+            "1. 移动平均法（Moving Average）",
+            "3. 长期投资：股票投资适合长期持有",
+            "4. 集成预测（Ensemble）",
+            "5. 预测误差评估",
+            "2. 指数平滑法（Exponential Smoothing）"
+          ],
+          "matched": [
+            "1. 移动平均法（Moving Average）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "Holt 双参数法怎么用",
+          "relevant": [
+            "2. 指数平滑法（Exponential Smoothing）"
+          ],
+          "retrieved": [
+            "2. 指数平滑法（Exponential Smoothing）",
+            "供应链管理基础知识库",
+            "5. ABC 分类法",
+            "5. 预测误差评估",
+            "一、需求预测方法"
+          ],
+          "matched": [
+            "2. 指数平滑法（Exponential Smoothing）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "多个预测模型怎么组合",
+          "relevant": [
+            "4. 集成预测（Ensemble）"
+          ],
+          "retrieved": [
+            "4. 集成预测（Ensemble）",
+            "一、需求预测方法",
+            "4. 定期评估：定期评估投资组合表现",
+            "5. 预测误差评估",
+            "供应链管理基础知识库"
+          ],
+          "matched": [
+            "4. 集成预测（Ensemble）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "供应商选择要看哪些指标",
+          "relevant": [
+            "1. 供应商选择应综合评估",
+            "1. 价格因素：比较不同供应商的报价"
+          ],
+          "retrieved": [
+            "4. 可维护性：考虑长期维护成本",
+            "1. 供应商选择应综合评估：价格、质量合格率、交付准时率、财务稳定性、",
+            "2. 服务质量：评估供应商的服务水平",
+            "4. 风险控制：评估供应商的财务稳定性",
+            "1. 价格因素：比较不同供应商的报价"
+          ],
+          "matched": [
+            "1. 供应商选择应综合评估",
+            "1. 价格因素：比较不同供应商的报价"
+          ],
+          "first_rank": 2,
+          "recall": 1.0,
+          "reciprocal_rank": 0.5
+        },
+        {
+          "query": "促销后预测要注意什么",
+          "relevant": [
+            "3. 促销期需求激增"
+          ],
+          "retrieved": [
+            "3. 促销期需求激增具有前置透支效应（需求前移），促销后的预测应剔除",
+            "一、需求预测方法",
+            "4. 集成预测（Ensemble）",
+            "5. 预测误差评估",
+            "5. ABC 分类法"
+          ],
+          "matched": [
+            "3. 促销期需求激增"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "大批量订货的利弊",
+          "relevant": [
+            "2. 大批量订货"
+          ],
+          "retrieved": [
+            "2. 大批量订货可降低单位订货成本，但推高持有成本和滞销风险；小批量多",
+            "3. 经济订货批量（EOQ）",
+            "2. 再订货点（Reorder Point）",
+            "2. 订货提前期（Lead Time）",
+            "1. 牛鞭效应（Bullwhip Effect）"
+          ],
+          "matched": [
+            "2. 大批量订货"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        }
+      ]
+    },
+    "title-boost": {
+      "metrics": {
+        "recall@1": 0.9666666666666667,
+        "recall@3": 0.9666666666666667,
+        "recall@5": 1.0,
+        "mrr@5": 1.0,
+        "hit_rate@3": 1.0
+      },
+      "cases": [
+        {
+          "query": "安全库存怎么计算",
+          "relevant": [
+            "1. 安全库存（Safety Stock）"
+          ],
+          "retrieved": [
+            "1. 安全库存（Safety Stock）",
+            "4. 服务水平（Service Level）",
+            "2. 再订货点（Reorder Point）",
+            "二、库存管理",
+            "3. 库存周转率"
+          ],
+          "matched": [
+            "1. 安全库存（Safety Stock）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "什么时候该补货",
+          "relevant": [
+            "2. 再订货点（Reorder Point）"
+          ],
+          "retrieved": [
+            "2. 再订货点（Reorder Point）",
+            "3. 经济订货批量（EOQ）",
+            "2. 订货提前期（Lead Time）",
+            "四、采购决策参考",
+            "1. 供应商选择应综合评估：价格、质量合格率、交付准时率、财务稳定性、"
+          ],
+          "matched": [
+            "2. 再订货点（Reorder Point）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "经济订货批量的公式",
+          "relevant": [
+            "3. 经济订货批量（EOQ）"
+          ],
+          "retrieved": [
+            "3. 经济订货批量（EOQ）",
+            "2. 大批量订货可降低单位订货成本，但推高持有成本和滞销风险；小批量多",
+            "2. 再订货点（Reorder Point）",
+            "2. 订货提前期（Lead Time）",
+            "1. 安全库存（Safety Stock）"
+          ],
+          "matched": [
+            "3. 经济订货批量（EOQ）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "提高服务水平会怎样",
+          "relevant": [
+            "4. 服务水平（Service Level）"
+          ],
+          "retrieved": [
+            "4. 服务水平（Service Level）",
+            "2. 服务质量：评估供应商的服务水平",
+            "2. 指数平滑法（Exponential Smoothing）",
+            "1. 安全库存（Safety Stock）",
+            "1. 移动平均法（Moving Average）"
+          ],
+          "matched": [
+            "4. 服务水平（Service Level）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "ABC 分类法怎么用",
+          "relevant": [
+            "5. ABC 分类法"
+          ],
+          "retrieved": [
+            "5. ABC 分类法",
+            "2. 分散投资：不要把所有鸡蛋放在一个篮子里",
+            "一、需求预测方法",
+            "1. 移动平均法（Moving Average）",
+            "3. 线性趋势法（Linear Trend）"
+          ],
+          "matched": [
+            "5. ABC 分类法"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "牛鞭效应是什么",
+          "relevant": [
+            "1. 牛鞭效应（Bullwhip Effect）"
+          ],
+          "retrieved": [
+            "1. 牛鞭效应（Bullwhip Effect）",
+            "3. 促销期需求激增具有前置透支效应（需求前移），促销后的预测应剔除",
+            "3. 交付能力：考察供应商的交付记录",
+            "1. 供应商选择应综合评估：价格、质量合格率、交付准时率、财务稳定性、",
+            "1. 安全库存（Safety Stock）"
+          ],
+          "matched": [
+            "1. 牛鞭效应（Bullwhip Effect）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "提前期对库存的影响",
+          "relevant": [
+            "2. 订货提前期（Lead Time）"
+          ],
+          "retrieved": [
+            "2. 订货提前期（Lead Time）",
+            "2. 再订货点（Reorder Point）",
+            "1. 安全库存（Safety Stock）",
+            "二、库存管理",
+            "3. 库存周转率"
+          ],
+          "matched": [
+            "2. 订货提前期（Lead Time）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "库存周转率低意味着什么",
+          "relevant": [
+            "3. 库存周转率"
+          ],
+          "retrieved": [
+            "3. 库存周转率",
+            "二、库存管理",
+            "2. 再订货点（Reorder Point）",
+            "4. 服务水平（Service Level）",
+            "1. 安全库存（Safety Stock）"
+          ],
+          "matched": [
+            "3. 库存周转率"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "如何评估预测误差",
+          "relevant": [
+            "5. 预测误差评估"
+          ],
+          "retrieved": [
+            "5. 预测误差评估",
+            "1. 风险评估：投资前必须评估风险承受能力",
+            "一、需求预测方法",
+            "4. 定期评估：定期评估投资组合表现",
+            "4. 集成预测（Ensemble）"
+          ],
+          "matched": [
+            "5. 预测误差评估"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "移动平均法适合什么场景",
+          "relevant": [
+            "1. 移动平均法（Moving Average）"
+          ],
+          "retrieved": [
+            "1. 移动平均法（Moving Average）",
+            "3. 长期投资：股票投资适合长期持有",
+            "4. 集成预测（Ensemble）",
+            "2. 指数平滑法（Exponential Smoothing）",
+            "5. 预测误差评估"
+          ],
+          "matched": [
+            "1. 移动平均法（Moving Average）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "Holt 双参数法怎么用",
+          "relevant": [
+            "2. 指数平滑法（Exponential Smoothing）"
+          ],
+          "retrieved": [
+            "2. 指数平滑法（Exponential Smoothing）",
+            "5. ABC 分类法",
+            "供应链管理基础知识库",
+            "一、需求预测方法",
+            "四、采购决策参考"
+          ],
+          "matched": [
+            "2. 指数平滑法（Exponential Smoothing）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "多个预测模型怎么组合",
+          "relevant": [
+            "4. 集成预测（Ensemble）"
+          ],
+          "retrieved": [
+            "4. 集成预测（Ensemble）",
+            "一、需求预测方法",
+            "4. 定期评估：定期评估投资组合表现",
+            "5. 预测误差评估",
+            "3. 促销期需求激增具有前置透支效应（需求前移），促销后的预测应剔除"
+          ],
+          "matched": [
+            "4. 集成预测（Ensemble）"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "供应商选择要看哪些指标",
+          "relevant": [
+            "1. 供应商选择应综合评估",
+            "1. 价格因素：比较不同供应商的报价"
+          ],
+          "retrieved": [
+            "1. 供应商选择应综合评估：价格、质量合格率、交付准时率、财务稳定性、",
+            "4. 可维护性：考虑长期维护成本",
+            "2. 服务质量：评估供应商的服务水平",
+            "4. 风险控制：评估供应商的财务稳定性",
+            "1. 价格因素：比较不同供应商的报价"
+          ],
+          "matched": [
+            "1. 供应商选择应综合评估",
+            "1. 价格因素：比较不同供应商的报价"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "促销后预测要注意什么",
+          "relevant": [
+            "3. 促销期需求激增"
+          ],
+          "retrieved": [
+            "3. 促销期需求激增具有前置透支效应（需求前移），促销后的预测应剔除",
+            "一、需求预测方法",
+            "4. 集成预测（Ensemble）",
+            "5. 预测误差评估",
+            "5. ABC 分类法"
+          ],
+          "matched": [
+            "3. 促销期需求激增"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        },
+        {
+          "query": "大批量订货的利弊",
+          "relevant": [
+            "2. 大批量订货"
+          ],
+          "retrieved": [
+            "2. 大批量订货可降低单位订货成本，但推高持有成本和滞销风险；小批量多",
+            "3. 经济订货批量（EOQ）",
+            "2. 再订货点（Reorder Point）",
+            "2. 订货提前期（Lead Time）",
+            "1. 牛鞭效应（Bullwhip Effect）"
+          ],
+          "matched": [
+            "2. 大批量订货"
+          ],
+          "first_rank": 1,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0
+        }
+      ]
+    }
+  }
+}

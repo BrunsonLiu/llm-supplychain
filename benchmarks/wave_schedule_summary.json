@@ -1,0 +1,391 @@
+{
+  "generated": "2026-10-27T19:09:48.830416+00:00",
+  "title": "Wave release scheduling benchmark (Week 7)",
+  "dataset": {
+    "clean_rows": 1014625,
+    "skus": 200,
+    "period_start": "2010-12-06",
+    "period_end": "2011-11-28",
+    "transaction_start": "2009-12-01",
+    "transaction_end": "2011-12-09",
+    "orders": 200,
+    "lines": 1269,
+    "units": 18748.0,
+    "week": "2011-11-28",
+    "max_orders": 8,
+    "max_lines": 40,
+    "travel_m_per_minute": 72.0,
+    "pick_min_per_line": 0.35,
+    "pick_min_per_unit": 0.02,
+    "setup_min_per_wave": 3.0
+  },
+  "plan": {
+    "mix": {
+      "express": 0.2,
+      "standard": 0.5,
+      "economy": 0.3
+    },
+    "cutoffs": {
+      "express": 240,
+      "standard": 480,
+      "economy": 600
+    },
+    "tier_counts": {
+      "express": 40,
+      "standard": 100,
+      "economy": 60
+    },
+    "seed": 42
+  },
+  "schedule": {
+    "pickers": 2,
+    "shift_minutes": 600.0,
+    "start_hour": 8,
+    "tardiness_weight": 100,
+    "makespan_weight": 1
+  },
+  "batching": {
+    "single_waves": 200,
+    "full_waves": 36,
+    "tiered_waves": 36,
+    "full_labor_per_order": 5.033043055555555,
+    "tiered_labor_per_order": 5.054063888888888,
+    "full_batching_status": "OPTIMAL",
+    "full_pool_size": 2516
+  },
+  "summary": [
+    {
+      "key": "single_edf",
+      "scenario": "按单拣选 + EDF",
+      "status": "HEURISTIC",
+      "waves": 200,
+      "orders": 200,
+      "pickers": 2,
+      "labor_minutes": 1661.9947222222222,
+      "labor_per_order": 8.309973611111111,
+      "labor_cost": 747.8976250000001,
+      "on_time_orders": 100,
+      "on_time_rate": 0.5,
+      "tardy_orders": 100,
+      "total_tardiness": 10949.850555555546,
+      "avg_tardiness_late": 109.49850555555545,
+      "max_tardiness": 233.16888888888855,
+      "makespan": 833.1688888888885,
+      "overtime": 233.16888888888855,
+      "picker_utilization": 0.997393652347397,
+      "orders_per_labor_hour": 7.22023953478927,
+      "solve_seconds": 0.0,
+      "objective": null,
+      "gap": null
+    },
+    {
+      "key": "full_edf",
+      "scenario": "全量合并 + EDF",
+      "status": "HEURISTIC",
+      "waves": 36,
+      "orders": 200,
+      "pickers": 2,
+      "labor_minutes": 1006.6086111111111,
+      "labor_per_order": 5.033043055555556,
+      "labor_cost": 452.973875,
+      "on_time_orders": 173,
+      "on_time_rate": 0.865,
+      "tardy_orders": 27,
+      "total_tardiness": 1706.743611111111,
+      "avg_tardiness_late": 63.21272633744856,
+      "max_tardiness": 127.47916666666669,
+      "makespan": 503.5477777777777,
+      "overtime": 0.0,
+      "picker_utilization": 0.9995164863534964,
+      "orders_per_labor_hour": 11.921217310821731,
+      "solve_seconds": 0.0,
+      "objective": null,
+      "gap": null
+    },
+    {
+      "key": "full_cpsat",
+      "scenario": "全量合并 + CP-SAT",
+      "status": "FEASIBLE",
+      "waves": 36,
+      "orders": 200,
+      "pickers": 2,
+      "labor_minutes": 1006.6086111111111,
+      "labor_per_order": 5.033043055555556,
+      "labor_cost": 452.973875,
+      "on_time_orders": 173,
+      "on_time_rate": 0.865,
+      "tardy_orders": 27,
+      "total_tardiness": 1706.744,
+      "avg_tardiness_late": 63.212740740740735,
+      "max_tardiness": 127.47899999999998,
+      "makespan": 503.548,
+      "overtime": 0.0,
+      "picker_utilization": 0.9995160452539888,
+      "orders_per_labor_hour": 11.921217310821731,
+      "solve_seconds": 10.012867499957792,
+      "objective": 171177.948,
+      "gap": 0.9996509246623286
+    },
+    {
+      "key": "tiered_edf",
+      "scenario": "承诺分层合并 + EDF",
+      "status": "HEURISTIC",
+      "waves": 36,
+      "orders": 200,
+      "pickers": 2,
+      "labor_minutes": 1010.8127777777778,
+      "labor_per_order": 5.054063888888889,
+      "labor_cost": 454.86575,
+      "on_time_orders": 200,
+      "on_time_rate": 1.0,
+      "tardy_orders": 0,
+      "total_tardiness": 0.0,
+      "avg_tardiness_late": 0.0,
+      "max_tardiness": 0.0,
+      "makespan": 508.58166666666665,
+      "overtime": 0.0,
+      "picker_utilization": 0.9937566019660341,
+      "orders_per_labor_hour": 11.871634652642015,
+      "solve_seconds": 0.0,
+      "objective": null,
+      "gap": null
+    },
+    {
+      "key": "tiered_cpsat",
+      "scenario": "承诺分层合并 + CP-SAT",
+      "status": "FEASIBLE",
+      "waves": 36,
+      "orders": 200,
+      "pickers": 2,
+      "labor_minutes": 1010.8127777777778,
+      "labor_per_order": 5.054063888888889,
+      "labor_cost": 454.86575,
+      "on_time_orders": 200,
+      "on_time_rate": 1.0,
+      "tardy_orders": 0,
+      "total_tardiness": 0.0,
+      "avg_tardiness_late": 0.0,
+      "max_tardiness": 0.0,
+      "makespan": 505.405,
+      "overtime": 0.0,
+      "picker_utilization": 1.0000027480711289,
+      "orders_per_labor_hour": 11.871634652642015,
+      "solve_seconds": 10.004956000018865,
+      "objective": 505.405,
+      "gap": 0.8965562271841394
+    }
+  ],
+  "promises": {
+    "full_edf": [
+      {
+        "tier": "特快",
+        "cutoff": "12:00",
+        "orders": 40,
+        "on_time": 19,
+        "on_time_rate": 0.475,
+        "tardy": 21,
+        "total_tardiness": 1589.0202777777777,
+        "max_tardiness": 127.47916666666669
+      },
+      {
+        "tier": "标准",
+        "cutoff": "16:00",
+        "orders": 100,
+        "on_time": 94,
+        "on_time_rate": 0.94,
+        "tardy": 6,
+        "total_tardiness": 117.72333333333302,
+        "max_tardiness": 23.547777777777696
+      },
+      {
+        "tier": "经济",
+        "cutoff": "18:00",
+        "orders": 60,
+        "on_time": 60,
+        "on_time_rate": 1.0,
+        "tardy": 0,
+        "total_tardiness": 0.0,
+        "max_tardiness": 0.0
+      }
+    ],
+    "tiered_edf": [
+      {
+        "tier": "特快",
+        "cutoff": "12:00",
+        "orders": 40,
+        "on_time": 40,
+        "on_time_rate": 1.0,
+        "tardy": 0,
+        "total_tardiness": 0.0,
+        "max_tardiness": 0.0
+      },
+      {
+        "tier": "标准",
+        "cutoff": "16:00",
+        "orders": 100,
+        "on_time": 100,
+        "on_time_rate": 1.0,
+        "tardy": 0,
+        "total_tardiness": 0.0,
+        "max_tardiness": 0.0
+      },
+      {
+        "tier": "经济",
+        "cutoff": "18:00",
+        "orders": 60,
+        "on_time": 60,
+        "on_time_rate": 1.0,
+        "tardy": 0,
+        "total_tardiness": 0.0,
+        "max_tardiness": 0.0
+      }
+    ]
+  },
+  "sensitivity": [
+    {
+      "pickers": 1,
+      "edf_on_time_rate": 0.415,
+      "edf_tardiness": 24794.473888888893,
+      "edf_makespan": 1010.8127777777778,
+      "mip_status": "FEASIBLE",
+      "mip_on_time_rate": 0.53,
+      "mip_tardiness": 22129.238999999987,
+      "mip_makespan": 1010.81,
+      "mip_seconds": 8.008588199969381
+    },
+    {
+      "pickers": 2,
+      "edf_on_time_rate": 1.0,
+      "edf_tardiness": 0.0,
+      "edf_makespan": 508.58166666666665,
+      "mip_status": "FEASIBLE",
+      "mip_on_time_rate": 1.0,
+      "mip_tardiness": 0.0,
+      "mip_makespan": 505.405,
+      "mip_seconds": 10.004956000018865
+    },
+    {
+      "pickers": 3,
+      "edf_on_time_rate": 1.0,
+      "edf_tardiness": 0.0,
+      "edf_makespan": 345.42277777777775,
+      "mip_status": "FEASIBLE",
+      "mip_on_time_rate": 1.0,
+      "mip_tardiness": 0.0,
+      "mip_makespan": 341.627,
+      "mip_seconds": 8.009839999955148
+    }
+  ],
+  "detail": [
+    {
+      "wave": "W1",
+      "picker": "P1",
+      "start": "08:00",
+      "end": "08:28",
+      "minutes": 28.44611111111111,
+      "orders": 8,
+      "deadline": "18:00",
+      "late_orders": 0,
+      "max_late": 0.0
+    },
+    {
+      "wave": "W2",
+      "picker": "P2",
+      "start": "08:00",
+      "end": "08:28",
+      "minutes": 28.339444444444442,
+      "orders": 4,
+      "deadline": "18:00",
+      "late_orders": 0,
+      "max_late": 0.0
+    },
+    {
+      "wave": "W3",
+      "picker": "P2",
+      "start": "08:28",
+      "end": "08:45",
+      "minutes": 16.206666666666667,
+      "orders": 7,
+      "deadline": "12:00",
+      "late_orders": 0,
+      "max_late": 0.0
+    },
+    {
+      "wave": "W4",
+      "picker": "P1",
+      "start": "08:28",
+      "end": "08:53",
+      "minutes": 24.93611111111111,
+      "orders": 8,
+      "deadline": "18:00",
+      "late_orders": 0,
+      "max_late": 0.0
+    },
+    {
+      "wave": "W5",
+      "picker": "P2",
+      "start": "08:45",
+      "end": "09:21",
+      "minutes": 36.29611111111111,
+      "orders": 4,
+      "deadline": "16:00",
+      "late_orders": 0,
+      "max_late": 0.0
+    },
+    {
+      "wave": "W6",
+      "picker": "P1",
+      "start": "08:53",
+      "end": "09:16",
+      "minutes": 22.299444444444443,
+      "orders": 8,
+      "deadline": "18:00",
+      "late_orders": 0,
+      "max_late": 0.0
+    },
+    {
+      "wave": "W7",
+      "picker": "P1",
+      "start": "09:16",
+      "end": "09:38",
+      "minutes": 22.43277777777778,
+      "orders": 3,
+      "deadline": "18:00",
+      "late_orders": 0,
+      "max_late": 0.0
+    },
+    {
+      "wave": "W8",
+      "picker": "P2",
+      "start": "09:21",
+      "end": "09:55",
+      "minutes": 33.919444444444444,
+      "orders": 5,
+      "deadline": "12:00",
+      "late_orders": 0,
+      "max_late": 0.0
+    },
+    {
+      "wave": "W9",
+      "picker": "P1",
+      "start": "09:38",
+      "end": "09:52",
+      "minutes": 13.808333333333334,
+      "orders": 2,
+      "deadline": "16:00",
+      "late_orders": 0,
+      "max_late": 0.0
+    },
+    {
+      "wave": "W10",
+      "picker": "P1",
+      "start": "09:52",
+      "end": "10:22",
+      "minutes": 29.946111111111108,
+      "orders": 4,
+      "deadline": "16:00",
+      "late_orders": 0,
+      "max_late": 0.0
+    }
+  ]
+}

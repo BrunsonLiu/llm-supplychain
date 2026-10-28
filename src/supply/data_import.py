@@ -106,7 +106,8 @@ class DataImporter:
         return count
     
     def generate_realistic_data(self, products: List[Dict] = None, 
-                               weeks: int = 104, start_date: str = None) -> int:
+                               weeks: int = 104, start_date: str = None,
+                               reset: bool = True) -> int:
         """
         生成更真实的模拟数据，包含：
         - 季节性波动
@@ -114,7 +115,14 @@ class DataImporter:
         - 趋势变化
         - 促销效应
         - 节假日效应
+
+        ``reset=True`` 会先清空需求/预测/订单与产品主数据，避免换产品数量
+        或周期后残留旧序列（导入 CSV 不走此路径）。
         """
+        if reset:
+            self.db.clear_data()
+            self.db.clear_products()
+
         if products is None:
             products = [
                 {'product_id': 'A', 'base_demand': 20, 'volatility': 0.15, 'seasonal_strength': 0.3},

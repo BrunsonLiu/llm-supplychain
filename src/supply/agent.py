@@ -2,16 +2,17 @@
 供应链智能体统一入口
 
 定位说明（诚实版）：
-    本 Agent 是"规则路由的工具编排器"——按关键词把指令分发给对应工具
+    本类保留为"规则路由的工具编排器"——按关键词把指令分发给对应工具
     （数据/预测/库存/报告/RAG检索），工具结果汇总后返回。
-    它**不是** LLM 自主规划型 Agent（没有 ReAct/Function-Calling 循环）。
-    如需升级，把 _route 换成 LLM function calling 即可，工具层无需改动。
+    LLM Function Calling 版本见 supply.function_agent.FunctionCallingAgent：
+    它复用同一批工具，并增加 JSON Schema 校验、allowlist、写操作开关与执行轨迹。
 
 典型用法：
     agent = SupplyChainAgent()
     agent.run("生成数据; 预测周期=12; 库存周期=12; 报告")
     agent.run("什么是安全库存？")        # 走 RAG 知识库
 """
+import re
 from typing import Any, List, Tuple, Dict, Optional
 
 from .tools import Tool, DataTool, ForecastTool, InventoryTool, ReportTool
@@ -60,8 +61,8 @@ class SupplyChainAgent:
         return None
 
     def run(self, prompt: str, max_steps: int = 6) -> List[Tuple[str, Any]]:
-        """执行指令串：按分号切分，逐条路由到工具"""
-        tasks = [t.strip() for t in prompt.split(";") if t.strip()]
+        """执行指令串：按分号（中英文）或换行切分，逐条路由到工具"""
+        tasks = [t.strip() for t in re.split(r"[;；\n]+", prompt) if t.strip()]
         results: List[Tuple[str, Any]] = []
         for task in tasks[:max_steps]:
             tool = self._route(task)
@@ -78,13 +79,18 @@ class SupplyChainAgent:
             return "RAG 工具未启用"
         return rag_tool.chain.run(question, k=k)["answer"]
 
-    def decision_report(self, horizon: int = 12, llm=None) -> Dict[str, Any]:
+    def decision_report(self, horizon: int = 12, llm=None, generate_data: bool = True) -> Dict[str, Any]:
         """一键决策报告：数据 -> 预测 -> 库存 -> 报告 -> (可选) LLM 摘要"""
-        pipeline = self.run(f"生成数据; 预测周期={horizon}; 库存周期={horizon}; 报告")
+        steps = []
+        if generate_data:
+            steps.append("生成数据")
+        steps.extend([f"预测周期={horizon}", f"库存周期={horizon}", "报告"])
+        pipeline = self.run("; ".join(steps))
+        offset = 1 if generate_data else 0
         summary = {
-            "forecast": pipeline[1][1].get("forecast", {}),
-            "orders": pipeline[2][1].get("orders", {}),
-            "report": pipeline[3][1].get("report", ""),
+            "forecast": pipeline[offset][1].get("forecast", {}),
+            "orders": pipeline[offset + 1][1].get("orders", {}),
+            "report": pipeline[offset + 2][1].get("report", ""),
             "stats": self.db.get_data_stats(),
         }
         if llm is not None:

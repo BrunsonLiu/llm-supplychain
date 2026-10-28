@@ -7,7 +7,7 @@ RAG 检索工具
 """
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from .tools import Tool
 
@@ -21,6 +21,7 @@ from rag import (
     HeadingSectionSplitter,
     MemoryVectorStore,
     VectorRetriever,
+    TitleBoostRetriever,
     RAGChain,
     MockEmbeddings,
     MockLLM,
@@ -44,11 +45,13 @@ class RAGTool(Tool):
         chunk_size: int = 500,
         chunk_overlap: int = 100,
         top_k: int = 3,
+        title_boost: float = 0.3,
     ):
         from rag import OpenAIEmbeddings, OpenAILLM
         self.embeddings = embeddings or MockEmbeddings()
         self.llm = llm or MockLLM()
         self.top_k = top_k
+        self.title_boost = title_boost
         self._openai_cls = (OpenAIEmbeddings, OpenAILLM)
 
         # 文档目录：默认 <项目根>/data/documents
@@ -77,36 +80,86 @@ class RAGTool(Tool):
                 self.embeddings.embed_documents([c.page_content for c in chunks]),
             )
 
-        retriever = VectorRetriever(store, self.embeddings)
+        base = VectorRetriever(store, self.embeddings)
+        retriever = (
+            TitleBoostRetriever(
+                base, boost=self.title_boost, title_fn=self._title
+            )
+            if self.title_boost > 0
+            else base
+        )
         return RAGChain(retriever=retriever, llm=self.llm, return_source_documents=True)
 
     def can_handle(self, prompt: str) -> bool:
         return any(kw in prompt for kw in RAG_KEYWORDS)
 
+    @staticmethod
+    def _title(text: str) -> str:
+        for line in text.splitlines():
+            line = line.strip().strip("#").strip()
+            if line and not set(line) <= {"=", "-"}:
+                return line[:80]
+        return "未命名片段"
+
+    def _citations(self, documents, scores: List[float]) -> List[Dict[str, Any]]:
+        citations = []
+        for index, (doc, score) in enumerate(zip(documents, scores), start=1):
+            metadata = doc.metadata or {}
+            source = metadata.get("filename") or metadata.get("source") or "unknown"
+            citations.append(
+                {
+                    "id": index,
+                    "source": str(source),
+                    "title": self._title(doc.page_content),
+                    "score": float(score),
+                    "chunk_index": metadata.get("chunk_index"),
+                    "snippet": doc.page_content[:240],
+                }
+            )
+        return citations
+
+    def _format_citations(self, citations: List[Dict[str, Any]]) -> str:
+        return "\n".join(
+            f"[{item['id']}] {item['source']} · {item['title']}"
+            for item in citations
+        )
+
     def run(self, prompt: str, top_k: int = None):
         k = top_k or self.top_k
+        retriever = self.chain.retriever
+        # VectorRetriever 提供带相似度的检索，保留分数用于引用排序
+        scored = retriever.retrieve_with_scores(prompt, k=k)
+        documents = [doc for doc, _ in scored]
+        citations = self._citations(documents, [score for _, score in scored])
+
         # Mock 模式不生成伪回答（模板字符串没有信息量），
         # 直接返回检索到的知识片段，如实演示检索效果
         if isinstance(self.llm, MockLLM):
-            docs = self.chain.retriever.retrieve(prompt, k=k)
-            if not docs:
+            if not documents:
                 answer = "（未检索到相关知识片段）"
             else:
-                answer = "【未配置 LLM，以下为检索到的知识片段】\n\n" + \
-                    "\n\n---\n\n".join(d.page_content[:300] for d in docs)
+                fragments = "\n\n".join(
+                    f"[{item['id']}] {item['title']}\n{item['snippet']}"
+                    for item in citations
+                )
+                answer = "【未配置 LLM，以下为检索到的知识片段】\n\n" + fragments
+                answer += "\n\n参考来源：\n" + self._format_citations(citations)
             return {
                 "status": "success",
                 "question": prompt,
                 "answer": answer,
-                "sources": [d.page_content[:120] for d in docs],
+                "citations": citations,
+                "sources": [item["snippet"] for item in citations],
             }
 
         result = self.chain.run(prompt, k=k)
+        answer = result["answer"].rstrip()
+        if citations:
+            answer += "\n\n参考来源：\n" + self._format_citations(citations)
         return {
             "status": "success",
             "question": result["question"],
-            "answer": result["answer"],
-            "sources": [
-                d.page_content[:120] for d in result.get("source_documents", [])
-            ],
+            "answer": answer,
+            "citations": citations,
+            "sources": [item["snippet"] for item in citations],
         }

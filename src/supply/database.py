@@ -152,8 +152,12 @@ class Database:
     def save_forecast(self, product_id: str, forecast_date: str, 
                      predicted_demand: float, model_name: str = 'baseline',
                      confidence_lower: float = None, confidence_upper: float = None):
-        """保存预测结果"""
+        """保存预测结果（同产品/日期/模型重复写入时覆盖，保证重跑幂等）"""
         with self.get_connection() as conn:
+            conn.execute(
+                "DELETE FROM forecasts WHERE product_id = ? AND forecast_date = ? AND model_name = ?",
+                (product_id, forecast_date, model_name),
+            )
             conn.execute("""
                 INSERT INTO forecasts 
                 (product_id, forecast_date, predicted_demand, model_name, confidence_lower, confidence_upper)
@@ -180,8 +184,12 @@ class Database:
     
     def save_order(self, product_id: str, order_date: str, order_quantity: float,
                   safety_stock: float = None, target_stock: float = None):
-        """保存订单建议"""
+        """保存订单建议（同产品/日期重复写入时覆盖，保证重跑幂等）"""
         with self.get_connection() as conn:
+            conn.execute(
+                "DELETE FROM inventory_orders WHERE product_id = ? AND order_date = ?",
+                (product_id, order_date),
+            )
             conn.execute("""
                 INSERT INTO inventory_orders 
                 (product_id, order_date, order_quantity, safety_stock, target_stock)
@@ -198,12 +206,17 @@ class Database:
             return dict(row) if row else None
     
     def clear_data(self):
-        """清空所有数据"""
+        """清空需求/预测/订单/报告数据"""
         with self.get_connection() as conn:
             conn.execute("DELETE FROM demand_data")
             conn.execute("DELETE FROM forecasts")
             conn.execute("DELETE FROM inventory_orders")
             conn.execute("DELETE FROM reports")
+
+    def clear_products(self):
+        """清空产品主数据（生成新数据集时使用）"""
+        with self.get_connection() as conn:
+            conn.execute("DELETE FROM products")
     
     def get_data_stats(self) -> Dict[str, Any]:
         """获取数据统计信息"""

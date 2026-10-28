@@ -6,6 +6,12 @@ supply 包：供应链领域模块
 - 新增：agent.py（统一入口 SupplyChainAgent）、rag_tool.py（RAG 检索工具）
 """
 from .agent import SupplyChainAgent
+from .function_agent import (
+    FunctionCallingAgent,
+    RulePlanner,
+    ToolSpec,
+    default_tool_specs,
+)
 from .tools import Tool, DataTool, ForecastTool, InventoryTool, ReportTool
 from .rag_tool import RAGTool
 from .database import Database
@@ -15,6 +21,10 @@ from .i18n import I18n
 
 __all__ = [
     "SupplyChainAgent",
+    "FunctionCallingAgent",
+    "RulePlanner",
+    "ToolSpec",
+    "default_tool_specs",
     "Tool",
     "DataTool",
     "ForecastTool",

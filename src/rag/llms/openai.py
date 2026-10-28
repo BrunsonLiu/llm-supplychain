@@ -6,6 +6,7 @@ OpenAI 兼容 LLM 实现
 - Moonshot:   base_url="https://api.moonshot.cn/v1", model="moonshot-v1-8k"
 api_key / base_url 均支持从环境变量回退读取。
 """
+import json
 import os
 from typing import List, Dict, Any, Optional
 from .base import BaseLLM, LLMResponse
@@ -98,6 +99,40 @@ class OpenAILLM(BaseLLM):
             **kwargs
         )
         return response.choices[0].message.content
+
+    def chat_with_tools(
+        self,
+        messages: List[Dict[str, Any]],
+        tools: List[Dict[str, Any]],
+        temperature: float = 0.2,
+        tool_choice: str = "auto",
+        max_tokens: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Native function calling. Returns content plus parsed tool calls."""
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            tools=tools,
+            tool_choice=tool_choice,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        message = response.choices[0].message
+        calls = []
+        for tool_call in message.tool_calls or []:
+            raw = tool_call.function.arguments or "{}"
+            try:
+                arguments = json.loads(raw)
+            except json.JSONDecodeError:
+                arguments = {"__parse_error__": raw}
+            calls.append(
+                {
+                    "id": tool_call.id,
+                    "name": tool_call.function.name,
+                    "arguments": arguments,
+                }
+            )
+        return {"content": message.content or "", "tool_calls": calls}
 
 
 class MockLLM(BaseLLM):

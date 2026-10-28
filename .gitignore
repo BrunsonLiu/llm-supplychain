@@ -32,6 +32,11 @@ cache/
 # 数据产物
 data/*.db
 data/vectorstore/
+data/raw/
+data/processed/
+data/_synthetic_cli/
+*.raw.parquet
+benchmarks/*.csv
 
 # IDE / 操作系统
 .vscode/

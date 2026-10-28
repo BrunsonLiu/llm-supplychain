@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, portfolio-llm-supplychain ]
   pull_request:
     branches: [ main, master ]
 
@@ -31,6 +31,134 @@ jobs:
         env:
           PYTHONPATH: src:.
         run: python tests/test_supply.py
+
+      - name: Run RAG tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_rag.py
+
+      - name: Run comprehensive tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_comprehensive.py
+
+      - name: Run forecasting tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_forecasting.py
+
+      - name: Run inventory tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_inventory.py
+
+      - name: Run network tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_network.py
+
+      - name: Run fulfillment tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_fulfillment.py
+
+      - name: Run wave picking tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_wave.py
+
+      - name: Run wave scheduling tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_wave_schedule.py
+
+      - name: Run online wave release tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_dynamic_wave.py
+
+      - name: Run end-to-end fulfillment tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_e2e.py
+
+      - name: Run end-to-end robustness tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_e2e_robustness.py
+
+      - name: Run stock deployment tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_e2e_deployment.py
+
+      - name: Run mid-shift recovery tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_e2e_recovery.py
+
+      - name: Run function-agent tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_function_agent.py
+
+      - name: Run agent evaluation
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_agent_eval.py --out-dir benchmarks
+
+      - name: Run retrieval evaluation
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_retrieval_eval.py --out-dir benchmarks
+
+      - name: Run fulfillment benchmark (small)
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_fulfillment_benchmark.py --orders 60 --milp-time 5 --out-dir /tmp/fulfillment-bench
+
+      - name: Run wave picking benchmark (small)
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_wave_benchmark.py --orders 60 --milp-time 5 --skip-sensitivity --out-dir /tmp/wave-bench
+
+      - name: Run wave scheduling benchmark (small)
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_wave_schedule_benchmark.py --orders 60 --milp-time 5 --schedule-time 3 --skip-sensitivity --out-dir /tmp/wave-schedule-bench
+
+      - name: Run online wave benchmark (small)
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_dynamic_wave_benchmark.py --orders 60 --loads 60 --tuning-waits 0 15 --tuning-fills 4 6 --out-dir /tmp/dynamic-wave-bench
+
+      - name: Run end-to-end benchmark (small)
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_benchmark.py --orders 100 --milp-time 5 --workers 4 --pickers 1 --picker-sweep 2 3 --out-dir /tmp/e2e-bench
+
+      - name: Run end-to-end robustness benchmark (small)
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_robustness.py --orders 80 --seeds 3 --milp-time 5 --workers 4 --out-dir /tmp/e2e-robustness-bench
+
+      - name: Run stock deployment benchmark (small)
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_deployment.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --plans baseline,balanced --out-dir /tmp/stock-deployment-bench
+
+      - name: Run mid-shift recovery benchmark (small)
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_recovery.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --placements baseline,balanced --skip-review-sweep --out-dir /tmp/recovery-bench
+
+      - name: Install optional UI dependency
+        run: pip install "streamlit>=1.49"
+
+      - name: Run Streamlit UI smoke tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_ui_smoke.py
 
       - name: Run demo (mock mode)
         env:

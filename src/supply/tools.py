@@ -15,6 +15,29 @@ _ = I18n.t
 
 logger = logging.getLogger(__name__)
 
+_DEFAULT_PRODUCTS = [
+    {'product_id': 'A', 'base_demand': 20, 'volatility': 0.15, 'seasonal_strength': 0.3},
+    {'product_id': 'B', 'base_demand': 35, 'volatility': 0.20, 'seasonal_strength': 0.4},
+    {'product_id': 'C', 'base_demand': 25, 'volatility': 0.18, 'seasonal_strength': 0.25},
+    {'product_id': 'D', 'base_demand': 50, 'volatility': 0.25, 'seasonal_strength': 0.5},
+    {'product_id': 'E', 'base_demand': 15, 'volatility': 0.12, 'seasonal_strength': 0.2},
+]
+
+
+def _product_specs(count: int) -> Optional[List[Dict[str, Any]]]:
+    """按数量生成产品参数；5 个时沿用默认组合。"""
+    if count == len(_DEFAULT_PRODUCTS):
+        return None
+    return [
+        {
+            'product_id': chr(ord('A') + index) if index < 26 else f"P{index + 1}",
+            'base_demand': 15 + 5 * (index % 8),
+            'volatility': 0.12 + 0.03 * (index % 5),
+            'seasonal_strength': 0.2 + 0.05 * (index % 6),
+        }
+        for index in range(count)
+    ]
+
 
 class Tool:
     name: str
@@ -50,12 +73,15 @@ class DataTool(Tool):
                 m = re.search(r"产品\s*=\s*(\d+)", prompt)
                 num_products = int(m.group(1)) if m else 5
                 
-                count = self.importer.generate_realistic_data(weeks=weeks)
+                count = self.importer.generate_realistic_data(
+                    products=_product_specs(num_products), weeks=weeks
+                )
                 
                 return {
                     "status": "success",
                     "action": "generate",
                     "records": count,
+                    "products": num_products,
                     "message": f"生成{count}条模拟数据"
                 }
             elif action == "import":
@@ -116,12 +142,19 @@ class ForecastTool(Tool):
         
         try:
             results = self.engine.forecast(data, horizon=horizon)
-            
+
+            last_dates = {}
+            for row in data:
+                last_dates[row["product_id"]] = row["date"]
+
             for product_id, result in results.items():
                 predictions = result.get("predictions", [])
-                start_date = datetime.now()
+                try:
+                    origin = datetime.fromisoformat(str(last_dates.get(product_id)))
+                except (TypeError, ValueError):
+                    origin = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
                 for i, pred in enumerate(predictions):
-                    forecast_date = (start_date + timedelta(weeks=i)).strftime('%Y-%m-%d')
+                    forecast_date = (origin + timedelta(weeks=i + 1)).strftime('%Y-%m-%d')
                     self.db.save_forecast(
                         product_id=product_id,
                         forecast_date=forecast_date,
@@ -197,23 +230,27 @@ class InventoryTool(Tool):
             else:
                 mean_demand = demands[0] if demands else 0
                 std_demand = mean_demand * 0.1
-            
-            z_score = 1.65 if service_level == 0.95 else 1.96 if service_level >= 0.975 else 1.28
-            
-            safety_stock = z_score * std_demand * math.sqrt(lead_time)
-            
+
+            # lead_time 以天存储，预测与需求都是周粒度，统一换算成周
+            lead_time_weeks = max(float(lead_time), 1.0) / 7.0
+            z_score = 1.96 if service_level >= 0.975 else 1.65 if service_level >= 0.95 else 1.28
+
+            safety_stock = z_score * std_demand * math.sqrt(lead_time_weeks)
+
             avg_forecast = sum(fc['predicted_demand'] for fc in forecast_list[:min(horizon, len(forecast_list))]) / min(horizon, len(forecast_list))
-            target_stock = avg_forecast * lead_time + safety_stock
-            
+            target_stock = avg_forecast * lead_time_weeks + safety_stock
+
             ordering_cost = 50 + unit_cost * 0.1
             holding_cost = unit_cost * 0.2
-            
-            eoq = math.sqrt((2 * avg_forecast * ordering_cost) / max(holding_cost, 0.01))
-            
+
+            annual_demand = avg_forecast * 52
+            eoq = math.sqrt((2 * annual_demand * ordering_cost) / max(holding_cost, 0.01))
+
             order_sequence = []
             current_inventory = 0
             for i in range(min(horizon, len(forecast_list))):
-                period_demand = forecast_list[i]['predicted_demand']
+                period_forecast = forecast_list[i]
+                period_demand = period_forecast['predicted_demand']
                 net_need = max(0, target_stock - current_inventory)
                 order_qty = max(net_need, eoq) if net_need > 0 else 0
                 order_qty = round(order_qty, 2)
@@ -226,9 +263,12 @@ class InventoryTool(Tool):
                     "eoq": round(eoq, 2)
                 })
                 
+                order_date = period_forecast.get('forecast_date') or (
+                    datetime.now() + timedelta(weeks=i)
+                ).strftime('%Y-%m-%d')
                 self.db.save_order(
                     product_id=product_id,
-                    order_date=(datetime.now() + timedelta(weeks=i)).strftime('%Y-%m-%d'),
+                    order_date=order_date,
                     order_quantity=order_qty,
                     safety_stock=round(safety_stock, 2),
                     target_stock=round(target_stock, 2)
@@ -259,7 +299,6 @@ class ReportTool(Tool):
         try:
             stats = self.db.get_data_stats()
             forecasts = self.db.get_forecasts()
-            orders = self.db.get_demand_data()
             
             report_lines = [I18n.t("report_title")]
             report_lines.append(I18n.t("report_time", datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
@@ -276,6 +315,7 @@ class ReportTool(Tool):
             
             report_lines.append(I18n.t("report_forecast_per"))
             for pid, fcs in by_product_forecast.items():
+                fcs = sorted(fcs, key=lambda row: str(row.get('forecast_date', '')))
                 if fcs:
                     latest = fcs[0]['predicted_demand']
                     last = fcs[-1]['predicted_demand']

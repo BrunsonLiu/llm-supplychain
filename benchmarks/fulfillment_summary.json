@@ -1,0 +1,451 @@
+{
+  "generated": "2026-10-27T20:39:09.588100+00:00",
+  "title": "Order fulfillment benchmark (multi-DC allocation)",
+  "dataset": {
+    "clean_rows": 1014625,
+    "skus": 200,
+    "period_start": "2010-12-06",
+    "period_end": "2011-11-28"
+  },
+  "instance": {
+    "week": "2011-11-28",
+    "orders": 120,
+    "order_lines": 542,
+    "skus": 155,
+    "units": 8771,
+    "dcs": [
+      "London",
+      "Rotterdam",
+      "Frankfurt"
+    ],
+    "promise_mix": "2d=36, 3d=60, 5d=24",
+    "handling_days": 1,
+    "transit_km_per_day": 700.0,
+    "freight_cost_per_unit_km": 0.0006,
+    "eligible_invoices": 334,
+    "sampled_invoices": 120,
+    "median_lines_per_order": 4.0,
+    "stock_factor": 0.85,
+    "stock_units": 7453,
+    "stock_coverage": 0.8497320715995895,
+    "stock_shares": [
+      0.34,
+      0.28,
+      0.38
+    ],
+    "capacity_shares": [
+      0.55,
+      0.4,
+      0.35
+    ],
+    "dc_capacity": [
+      4825,
+      3509,
+      3070
+    ],
+    "promise_days": {
+      "2": 36,
+      "3": 60,
+      "5": 24
+    },
+    "promise_tiers": [
+      [
+        2,
+        0.3
+      ],
+      [
+        3,
+        0.5
+      ],
+      [
+        5,
+        0.2
+      ]
+    ],
+    "transit_days_range": [
+      2,
+      5
+    ],
+    "fixed_ship_cost": 25.0,
+    "late_penalty_per_unit_day": 0.35,
+    "unmet_penalty_per_unit": 6.0,
+    "handling_cost_per_unit": [
+      0.02,
+      0.04,
+      0.05
+    ],
+    "seed": 42,
+    "assumptions": [
+      "订单/行/数量/目的国来自 Online Retail II 真实发票",
+      "DC 库存、产能、转运天数、SLA 承诺与费率是显式假设",
+      "库存按 SKU 需求 stock_factor 分配并加入确定性偏斜"
+    ]
+  },
+  "scenarios": [
+    {
+      "key": "greedy",
+      "name": "Greedy (deadline-first)",
+      "status": "HEURISTIC",
+      "unit_fill": 0.6117888496180595,
+      "order_fill": 0.325,
+      "otif": 0.25,
+      "on_time_unit_rate": 0.5754189944134078,
+      "split_rate": 0.7,
+      "shipments": 204,
+      "transport": 2089.056040118162,
+      "fixed": 5100.0,
+      "late": 150.85,
+      "unmet": 20430.0,
+      "total": 27769.906040118163,
+      "solve_seconds": 0.0072095999494194984,
+      "best_bound": null,
+      "gap": null,
+      "dc_load": [
+        {
+          "dc": "London",
+          "units": 2437,
+          "capacity": 4825,
+          "utilization": 0.5050777202072538,
+          "stock_left": 13
+        },
+        {
+          "dc": "Rotterdam",
+          "units": 2081,
+          "capacity": 3509,
+          "utilization": 0.5930464519806212,
+          "stock_left": 0
+        },
+        {
+          "dc": "Frankfurt",
+          "units": 848,
+          "capacity": 3070,
+          "utilization": 0.2762214983713355,
+          "stock_left": 2074
+        }
+      ],
+      "promise": [
+        {
+          "promise": "2 days",
+          "orders": 36,
+          "otif": 0.25,
+          "late_units": 319,
+          "unmet_units": 1078
+        },
+        {
+          "promise": "3 days",
+          "orders": 60,
+          "otif": 0.2833333333333333,
+          "late_units": 0,
+          "unmet_units": 1220
+        },
+        {
+          "promise": "5 days",
+          "orders": 24,
+          "otif": 0.16666666666666666,
+          "late_units": 0,
+          "unmet_units": 1107
+        }
+      ]
+    },
+    {
+      "key": "milp_1",
+      "name": "MILP (max 1 DC/order)",
+      "status": "FEASIBLE",
+      "unit_fill": 0.4704138638695702,
+      "order_fill": 0.14166666666666666,
+      "otif": 0.125,
+      "on_time_unit_rate": 0.4565043894652833,
+      "split_rate": 0.0,
+      "shipments": 119,
+      "transport": 1710.2891016887636,
+      "fixed": 2975.0,
+      "late": 50.4,
+      "unmet": 27870.0,
+      "total": 32605.689101688764,
+      "solve_seconds": 25.028912500012666,
+      "best_bound": 12239.703,
+      "gap": 0.6246078413902656,
+      "dc_load": [
+        {
+          "dc": "London",
+          "units": 1898,
+          "capacity": 4825,
+          "utilization": 0.3933678756476684,
+          "stock_left": 552
+        },
+        {
+          "dc": "Rotterdam",
+          "units": 1051,
+          "capacity": 3509,
+          "utilization": 0.2995155314904531,
+          "stock_left": 1030
+        },
+        {
+          "dc": "Frankfurt",
+          "units": 1177,
+          "capacity": 3070,
+          "utilization": 0.3833876221498371,
+          "stock_left": 1745
+        }
+      ],
+      "promise": [
+        {
+          "promise": "2 days",
+          "orders": 36,
+          "otif": 0.1388888888888889,
+          "late_units": 122,
+          "unmet_units": 2159
+        },
+        {
+          "promise": "3 days",
+          "orders": 60,
+          "otif": 0.13333333333333333,
+          "late_units": 0,
+          "unmet_units": 1512
+        },
+        {
+          "promise": "5 days",
+          "orders": 24,
+          "otif": 0.08333333333333333,
+          "late_units": 0,
+          "unmet_units": 974
+        }
+      ]
+    },
+    {
+      "key": "milp_2",
+      "name": "MILP (max 2 DCs/order)",
+      "status": "FEASIBLE",
+      "unit_fill": 0.6788279557633109,
+      "order_fill": 0.15,
+      "otif": 0.15,
+      "on_time_unit_rate": 0.6496408619313647,
+      "split_rate": 0.7916666666666666,
+      "shipments": 212,
+      "transport": 2725.521933455834,
+      "fixed": 5300.0,
+      "late": 106.39999999999999,
+      "unmet": 16902.0,
+      "total": 25033.921933455833,
+      "solve_seconds": 25.005663700052537,
+      "best_bound": 11573.71,
+      "gap": 0.537667759423661,
+      "dc_load": [
+        {
+          "dc": "London",
+          "units": 1831,
+          "capacity": 4825,
+          "utilization": 0.3794818652849741,
+          "stock_left": 619
+        },
+        {
+          "dc": "Rotterdam",
+          "units": 1959,
+          "capacity": 3509,
+          "utilization": 0.5582787118837276,
+          "stock_left": 122
+        },
+        {
+          "dc": "Frankfurt",
+          "units": 2164,
+          "capacity": 3070,
+          "utilization": 0.704885993485342,
+          "stock_left": 758
+        }
+      ],
+      "promise": [
+        {
+          "promise": "2 days",
+          "orders": 36,
+          "otif": 0.1388888888888889,
+          "late_units": 256,
+          "unmet_units": 1401
+        },
+        {
+          "promise": "3 days",
+          "orders": 60,
+          "otif": 0.13333333333333333,
+          "late_units": 0,
+          "unmet_units": 856
+        },
+        {
+          "promise": "5 days",
+          "orders": 24,
+          "otif": 0.20833333333333334,
+          "late_units": 0,
+          "unmet_units": 560
+        }
+      ]
+    },
+    {
+      "key": "milp_service",
+      "name": "MILP (2 DCs, 5x late penalty)",
+      "status": "FEASIBLE",
+      "unit_fill": 0.6928514422528788,
+      "order_fill": 0.325,
+      "otif": 0.30833333333333335,
+      "on_time_unit_rate": 0.6499828981872079,
+      "split_rate": 0.8916666666666667,
+      "shipments": 224,
+      "transport": 2825.282159160252,
+      "fixed": 5600.0,
+      "late": 131.6,
+      "unmet": 16164.0,
+      "total": 24720.882159160254,
+      "solve_seconds": 25.00333259999752,
+      "best_bound": -492.645,
+      "gap": 1.026670161008419,
+      "dc_load": [
+        {
+          "dc": "London",
+          "units": 1734,
+          "capacity": 4825,
+          "utilization": 0.3593782383419689,
+          "stock_left": 716
+        },
+        {
+          "dc": "Rotterdam",
+          "units": 2030,
+          "capacity": 3509,
+          "utilization": 0.5785123966942148,
+          "stock_left": 51
+        },
+        {
+          "dc": "Frankfurt",
+          "units": 2313,
+          "capacity": 3070,
+          "utilization": 0.7534201954397394,
+          "stock_left": 609
+        }
+      ],
+      "promise": [
+        {
+          "promise": "2 days",
+          "orders": 36,
+          "otif": 0.3611111111111111,
+          "late_units": 367,
+          "unmet_units": 1256
+        },
+        {
+          "promise": "3 days",
+          "orders": 60,
+          "otif": 0.2833333333333333,
+          "late_units": 9,
+          "unmet_units": 895
+        },
+        {
+          "promise": "5 days",
+          "orders": 24,
+          "otif": 0.2916666666666667,
+          "late_units": 0,
+          "unmet_units": 543
+        }
+      ]
+    }
+  ],
+  "service": {
+    "late_weight": 5.0,
+    "otif_bonus": 200.0,
+    "time_limit_seconds": 25.0
+  },
+  "examples": [
+    {
+      "order": "579176",
+      "destination": "United Kingdom",
+      "promise": 3,
+      "units": 70,
+      "greedy_dcs": [
+        "London",
+        "Rotterdam"
+      ],
+      "greedy_otif": false,
+      "milp_dcs": [
+        "London",
+        "Frankfurt"
+      ],
+      "milp_otif": true,
+      "milp_late_units": 0
+    },
+    {
+      "order": "579473",
+      "destination": "United Kingdom",
+      "promise": 3,
+      "units": 50,
+      "greedy_dcs": [
+        "London",
+        "Rotterdam"
+      ],
+      "greedy_otif": false,
+      "milp_dcs": [
+        "London",
+        "Frankfurt"
+      ],
+      "milp_otif": true,
+      "milp_late_units": 0
+    },
+    {
+      "order": "579954",
+      "destination": "United Kingdom",
+      "promise": 3,
+      "units": 36,
+      "greedy_dcs": [
+        "London",
+        "Rotterdam"
+      ],
+      "greedy_otif": false,
+      "milp_dcs": [
+        "London",
+        "Rotterdam"
+      ],
+      "milp_otif": true,
+      "milp_late_units": 0
+    },
+    {
+      "order": "580387",
+      "destination": "United Kingdom",
+      "promise": 5,
+      "units": 26,
+      "greedy_dcs": [
+        "Frankfurt"
+      ],
+      "greedy_otif": false,
+      "milp_dcs": [
+        "London",
+        "Frankfurt"
+      ],
+      "milp_otif": true,
+      "milp_late_units": 0
+    },
+    {
+      "order": "579544",
+      "destination": "United Kingdom",
+      "promise": 3,
+      "units": 25,
+      "greedy_dcs": [
+        "London",
+        "Frankfurt"
+      ],
+      "greedy_otif": false,
+      "milp_dcs": [
+        "London"
+      ],
+      "milp_otif": true,
+      "milp_late_units": 0
+    },
+    {
+      "order": "580386",
+      "destination": "United Kingdom",
+      "promise": 2,
+      "units": 24,
+      "greedy_dcs": [
+        "Frankfurt"
+      ],
+      "greedy_otif": false,
+      "milp_dcs": [
+        "London"
+      ],
+      "milp_otif": true,
+      "milp_late_units": 0
+    }
+  ]
+}

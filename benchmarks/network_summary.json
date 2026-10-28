@@ -1,0 +1,378 @@
+{
+  "generated_at": "2026-10-27T18:30:41.524548+00:00",
+  "title": "Network & warehouse benchmark (Week 3)",
+  "dataset": {
+    "clean_rows": 1014625,
+    "skus": 200,
+    "period_start": "2010-12-06",
+    "period_end": "2011-11-28",
+    "transaction_start": "2009-12-01",
+    "transaction_end": "2011-12-09",
+    "weekly_units": 33897.846153846156
+  },
+  "location": {
+    "meta": {
+      "weeks": 52,
+      "period_start": "2010-12-06",
+      "period_end": "2011-11-28",
+      "total_units_all_countries": 1762688.0,
+      "covered_units": 1717478.0,
+      "coverage_share": 0.974351671991867,
+      "fixed_cost_multiplier": 1.0,
+      "transport_cost_per_unit_km": 0.00018,
+      "road_factor": 1.25
+    },
+    "baseline": {
+      "status": "HEURISTIC",
+      "opened": 8,
+      "fixed_cost": 2220000.0,
+      "transport_cost": 84310.94856587442,
+      "total_cost": 2304310.9485658742,
+      "avg_distance_km": 272.7220719562651,
+      "solve_seconds": 0.0005912999622523785
+    },
+    "optimized": {
+      "status": "OPTIMAL",
+      "opened": 2,
+      "fixed_cost": 710000.0,
+      "transport_cost": 150314.86989182964,
+      "total_cost": 860314.8698918297,
+      "avg_distance_km": 486.2260887826014,
+      "solve_seconds": 0.10835009999573231
+    },
+    "facilities": [
+      {
+        "facility": "London",
+        "units": 1000000.0,
+        "utilization": 1.0,
+        "fixed_cost": 380000.0
+      },
+      {
+        "facility": "Rotterdam",
+        "units": 717478.0,
+        "utilization": 0.8968475,
+        "fixed_cost": 330000.0
+      }
+    ],
+    "demand": [
+      {
+        "country": "United Kingdom",
+        "units": 1488693.0,
+        "share": 0.8667901422900323
+      },
+      {
+        "country": "Netherlands",
+        "units": 70044.0,
+        "share": 0.040783055154127154
+      },
+      {
+        "country": "EIRE",
+        "units": 38687.0,
+        "share": 0.022525470486375952
+      },
+      {
+        "country": "France",
+        "units": 35471.0,
+        "share": 0.020652957417795163
+      },
+      {
+        "country": "Germany",
+        "units": 29559.0,
+        "share": 0.017210700806647886
+      },
+      {
+        "country": "Sweden",
+        "units": 12510.0,
+        "share": 0.00728393609699804
+      },
+      {
+        "country": "Spain",
+        "units": 9500.0,
+        "share": 0.005531366340645993
+      },
+      {
+        "country": "Switzerland",
+        "units": 8160.0,
+        "share": 0.004751152562070664
+      },
+      {
+        "country": "Belgium",
+        "units": 6571.0,
+        "share": 0.0038259587604615604
+      },
+      {
+        "country": "Portugal",
+        "units": 4763.0,
+        "share": 0.0027732524084733545
+      },
+      {
+        "country": "Norway",
+        "units": 3997.0,
+        "share": 0.0023272496066907406
+      },
+      {
+        "country": "Channel Islands",
+        "units": 3406.0,
+        "share": 0.001983140395393711
+      },
+      {
+        "country": "Denmark",
+        "units": 3060.0,
+        "share": 0.001781682210776499
+      },
+      {
+        "country": "Finland",
+        "units": 3057.0,
+        "share": 0.001779935463511032
+      }
+    ],
+    "sensitivity": [
+      {
+        "fixed_cost_multiplier": 0.25,
+        "status": "OPTIMAL",
+        "opened": 3,
+        "fixed_cost": 207500.0,
+        "transport_cost": 110667.94821954763,
+        "total_cost": 318167.94821954763,
+        "avg_distance_km": 357.97951097658444,
+        "facilities": "London, Manchester, Warsaw"
+      },
+      {
+        "fixed_cost_multiplier": 0.5,
+        "status": "OPTIMAL",
+        "opened": 2,
+        "fixed_cost": 355000.0,
+        "transport_cost": 150314.86989182964,
+        "total_cost": 505314.8698918297,
+        "avg_distance_km": 486.2260887826014,
+        "facilities": "London, Rotterdam"
+      },
+      {
+        "fixed_cost_multiplier": 1.0,
+        "status": "OPTIMAL",
+        "opened": 2,
+        "fixed_cost": 710000.0,
+        "transport_cost": 150314.86989182964,
+        "total_cost": 860314.8698918297,
+        "avg_distance_km": 486.2260887826014,
+        "facilities": "London, Rotterdam"
+      },
+      {
+        "fixed_cost_multiplier": 2.0,
+        "status": "OPTIMAL",
+        "opened": 2,
+        "fixed_cost": 1420000.0,
+        "transport_cost": 150314.86989182964,
+        "total_cost": 1570314.8698918296,
+        "avg_distance_km": 486.2260887826014,
+        "facilities": "London, Rotterdam"
+      },
+      {
+        "fixed_cost_multiplier": 4.0,
+        "status": "OPTIMAL",
+        "opened": 2,
+        "fixed_cost": 2840000.0,
+        "transport_cost": 150314.86989182964,
+        "total_cost": 2990314.86989183,
+        "avg_distance_km": 486.2260887826014,
+        "facilities": "London, Rotterdam"
+      }
+    ]
+  },
+  "routing": {
+    "meta": {
+      "customers": 8,
+      "vehicles": 4,
+      "capacity": 10950.0,
+      "speed_kmh": 40.0,
+      "service_minutes": 20.0,
+      "horizon_minutes": 480,
+      "weekly_units": 33897.846153846156,
+      "time_windows": [
+        [
+          0,
+          120
+        ],
+        [
+          0,
+          120
+        ],
+        [
+          120,
+          240
+        ],
+        [
+          120,
+          240
+        ],
+        [
+          240,
+          360
+        ],
+        [
+          240,
+          360
+        ],
+        [
+          360,
+          480
+        ],
+        [
+          360,
+          480
+        ]
+      ]
+    },
+    "plans": [
+      {
+        "method": "one route per store",
+        "distance_km": 544.8293588464462,
+        "vehicles": 8,
+        "max_load": 9491.396923076925,
+        "total_minutes": 977.2440382696692,
+        "feasible": false,
+        "solve_seconds": 3.8199941627681255e-05
+      },
+      {
+        "method": "Clarke-Wright savings",
+        "distance_km": 365.33519309492056,
+        "vehicles": 4,
+        "max_load": 9491.396923076925,
+        "total_minutes": 708.0027896423809,
+        "feasible": true,
+        "solve_seconds": 0.00010409997776150703
+      },
+      {
+        "method": "exact subset DP",
+        "distance_km": 365.33519309492056,
+        "vehicles": 4,
+        "max_load": 9491.396923076925,
+        "total_minutes": 708.0027896423809,
+        "feasible": true,
+        "solve_seconds": 0.010863600065931678
+      },
+      {
+        "method": "OR-Tools CVRP",
+        "distance_km": 365.33519309492056,
+        "vehicles": 4,
+        "max_load": 9491.396923076925,
+        "total_minutes": 708.0027896423809,
+        "feasible": true,
+        "solve_seconds": 2.037707700044848
+      },
+      {
+        "method": "OR-Tools CVRP + time windows",
+        "distance_km": 413.41989308762584,
+        "vehicles": 4,
+        "max_load": 10508.332307692308,
+        "total_minutes": 780.1298396314388,
+        "feasible": true,
+        "solve_seconds": 2.0040035999845713
+      }
+    ],
+    "routes": [
+      {
+        "vehicle": "V1",
+        "stores": "S2",
+        "load": 6440.59076923077,
+        "distance_km": 72.80109889280519,
+        "arrivals": "S2 54-74min"
+      },
+      {
+        "vehicle": "V2",
+        "stores": "S4 → S3 → S8",
+        "load": 10508.332307692308,
+        "distance_km": 167.17859235945974,
+        "arrivals": "S4 120-140min; S3 170-190min; S8 360-380min"
+      },
+      {
+        "vehicle": "V3",
+        "stores": "S1",
+        "load": 9491.396923076925,
+        "distance_km": 56.85068161420758,
+        "arrivals": "S1 42-62min"
+      },
+      {
+        "vehicle": "V4",
+        "stores": "S6 → S5 → S7",
+        "load": 7457.526153846155,
+        "distance_km": 116.58952022115338,
+        "arrivals": "S6 240-260min; S5 306-326min; S7 360-380min"
+      }
+    ]
+  },
+  "warehouse": {
+    "meta": {
+      "week": "2011-11-28",
+      "eligible_invoices": 445,
+      "sampled_invoices": 200,
+      "order_lines": 1269,
+      "unique_skus": 179,
+      "median_lines_per_order": 5.0,
+      "units": 18748.0,
+      "seed": 42,
+      "aisles": 8,
+      "bays": 16,
+      "slots": 256,
+      "bay_meters": 1.2,
+      "aisle_gap_meters": 2.5,
+      "skus_assigned": 200
+    },
+    "summary": [
+      {
+        "slotting": "random",
+        "orders": 200,
+        "avg_lines": 6.345,
+        "avg_units": 93.74,
+        "return_m": 122.714,
+        "s_shape_m": 120.41,
+        "optimal_m": 90.61899999999997,
+        "return_saving": 0.0,
+        "optimal_saving": 0.0
+      },
+      {
+        "slotting": "abc",
+        "orders": 200,
+        "avg_lines": 6.345,
+        "avg_units": 93.74,
+        "return_m": 87.4385,
+        "s_shape_m": 116.4905,
+        "optimal_m": 79.7285,
+        "return_saving": 0.28746108838437334,
+        "optimal_saving": 0.12017899116079389
+      }
+    ],
+    "sample": [
+      {
+        "sku": "23166",
+        "abc": "A",
+        "slot": "(4, 1)",
+        "depot_m": 2.45
+      },
+      {
+        "sku": "22197",
+        "abc": "A",
+        "slot": "(4, 1)",
+        "depot_m": 2.45
+      },
+      {
+        "sku": "84077",
+        "abc": "A",
+        "slot": "(5, 1)",
+        "depot_m": 2.45
+      },
+      {
+        "sku": "85099B",
+        "abc": "A",
+        "slot": "(5, 1)",
+        "depot_m": 2.45
+      },
+      {
+        "sku": "85123A",
+        "abc": "A",
+        "slot": "(4, 2)",
+        "depot_m": 3.65
+      }
+    ]
+  }
+}

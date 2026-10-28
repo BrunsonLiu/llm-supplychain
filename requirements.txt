@@ -2,8 +2,20 @@
 
 # 核心
 numpy>=1.21.0
+pandas>=2.1.0
+pyarrow>=14.0.0
 pydantic>=2.0.0
 pyyaml>=6.0
+
+# 需求预测与回测
+lightgbm>=4.0.0
+statsmodels>=0.14.0
+
+# 运筹优化（库存 MILP / 运输 LP）
+ortools>=9.8.0
+
+# 数据读取
+openpyxl>=3.1.0
 
 # LLM（OpenAI 兼容 SDK，可接 DeepSeek/Moonshot/vLLM 等）
 openai>=1.0.0
@@ -18,9 +30,13 @@ openai>=1.0.0
 fastapi>=0.104.0
 uvicorn>=0.24.0
 requests>=2.28.0
+httpx>=0.25.0
 
 # 混合检索
 rank-bm25>=0.2.2
+
+# 交互界面（可选）
+# streamlit>=1.49.0
 
 # 开发/测试
 pytest>=7.0.0

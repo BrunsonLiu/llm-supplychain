@@ -5,6 +5,7 @@
 合并自两个源项目的 API：
 - 原 LLMandagentt/app/main.py：/run 决策流程、/data 数据操作
 - 原 RAG项目/src/api/server.py 的定位由 /ask 知识问答端点承接
+- 新增 /agent：Function Calling 工具编排（护栏 + 执行轨迹 + 引用）
 
 运行：
   PYTHONPATH=src;. uvicorn app.main:app --reload --port 8000
@@ -13,6 +14,7 @@
 import logging
 import os
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional
 
@@ -23,7 +25,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from supply import SupplyChainAgent, Database, I18n
+from supply import FunctionCallingAgent, SupplyChainAgent, Database, I18n
 from rag import OpenAILLM
 
 logging.basicConfig(level=logging.INFO,
@@ -46,6 +48,7 @@ app.add_middleware(
 
 # 全局单例 Agent（工具无状态、Database 按需连接）
 _agent: Optional[SupplyChainAgent] = None
+_function_agents: Dict[tuple, FunctionCallingAgent] = {}
 
 
 def get_agent() -> SupplyChainAgent:
@@ -53,6 +56,15 @@ def get_agent() -> SupplyChainAgent:
     if _agent is None:
         _agent = SupplyChainAgent()
     return _agent
+
+
+def get_function_agent(use_llm: bool, allow_writes: bool) -> FunctionCallingAgent:
+    """按 (planner, allow_writes) 缓存，复用 RAG 索引；LLM 未配置时回退规则规划器。"""
+    llm = build_llm() if use_llm else None
+    key = ("openai" if llm is not None else "rules", allow_writes)
+    if key not in _function_agents:
+        _function_agents[key] = FunctionCallingAgent(llm=llm, allow_writes=allow_writes)
+    return _function_agents[key]
 
 
 def build_llm():
@@ -69,6 +81,17 @@ def build_llm():
         return None
 
 
+@contextmanager
+def language_context(lang: str):
+    """请求级语言切换；I18n 是全局状态，结束后恢复。"""
+    previous = I18n.get_language()
+    I18n.set_language(lang)
+    try:
+        yield
+    finally:
+        I18n.set_language(previous)
+
+
 class RunRequest(BaseModel):
     horizon: int = Field(default=12, ge=1, le=52)
     generate_data: bool = True
@@ -82,6 +105,13 @@ class AskRequest(BaseModel):
     lang: Literal["zh", "en"] = "zh"
 
 
+class AgentRequest(BaseModel):
+    prompt: str = Field(..., min_length=1)
+    max_steps: int = Field(default=8, ge=1, le=12)
+    allow_writes: bool = True
+    use_llm: bool = True
+
+
 @app.get("/")
 def read_root():
     return {"msg": _("api_running"), "version": "3.0.0", "docs": "/docs"}
@@ -93,8 +123,10 @@ def run_pipeline(req: RunRequest):
     try:
         agent = get_agent()
         llm = build_llm() if req.use_llm else None
-        prompt = f"{_('data_generate') if req.generate_data else ''}; 预测周期={req.horizon}; 库存周期={req.horizon}; 报告"
-        report = agent.decision_report(horizon=req.horizon, llm=llm)
+        with language_context(req.lang):
+            report = agent.decision_report(
+                horizon=req.horizon, llm=llm, generate_data=req.generate_data
+            )
         return {"status": "success", "lang": req.lang, **report}
     except Exception as e:
         logger.error(f"API执行失败: {e}")
@@ -111,11 +143,40 @@ def ask_knowledge(req: AskRequest):
             raise HTTPException(status_code=400, detail="RAG 工具未启用")
         result = rag_tool.run(req.question, top_k=req.top_k)
         return {"status": "success", "question": result["question"],
-                "answer": result["answer"], "sources": result["sources"]}
+                "answer": result["answer"], "sources": result["sources"],
+                "citations": result["citations"]}
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"知识问答失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/agent")
+def run_function_agent(req: AgentRequest):
+    """Function Calling Agent：多步工具调用 + 参数校验 + 护栏 + 引用"""
+    try:
+        agent = get_function_agent(req.use_llm, req.allow_writes)
+        result = agent.run(req.prompt)
+        return {
+            "status": result["status"],
+            "answer": result["answer"],
+            "planner": result["planner"],
+            "steps": result["steps"],
+            "tool_calls": [
+                {
+                    "step": item["step"],
+                    "name": item["name"],
+                    "arguments": item["arguments"],
+                    "status": item["status"],
+                }
+                for item in result["tool_calls"]
+            ],
+            "citations": result["citations"],
+            "blocked": result["blocked"],
+        }
+    except Exception as e:
+        logger.error(f"Agent 执行失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

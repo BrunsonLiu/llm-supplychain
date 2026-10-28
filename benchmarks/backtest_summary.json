@@ -1,0 +1,1327 @@
+{
+  "generated_at": "2026-10-27T17:44:00.867725+00:00",
+  "title": "Demand forecasting benchmark (Online Retail II)",
+  "dataset": {
+    "dataset": "online_retail_ii",
+    "source": "UCI Machine Learning Repository, dataset 502",
+    "source_url": "https://archive.ics.uci.edu/static/public/502/online+retail+ii.zip",
+    "generated_at": "2026-10-27T15:54:28.801797+00:00",
+    "clean_stats": {
+      "raw_rows": 1067371,
+      "clean_rows": 1014625,
+      "dropped_invalid": 0,
+      "dropped_cancelled": 19494,
+      "dropped_non_product": 4884,
+      "dropped_non_positive": 6116,
+      "dropped_duplicates": 22252,
+      "unique_skus": 4707
+    },
+    "skus_before_filter": 4675,
+    "skus_selected": 200,
+    "weeks": 104,
+    "rows": 20800,
+    "start_week": "2009-12-07",
+    "end_week": "2011-11-28",
+    "total_demand": 3389909.0,
+    "zero_share": 0.1795673076923077,
+    "filters": {
+      "top_n": 200,
+      "min_nonzero_weeks": 26,
+      "rank_by": "revenue",
+      "product_code_pattern": "^\\d{5}[A-Za-z]{0,2}$"
+    },
+    "sku_stats": [
+      {
+        "sku": "84077",
+        "weeks": 104,
+        "nonzero_weeks": 101,
+        "total_demand": 104575.0,
+        "total_revenue": 24068.749999999996
+      },
+      {
+        "sku": "85099B",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 95701.0,
+        "total_revenue": 179839.09
+      },
+      {
+        "sku": "21212",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 93178.0,
+        "total_revenue": 50754.9
+      },
+      {
+        "sku": "85123A",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 92315.0,
+        "total_revenue": 254639.19
+      },
+      {
+        "sku": "22197",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 83404.0,
+        "total_revenue": 75121.62
+      },
+      {
+        "sku": "23166",
+        "weeks": 104,
+        "nonzero_weeks": 31,
+        "total_demand": 77856.0,
+        "total_revenue": 81492.97
+      },
+      {
+        "sku": "84879",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 77590.0,
+        "total_revenue": 125379.67
+      },
+      {
+        "sku": "21977",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 55489.0,
+        "total_revenue": 27748.3
+      },
+      {
+        "sku": "84991",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 53453.0,
+        "total_revenue": 26688.31
+      },
+      {
+        "sku": "15036",
+        "weeks": 104,
+        "nonzero_weeks": 100,
+        "total_demand": 43921.0,
+        "total_revenue": 32754.26
+      },
+      {
+        "sku": "22492",
+        "weeks": 104,
+        "nonzero_weeks": 82,
+        "total_demand": 43398.0,
+        "total_revenue": 27717.47
+      },
+      {
+        "sku": "84755",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 40349.0,
+        "total_revenue": 25113.99
+      },
+      {
+        "sku": "21213",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 39994.0,
+        "total_revenue": 21210.66
+      },
+      {
+        "sku": "20725",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 39935.0,
+        "total_revenue": 70425.41
+      },
+      {
+        "sku": "22178",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 39371.0,
+        "total_revenue": 51022.78
+      },
+      {
+        "sku": "22386",
+        "weeks": 104,
+        "nonzero_weeks": 96,
+        "total_demand": 39364.0,
+        "total_revenue": 76114.54
+      },
+      {
+        "sku": "21232",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 36831.0,
+        "total_revenue": 47718.79
+      },
+      {
+        "sku": "85099F",
+        "weeks": 104,
+        "nonzero_weeks": 101,
+        "total_demand": 36828.0,
+        "total_revenue": 68564.19
+      },
+      {
+        "sku": "21915",
+        "weeks": 104,
+        "nonzero_weeks": 89,
+        "total_demand": 36379.0,
+        "total_revenue": 42777.04
+      },
+      {
+        "sku": "84946",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 35814.0,
+        "total_revenue": 47981.12
+      },
+      {
+        "sku": "71459",
+        "weeks": 104,
+        "nonzero_weeks": 101,
+        "total_demand": 32833.0,
+        "total_revenue": 26581.469999999998
+      },
+      {
+        "sku": "22086",
+        "weeks": 104,
+        "nonzero_weeks": 82,
+        "total_demand": 31569.0,
+        "total_revenue": 107096.1
+      },
+      {
+        "sku": "20724",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 31395.0,
+        "total_revenue": 34087.05
+      },
+      {
+        "sku": "22355",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 31053.0,
+        "total_revenue": 43755.85
+      },
+      {
+        "sku": "21080",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 30615.0,
+        "total_revenue": 25026.649999999998
+      },
+      {
+        "sku": "85099C",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 30056.0,
+        "total_revenue": 57937.270000000004
+      },
+      {
+        "sku": "84347",
+        "weeks": 104,
+        "nonzero_weeks": 75,
+        "total_demand": 29069.0,
+        "total_revenue": 65872.65
+      },
+      {
+        "sku": "21931",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 28696.0,
+        "total_revenue": 60450.85
+      },
+      {
+        "sku": "21731",
+        "weeks": 104,
+        "nonzero_weeks": 101,
+        "total_demand": 28489.0,
+        "total_revenue": 47456.49
+      },
+      {
+        "sku": "47566",
+        "weeks": 104,
+        "nonzero_weeks": 101,
+        "total_demand": 28101.0,
+        "total_revenue": 147708.05
+      },
+      {
+        "sku": "22469",
+        "weeks": 104,
+        "nonzero_weeks": 77,
+        "total_demand": 27833.0,
+        "total_revenue": 48795.68
+      },
+      {
+        "sku": "23084",
+        "weeks": 104,
+        "nonzero_weeks": 30,
+        "total_demand": 27583.0,
+        "total_revenue": 59848.3
+      },
+      {
+        "sku": "22411",
+        "weeks": 104,
+        "nonzero_weeks": 96,
+        "total_demand": 27031.0,
+        "total_revenue": 56715.13
+      },
+      {
+        "sku": "21790",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 26768.0,
+        "total_revenue": 23040.25
+      },
+      {
+        "sku": "84970S",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 26458.0,
+        "total_revenue": 22165.239999999998
+      },
+      {
+        "sku": "20727",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 26370.0,
+        "total_revenue": 45033.12
+      },
+      {
+        "sku": "22423",
+        "weeks": 104,
+        "nonzero_weeks": 89,
+        "total_demand": 26143.0,
+        "total_revenue": 326199.67
+      },
+      {
+        "sku": "21929",
+        "weeks": 104,
+        "nonzero_weeks": 97,
+        "total_demand": 25267.0,
+        "total_revenue": 48969.42
+      },
+      {
+        "sku": "22383",
+        "weeks": 104,
+        "nonzero_weeks": 97,
+        "total_demand": 25002.0,
+        "total_revenue": 43061.02
+      },
+      {
+        "sku": "20728",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 24404.0,
+        "total_revenue": 41886.37
+      },
+      {
+        "sku": "20719",
+        "weeks": 104,
+        "nonzero_weeks": 101,
+        "total_demand": 24085.0,
+        "total_revenue": 27016.18
+      },
+      {
+        "sku": "21181",
+        "weeks": 104,
+        "nonzero_weeks": 77,
+        "total_demand": 24071.0,
+        "total_revenue": 48658.450000000004
+      },
+      {
+        "sku": "21928",
+        "weeks": 104,
+        "nonzero_weeks": 100,
+        "total_demand": 24016.0,
+        "total_revenue": 45687.36
+      },
+      {
+        "sku": "20726",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 21883.0,
+        "total_revenue": 38059.3
+      },
+      {
+        "sku": "84978",
+        "weeks": 104,
+        "nonzero_weeks": 101,
+        "total_demand": 21530.0,
+        "total_revenue": 28282.350000000002
+      },
+      {
+        "sku": "20971",
+        "weeks": 104,
+        "nonzero_weeks": 102,
+        "total_demand": 21085.0,
+        "total_revenue": 27273.11
+      },
+      {
+        "sku": "22384",
+        "weeks": 104,
+        "nonzero_weeks": 96,
+        "total_demand": 20736.0,
+        "total_revenue": 33972.37
+      },
+      {
+        "sku": "20713",
+        "weeks": 104,
+        "nonzero_weeks": 89,
+        "total_demand": 20532.0,
+        "total_revenue": 40030.409999999996
+      },
+      {
+        "sku": "22629",
+        "weeks": 104,
+        "nonzero_weeks": 74,
+        "total_demand": 20471.0,
+        "total_revenue": 37362.119999999995
+      },
+      {
+        "sku": "21175",
+        "weeks": 104,
+        "nonzero_weeks": 97,
+        "total_demand": 20401.0,
+        "total_revenue": 43167.05
+      }
+    ]
+  },
+  "config": {
+    "horizon": 13,
+    "n_folds": 4,
+    "min_train_weeks": 52,
+    "min_train_nonzero_weeks": 13,
+    "seasonality": 52,
+    "models": [
+      "naive",
+      "seasonal_naive",
+      "ma4",
+      "ma8",
+      "croston_sba",
+      "holt"
+    ],
+    "include_lgbm": true
+  },
+  "folds": [
+    {
+      "fold": 0,
+      "cutoff": "2010-11-29T00:00:00",
+      "test_start": "2010-12-06T00:00:00",
+      "test_end": "2011-02-28T00:00:00",
+      "train_weeks": 52,
+      "test_weeks": 13
+    },
+    {
+      "fold": 1,
+      "cutoff": "2011-02-28T00:00:00",
+      "test_start": "2011-03-07T00:00:00",
+      "test_end": "2011-05-30T00:00:00",
+      "train_weeks": 65,
+      "test_weeks": 13
+    },
+    {
+      "fold": 2,
+      "cutoff": "2011-05-30T00:00:00",
+      "test_start": "2011-06-06T00:00:00",
+      "test_end": "2011-08-29T00:00:00",
+      "train_weeks": 78,
+      "test_weeks": 13
+    },
+    {
+      "fold": 3,
+      "cutoff": "2011-08-29T00:00:00",
+      "test_start": "2011-09-05T00:00:00",
+      "test_end": "2011-11-28T00:00:00",
+      "train_weeks": 91,
+      "test_weeks": 13
+    }
+  ],
+  "overall": [
+    {
+      "model": "croston_sba",
+      "n": 9685,
+      "actual_sum": 1593232.0,
+      "abs_err_sum": 1322733.219946919,
+      "err_sum": 186910.66573368554,
+      "mae": 136.57544862642428,
+      "rmse": 421.99980813724454,
+      "rmsse": 1.7478800316555172,
+      "wmape": 0.8302200934621694,
+      "bias": 0.1173154102689913
+    },
+    {
+      "model": "holt",
+      "n": 9685,
+      "actual_sum": 1593232.0,
+      "abs_err_sum": 1546966.4577436892,
+      "err_sum": 491396.8771979191,
+      "mae": 159.72808030394313,
+      "rmse": 343.5843994557985,
+      "rmsse": 1.8415913103821449,
+      "wmape": 0.9709612019741565,
+      "bias": 0.30842769740873843
+    },
+    {
+      "model": "lightgbm",
+      "n": 9685,
+      "actual_sum": 1593232.0,
+      "abs_err_sum": 1168449.4704217261,
+      "err_sum": 135826.69409872754,
+      "mae": 120.64527314628045,
+      "rmse": 249.61401595167825,
+      "rmsse": 1.525456192206453,
+      "wmape": 0.7333831296520068,
+      "bias": 0.0852523010451256
+    },
+    {
+      "model": "ma4",
+      "n": 9685,
+      "actual_sum": 1593232.0,
+      "abs_err_sum": 1357820.0,
+      "err_sum": 240652.0,
+      "mae": 140.19824470831182,
+      "rmse": 294.90665273622545,
+      "rmsse": 1.686394374833525,
+      "wmape": 0.8522424857145726,
+      "bias": 0.15104642638360263
+    },
+    {
+      "model": "ma8",
+      "n": 9685,
+      "actual_sum": 1593232.0,
+      "abs_err_sum": 1285365.125,
+      "err_sum": 131739.625,
+      "mae": 132.7171011874032,
+      "rmse": 280.03706828520274,
+      "rmsse": 1.6599369377491384,
+      "wmape": 0.8067658225544051,
+      "bias": 0.0826870317693845
+    },
+    {
+      "model": "naive",
+      "n": 9685,
+      "actual_sum": 1593232.0,
+      "abs_err_sum": 1424971.0,
+      "err_sum": 4845.0,
+      "mae": 147.13175012906555,
+      "rmse": 318.4487891097924,
+      "rmsse": 1.7736171723300613,
+      "wmape": 0.8943901453146811,
+      "bias": 0.0030409883808509997
+    },
+    {
+      "model": "seasonal_naive",
+      "n": 9685,
+      "actual_sum": 1593232.0,
+      "abs_err_sum": 1382125.0,
+      "err_sum": 33989.0,
+      "mae": 142.70779556014455,
+      "rmse": 313.6252944149289,
+      "rmsse": 2.017248785239813,
+      "wmape": 0.867497640017273,
+      "bias": 0.021333365134519014
+    }
+  ],
+  "aggregate_volume": [
+    {
+      "model": "seasonal_naive",
+      "weeks": 52,
+      "actual_sum": 1593232.0,
+      "abs_err_sum": 335777.0,
+      "err_sum": 33989.0,
+      "wmape": 0.2107521064101148,
+      "bias": 0.021333365134519014
+    },
+    {
+      "model": "croston_sba",
+      "weeks": 52,
+      "actual_sum": 1593232.0,
+      "abs_err_sum": 472529.77308576985,
+      "err_sum": 186910.66573368566,
+      "wmape": 0.2965856655438567,
+      "bias": 0.11731541026899137
+    },
+    {
+      "model": "lightgbm",
+      "weeks": 52,
+      "actual_sum": 1593232.0,
+      "abs_err_sum": 508755.4546896298,
+      "err_sum": 135826.69409872752,
+      "wmape": 0.31932289502698274,
+      "bias": 0.08525230104512557
+    },
+    {
+      "model": "ma8",
+      "weeks": 52,
+      "actual_sum": 1593232.0,
+      "abs_err_sum": 629553.375,
+      "err_sum": 131739.625,
+      "wmape": 0.39514231135201905,
+      "bias": 0.0826870317693845
+    },
+    {
+      "model": "ma4",
+      "weeks": 52,
+      "actual_sum": 1593232.0,
+      "abs_err_sum": 718334.5,
+      "err_sum": 240652.0,
+      "wmape": 0.45086622663868164,
+      "bias": 0.15104642638360263
+    },
+    {
+      "model": "holt",
+      "weeks": 52,
+      "actual_sum": 1593232.0,
+      "abs_err_sum": 797400.7072835776,
+      "err_sum": 491396.8771979191,
+      "wmape": 0.5004925254348254,
+      "bias": 0.30842769740873843
+    },
+    {
+      "model": "naive",
+      "weeks": 52,
+      "actual_sum": 1593232.0,
+      "abs_err_sum": 848775.0,
+      "err_sum": 4845.0,
+      "wmape": 0.532737856131436,
+      "bias": 0.0030409883808509997
+    }
+  ],
+  "by_horizon": [
+    {
+      "model": "croston_sba",
+      "horizon_bucket": "1-4",
+      "n": 2980,
+      "actual_sum": 471615.0,
+      "abs_err_sum": 392644.0116117398,
+      "err_sum": 76121.20484113402,
+      "mae": 131.75973544018115,
+      "rmse": 400.48147594843323,
+      "rmsse": 1.595668710130401,
+      "wmape": 0.8325520002793376,
+      "bias": 0.16140539389360817
+    },
+    {
+      "model": "croston_sba",
+      "horizon_bucket": "5-8",
+      "n": 2980,
+      "actual_sum": 466056.0,
+      "abs_err_sum": 399363.8987442652,
+      "err_sum": 81680.20484113402,
+      "mae": 134.01473112223664,
+      "rmse": 429.41843242299507,
+      "rmsse": 1.9594565583187051,
+      "wmape": 0.8569010993191059,
+      "bias": 0.17525834844124746
+    },
+    {
+      "model": "croston_sba",
+      "horizon_bucket": "9-13",
+      "n": 3725,
+      "actual_sum": 655561.0,
+      "abs_err_sum": 530725.3095909139,
+      "err_sum": 29109.25605141752,
+      "mae": 142.47659317876884,
+      "rmse": 432.65401515587354,
+      "rmsse": 1.6836618021486136,
+      "wmape": 0.809574257149089,
+      "bias": 0.044403581133437654
+    },
+    {
+      "model": "holt",
+      "horizon_bucket": "1-4",
+      "n": 2980,
+      "actual_sum": 471615.0,
+      "abs_err_sum": 419632.9947030895,
+      "err_sum": 133762.33416133234,
+      "mae": 140.81644117553338,
+      "rmse": 280.5710287475017,
+      "rmsse": 1.518619696542637,
+      "wmape": 0.8897787277823851,
+      "bias": 0.28362612334495796
+    },
+    {
+      "model": "holt",
+      "horizon_bucket": "5-8",
+      "n": 2980,
+      "actual_sum": 466056.0,
+      "abs_err_sum": 467274.7570465591,
+      "err_sum": 170880.6538832757,
+      "mae": 156.80360974716749,
+      "rmse": 346.09895020113765,
+      "rmsse": 1.9943182309503809,
+      "wmape": 1.0026150442147705,
+      "bias": 0.3666526208937889
+    },
+    {
+      "model": "holt",
+      "horizon_bucket": "9-13",
+      "n": 3725,
+      "actual_sum": 655561.0,
+      "abs_err_sum": 660058.7059940406,
+      "err_sum": 186753.88915331112,
+      "mae": 177.19696805209142,
+      "rmse": 384.8726470226688,
+      "rmsse": 1.9470447992823425,
+      "wmape": 1.0068608504685919,
+      "bias": 0.2848764480396349
+    },
+    {
+      "model": "lightgbm",
+      "horizon_bucket": "1-4",
+      "n": 2980,
+      "actual_sum": 471615.0,
+      "abs_err_sum": 349995.50305828627,
+      "err_sum": 54614.339579778454,
+      "mae": 117.44815538868667,
+      "rmse": 220.5383706806193,
+      "rmsse": 1.3801306199090506,
+      "wmape": 0.7421212282439835,
+      "bias": 0.11580280436325913
+    },
+    {
+      "model": "lightgbm",
+      "horizon_bucket": "5-8",
+      "n": 2980,
+      "actual_sum": 466056.0,
+      "abs_err_sum": 350229.9364780707,
+      "err_sum": 50679.85080012585,
+      "mae": 117.52682432150023,
+      "rmse": 259.2440144265517,
+      "rmsse": 1.7938565227243068,
+      "wmape": 0.7514760811534894,
+      "bias": 0.10874197693008104
+    },
+    {
+      "model": "lightgbm",
+      "horizon_bucket": "9-13",
+      "n": 3725,
+      "actual_sum": 655561.0,
+      "abs_err_sum": 468224.03088536917,
+      "err_sum": 30532.503718823227,
+      "mae": 125.69772641217965,
+      "rmse": 263.2924277832522,
+      "rmsse": 1.3971749151705244,
+      "wmape": 0.7142341153384189,
+      "bias": 0.046574618866624506
+    },
+    {
+      "model": "ma4",
+      "horizon_bucket": "1-4",
+      "n": 2980,
+      "actual_sum": 471615.0,
+      "abs_err_sum": 395232.0,
+      "err_sum": 92657.0,
+      "mae": 132.62818791946307,
+      "rmse": 263.3570247462966,
+      "rmsse": 1.488783484489295,
+      "wmape": 0.8380395025603511,
+      "bias": 0.19646745756602313
+    },
+    {
+      "model": "ma4",
+      "horizon_bucket": "5-8",
+      "n": 2980,
+      "actual_sum": 466056.0,
+      "abs_err_sum": 408974.5,
+      "err_sum": 98216.0,
+      "mae": 137.23976510067115,
+      "rmse": 306.42709069655,
+      "rmsse": 1.8796766374838765,
+      "wmape": 0.8775222290883499,
+      "bias": 0.21073862368470742
+    },
+    {
+      "model": "ma4",
+      "horizon_bucket": "9-13",
+      "n": 3725,
+      "actual_sum": 655561.0,
+      "abs_err_sum": 553613.5,
+      "err_sum": 49779.0,
+      "mae": 148.62107382550334,
+      "rmse": 309.0602537309539,
+      "rmsse": 1.6716695688053251,
+      "wmape": 0.8444881559458235,
+      "bias": 0.0759334371629795
+    },
+    {
+      "model": "ma8",
+      "horizon_bucket": "1-4",
+      "n": 2980,
+      "actual_sum": 471615.0,
+      "abs_err_sum": 375764.5,
+      "err_sum": 59145.5,
+      "mae": 126.09546979865772,
+      "rmse": 244.29608056419335,
+      "rmsse": 1.4597566398285062,
+      "wmape": 0.7967611293109846,
+      "bias": 0.12541055734020334
+    },
+    {
+      "model": "ma8",
+      "horizon_bucket": "5-8",
+      "n": 2980,
+      "actual_sum": 466056.0,
+      "abs_err_sum": 385789.5,
+      "err_sum": 64704.5,
+      "mae": 129.45956375838927,
+      "rmse": 289.7139047807719,
+      "rmsse": 1.855142245208284,
+      "wmape": 0.8277749884134096,
+      "bias": 0.1388341744339736
+    },
+    {
+      "model": "ma8",
+      "horizon_bucket": "9-13",
+      "n": 3725,
+      "actual_sum": 655561.0,
+      "abs_err_sum": 523811.125,
+      "err_sum": 7889.625,
+      "mae": 140.62043624161075,
+      "rmse": 298.33236115769637,
+      "rmsse": 1.6450112154652596,
+      "wmape": 0.7990272835022217,
+      "bias": 0.01203492123539991
+    },
+    {
+      "model": "naive",
+      "horizon_bucket": "1-4",
+      "n": 2980,
+      "actual_sum": 471615.0,
+      "abs_err_sum": 422689.0,
+      "err_sum": 20101.0,
+      "mae": 141.84194630872483,
+      "rmse": 295.11325945480706,
+      "rmsse": 1.5948027741905866,
+      "wmape": 0.8962586007654548,
+      "bias": 0.04262162993119387
+    },
+    {
+      "model": "naive",
+      "horizon_bucket": "5-8",
+      "n": 2980,
+      "actual_sum": 466056.0,
+      "abs_err_sum": 420632.0,
+      "err_sum": 25660.0,
+      "mae": 141.151677852349,
+      "rmse": 326.63973134626434,
+      "rmsse": 1.9627807484557913,
+      "wmape": 0.9025353176442316,
+      "bias": 0.055057761299071355
+    },
+    {
+      "model": "naive",
+      "horizon_bucket": "9-13",
+      "n": 3725,
+      "actual_sum": 655561.0,
+      "abs_err_sum": 581650.0,
+      "err_sum": -40916.0,
+      "mae": 156.1476510067114,
+      "rmse": 329.600912229141,
+      "rmsse": 1.7498980394008334,
+      "wmape": 0.8872553431335909,
+      "bias": -0.06241371893691052
+    },
+    {
+      "model": "seasonal_naive",
+      "horizon_bucket": "1-4",
+      "n": 2980,
+      "actual_sum": 471615.0,
+      "abs_err_sum": 392317.0,
+      "err_sum": -28601.0,
+      "mae": 131.65,
+      "rmse": 264.5287598071345,
+      "rmsse": 1.8453991630509474,
+      "wmape": 0.8318586134876965,
+      "bias": -0.06064480561474932
+    },
+    {
+      "model": "seasonal_naive",
+      "horizon_bucket": "5-8",
+      "n": 2980,
+      "actual_sum": 466056.0,
+      "abs_err_sum": 431016.0,
+      "err_sum": 18996.0,
+      "mae": 144.63624161073827,
+      "rmse": 307.3520837015827,
+      "rmsse": 2.1045638752850704,
+      "wmape": 0.9248159019516968,
+      "bias": 0.04075905041454246
+    },
+    {
+      "model": "seasonal_naive",
+      "horizon_bucket": "9-13",
+      "n": 3725,
+      "actual_sum": 655561.0,
+      "abs_err_sum": 558792.0,
+      "err_sum": 43594.0,
+      "mae": 150.01127516778524,
+      "rmse": 352.3996754754008,
+      "rmsse": 2.0766345800642596,
+      "wmape": 0.8523874971207867,
+      "bias": 0.06649876975597999
+    }
+  ],
+  "by_fold": [
+    {
+      "model": "croston_sba",
+      "fold": 0,
+      "n": 2275,
+      "actual_sum": 300201.0,
+      "abs_err_sum": 362123.53292650677,
+      "err_sum": 230412.004452621,
+      "mae": 159.17517930835461,
+      "rmse": 285.1565949255185,
+      "rmsse": 2.19520975523297,
+      "wmape": 1.2062702420261984,
+      "bias": 0.7675257725744452
+    },
+    {
+      "model": "croston_sba",
+      "fold": 1,
+      "n": 2379,
+      "actual_sum": 367101.0,
+      "abs_err_sum": 263708.30612968496,
+      "err_sum": -1381.507510314739,
+      "mae": 110.84838424955231,
+      "rmse": 217.21856364233395,
+      "rmsse": 1.4321509349429158,
+      "wmape": 0.718353548831752,
+      "bias": -0.0037632899673788384
+    },
+    {
+      "model": "croston_sba",
+      "fold": 2,
+      "n": 2431,
+      "actual_sum": 349855.0,
+      "abs_err_sum": 227551.7007215319,
+      "err_sum": 17280.392690701763,
+      "mae": 93.60415496566512,
+      "rmse": 171.0459804161012,
+      "rmsse": 1.3654692437116673,
+      "wmape": 0.6504171748911175,
+      "bias": 0.04939301336468469
+    },
+    {
+      "model": "croston_sba",
+      "fold": 3,
+      "n": 2600,
+      "actual_sum": 576075.0,
+      "abs_err_sum": 469349.6801691952,
+      "err_sum": -59400.22389932247,
+      "mae": 180.51910775738278,
+      "rmse": 722.276945482094,
+      "rmsse": 1.8824406110765084,
+      "wmape": 0.8147371091770954,
+      "bias": -0.10311196267729457
+    },
+    {
+      "model": "holt",
+      "fold": 0,
+      "n": 2275,
+      "actual_sum": 300201.0,
+      "abs_err_sum": 650038.0681959979,
+      "err_sum": 549255.560842832,
+      "mae": 285.7310189872518,
+      "rmse": 539.330035179241,
+      "rmsse": 2.8769510701812315,
+      "wmape": 2.1653427809900627,
+      "bias": 1.829626020042678
+    },
+    {
+      "model": "holt",
+      "fold": 1,
+      "n": 2379,
+      "actual_sum": 367101.0,
+      "abs_err_sum": 275904.52890987555,
+      "err_sum": -1488.681852378912,
+      "mae": 115.97500164349539,
+      "rmse": 234.80845935002628,
+      "rmsse": 1.149448427033052,
+      "wmape": 0.7515766203575461,
+      "bias": -0.004055237802073304
+    },
+    {
+      "model": "holt",
+      "fold": 2,
+      "n": 2431,
+      "actual_sum": 349855.0,
+      "abs_err_sum": 246408.88235480463,
+      "err_sum": 45380.90184787346,
+      "mae": 101.36111984977566,
+      "rmse": 192.0423318292932,
+      "rmsse": 1.0047431880038558,
+      "wmape": 0.7043171666970734,
+      "bias": 0.1297134579979519
+    },
+    {
+      "model": "holt",
+      "fold": 3,
+      "n": 2600,
+      "actual_sum": 576075.0,
+      "abs_err_sum": 374614.9782830112,
+      "err_sum": -101750.90364040741,
+      "mae": 144.0826839550043,
+      "rmse": 316.6832634077091,
+      "rmsse": 1.7994787572030675,
+      "wmape": 0.6502885531970858,
+      "bias": -0.17662787595435908
+    },
+    {
+      "model": "lightgbm",
+      "fold": 0,
+      "n": 2275,
+      "actual_sum": 300201.0,
+      "abs_err_sum": 372816.2180812032,
+      "err_sum": 263857.88066266605,
+      "mae": 163.87526069503437,
+      "rmse": 281.56327496672935,
+      "rmsse": 2.1955728082330253,
+      "wmape": 1.241888661534116,
+      "bias": 0.8789373808303972
+    },
+    {
+      "model": "lightgbm",
+      "fold": 1,
+      "n": 2379,
+      "actual_sum": 367101.0,
+      "abs_err_sum": 247517.2125363888,
+      "err_sum": -47058.09151291303,
+      "mae": 104.04254415148752,
+      "rmse": 224.1531153377698,
+      "rmsse": 1.1657771411336628,
+      "wmape": 0.6742482655628528,
+      "bias": -0.12818840458869094
+    },
+    {
+      "model": "lightgbm",
+      "fold": 2,
+      "n": 2431,
+      "actual_sum": 349855.0,
+      "abs_err_sum": 223393.64299205394,
+      "err_sum": 7529.745281268389,
+      "mae": 91.89372397863181,
+      "rmse": 172.83928928772718,
+      "rmsse": 0.9367278745870069,
+      "wmape": 0.638532086127264,
+      "bias": 0.02152247440016118
+    },
+    {
+      "model": "lightgbm",
+      "fold": 3,
+      "n": 2600,
+      "actual_sum": 576075.0,
+      "abs_err_sum": 324722.39681208023,
+      "err_sum": -88502.84033229385,
+      "mae": 124.89322954310778,
+      "rmse": 298.0277545348737,
+      "rmsse": 1.5447400524798485,
+      "wmape": 0.5636807651991151,
+      "bias": -0.15363076046051966
+    },
+    {
+      "model": "ma4",
+      "fold": 0,
+      "n": 2275,
+      "actual_sum": 300201.0,
+      "abs_err_sum": 519323.5,
+      "err_sum": 420304.5,
+      "mae": 228.27406593406593,
+      "rmse": 405.61992725285995,
+      "rmsse": 2.417662351834203,
+      "wmape": 1.729919287410768,
+      "bias": 1.4000769484445421
+    },
+    {
+      "model": "ma4",
+      "fold": 1,
+      "n": 2379,
+      "actual_sum": 367101.0,
+      "abs_err_sum": 239669.25,
+      "err_sum": -72563.25,
+      "mae": 100.7436948297604,
+      "rmse": 229.69914066846994,
+      "rmsse": 1.1090437179459633,
+      "wmape": 0.6528700548350453,
+      "bias": -0.1976656288051517
+    },
+    {
+      "model": "ma4",
+      "fold": 2,
+      "n": 2431,
+      "actual_sum": 349855.0,
+      "abs_err_sum": 238561.75,
+      "err_sum": 44984.25,
+      "mae": 98.13317564788153,
+      "rmse": 190.2590195598056,
+      "rmsse": 0.9830053713998019,
+      "wmape": 0.6818874962484458,
+      "bias": 0.12857969730316846
+    },
+    {
+      "model": "ma4",
+      "fold": 3,
+      "n": 2600,
+      "actual_sum": 576075.0,
+      "abs_err_sum": 360265.5,
+      "err_sum": -152073.5,
+      "mae": 138.56365384615384,
+      "rmse": 312.8559976865739,
+      "rmsse": 1.8574847326392754,
+      "wmape": 0.6253795078765786,
+      "bias": -0.2639821203836306
+    },
+    {
+      "model": "ma8",
+      "fold": 0,
+      "n": 2275,
+      "actual_sum": 300201.0,
+      "abs_err_sum": 453160.375,
+      "err_sum": 338308.625,
+      "mae": 199.19137362637363,
+      "rmse": 360.082294880682,
+      "rmsse": 2.2827891597248655,
+      "wmape": 1.5095232027874657,
+      "bias": 1.1269403666210305
+    },
+    {
+      "model": "ma8",
+      "fold": 1,
+      "n": 2379,
+      "actual_sum": 367101.0,
+      "abs_err_sum": 237689.875,
+      "err_sum": -55820.875,
+      "mae": 99.91167507356032,
+      "rmse": 219.1363820113578,
+      "rmsse": 1.127051032897178,
+      "wmape": 0.6474781463411976,
+      "bias": -0.15205862964143382
+    },
+    {
+      "model": "ma8",
+      "fold": 2,
+      "n": 2431,
+      "actual_sum": 349855.0,
+      "abs_err_sum": 240872.375,
+      "err_sum": 12882.375,
+      "mae": 99.08365898807075,
+      "rmse": 190.06671408052424,
+      "rmsse": 0.9784146662892466,
+      "wmape": 0.6884920181217933,
+      "bias": 0.03682204055966043
+    },
+    {
+      "model": "ma8",
+      "fold": 3,
+      "n": 2600,
+      "actual_sum": 576075.0,
+      "abs_err_sum": 353642.5,
+      "err_sum": -163630.5,
+      "mae": 136.01634615384614,
+      "rmse": 317.72516480215677,
+      "rmsse": 1.9096466202331666,
+      "wmape": 0.6138827409625482,
+      "bias": -0.28404374430412704
+    },
+    {
+      "model": "naive",
+      "fold": 0,
+      "n": 2275,
+      "actual_sum": 300201.0,
+      "abs_err_sum": 541244.0,
+      "err_sum": 420376.0,
+      "mae": 237.90945054945055,
+      "rmse": 455.2059193496818,
+      "rmsse": 2.597545803202762,
+      "wmape": 1.8029386977391815,
+      "bias": 1.4003151222014583
+    },
+    {
+      "model": "naive",
+      "fold": 1,
+      "n": 2379,
+      "actual_sum": 367101.0,
+      "abs_err_sum": 251902.0,
+      "err_sum": -90968.0,
+      "mae": 105.88566624632199,
+      "rmse": 234.008133707882,
+      "rmsse": 1.1871419339775526,
+      "wmape": 0.6861926281867933,
+      "bias": -0.2478010138899104
+    },
+    {
+      "model": "naive",
+      "fold": 2,
+      "n": 2431,
+      "actual_sum": 349855.0,
+      "abs_err_sum": 236343.0,
+      "err_sum": -95263.0,
+      "mae": 97.22048539695598,
+      "rmse": 202.6454848087393,
+      "rmsse": 1.0617167442196598,
+      "wmape": 0.6755455831701705,
+      "bias": -0.27229280702005115
+    },
+    {
+      "model": "naive",
+      "fold": 3,
+      "n": 2600,
+      "actual_sum": 576075.0,
+      "abs_err_sum": 395482.0,
+      "err_sum": -229300.0,
+      "mae": 152.10846153846154,
+      "rmse": 328.54044359397074,
+      "rmsse": 1.8629207594390447,
+      "wmape": 0.6865113049516122,
+      "bias": -0.3980384498546196
+    },
+    {
+      "model": "seasonal_naive",
+      "fold": 0,
+      "n": 2275,
+      "actual_sum": 300201.0,
+      "abs_err_sum": 276576.0,
+      "err_sum": -33760.0,
+      "mae": 121.57186813186813,
+      "rmse": 256.24944406265075,
+      "rmsse": 2.318207650365561,
+      "wmape": 0.9213027271727943,
+      "bias": -0.11245798648239014
+    },
+    {
+      "model": "seasonal_naive",
+      "fold": 1,
+      "n": 2379,
+      "actual_sum": 367101.0,
+      "abs_err_sum": 309554.0,
+      "err_sum": -21194.0,
+      "mae": 130.1193778898697,
+      "rmse": 265.64195246697494,
+      "rmsse": 1.595951041948649,
+      "wmape": 0.8432393265068742,
+      "bias": -0.0577334303093699
+    },
+    {
+      "model": "seasonal_naive",
+      "fold": 2,
+      "n": 2431,
+      "actual_sum": 349855.0,
+      "abs_err_sum": 321586.0,
+      "err_sum": 51834.0,
+      "mae": 132.2854792266557,
+      "rmse": 262.5541459503894,
+      "rmsse": 1.396160541699678,
+      "wmape": 0.9191979534378528,
+      "bias": 0.14815852281659544
+    },
+    {
+      "model": "seasonal_naive",
+      "fold": 3,
+      "n": 2600,
+      "actual_sum": 576075.0,
+      "abs_err_sum": 474409.0,
+      "err_sum": 37109.0,
+      "mae": 182.465,
+      "rmse": 424.1659775824336,
+      "rmsse": 2.510511414041903,
+      "wmape": 0.8235195070086361,
+      "bias": 0.06441695959727466
+    }
+  ],
+  "timings": [
+    {
+      "model": "croston_sba",
+      "mean_seconds": 0.02764285000739619,
+      "total_seconds": 0.11057140002958477
+    },
+    {
+      "model": "holt",
+      "mean_seconds": 4.067711675044848,
+      "total_seconds": 16.27084670017939
+    },
+    {
+      "model": "lightgbm",
+      "mean_seconds": 11.141383050009608,
+      "total_seconds": 44.56553220003843
+    },
+    {
+      "model": "ma4",
+      "mean_seconds": 0.022640200011665,
+      "total_seconds": 0.09056080004666
+    },
+    {
+      "model": "ma8",
+      "mean_seconds": 0.022717350017046556,
+      "total_seconds": 0.09086940006818622
+    },
+    {
+      "model": "naive",
+      "mean_seconds": 0.020345374970929697,
+      "total_seconds": 0.08138149988371879
+    },
+    {
+      "model": "seasonal_naive",
+      "mean_seconds": 0.020721025008242577,
+      "total_seconds": 0.08288410003297031
+    }
+  ],
+  "feature_importance": [
+    {
+      "feature": "price",
+      "gain": 19673432.576293945
+    },
+    {
+      "feature": "roll_mean_4",
+      "gain": 13108395.91571045
+    },
+    {
+      "feature": "sku_mean",
+      "gain": 9137949.977081299
+    },
+    {
+      "feature": "target_week_of_year",
+      "gain": 8475334.901824951
+    },
+    {
+      "feature": "roll_mean_8",
+      "gain": 6056261.813110352
+    },
+    {
+      "feature": "zero_streak",
+      "gain": 5851420.41394043
+    },
+    {
+      "feature": "price_lag_4",
+      "gain": 4628298.800292969
+    },
+    {
+      "feature": "seasonal_lag_53",
+      "gain": 2295449.404144287
+    },
+    {
+      "feature": "sku_nonzero_rate",
+      "gain": 1855445.1405334473
+    },
+    {
+      "feature": "sku_cv",
+      "gain": 1696954.0286865234
+    },
+    {
+      "feature": "target_cos_woy",
+      "gain": 1645553.8009033203
+    },
+    {
+      "feature": "lag_1",
+      "gain": 1641544.7326049805
+    },
+    {
+      "feature": "target_sin_woy",
+      "gain": 1606571.28024292
+    },
+    {
+      "feature": "seasonal_lag_52",
+      "gain": 1369164.7328796387
+    },
+    {
+      "feature": "seasonal_lag_51",
+      "gain": 1356743.9518127441
+    }
+  ]
+}

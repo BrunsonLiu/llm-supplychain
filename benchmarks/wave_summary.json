@@ -1,0 +1,223 @@
+{
+  "generated": "2026-10-27T18:37:53.441462+00:00",
+  "title": "Wave picking benchmark (Week 6)",
+  "dataset": {
+    "clean_rows": 1014625,
+    "skus": 200,
+    "period_start": "2010-12-06",
+    "period_end": "2011-11-28",
+    "transaction_start": "2009-12-01",
+    "transaction_end": "2011-12-09"
+  },
+  "assumptions": {
+    "week": "2011-11-28",
+    "slotting": "abc",
+    "arrival_seed": 42,
+    "sampled_invoices": 200,
+    "eligible_invoices": 445,
+    "median_lines_per_order": 5.0,
+    "orders": 200,
+    "lines": 1269,
+    "units": 18748.0,
+    "skus": 179,
+    "max_orders": 8,
+    "max_lines": 40,
+    "pick_minutes_per_line": 0.35,
+    "pick_minutes_per_unit": 0.02,
+    "setup_minutes_per_wave": 3.0,
+    "travel_meters_per_minute": 72.0,
+    "labor_cost_per_minute": 0.45,
+    "layout_aisles": 8,
+    "layout_bays": 16,
+    "layout_slots": 256,
+    "order_lines": 1269,
+    "unique_skus": 179,
+    "seed": 42
+  },
+  "summary": [
+    {
+      "key": "single_order",
+      "scenario": "按单拣选",
+      "status": "BASELINE",
+      "waves": 200,
+      "avg_orders": 1.0,
+      "avg_lines": 6.345,
+      "travel_m": 17487.7,
+      "travel_per_order": 87.4385,
+      "travel_saving": 0.0,
+      "labor_minutes": 1661.9947222222222,
+      "labor_per_order": 8.309973611111111,
+      "labor_saving": 0.0,
+      "orders_per_hour": 7.22023953478927,
+      "labor_cost": 747.8976250000001,
+      "max_lines": 19,
+      "max_units": 1456.0,
+      "solve_seconds": 0.0,
+      "pool_size": 0
+    },
+    {
+      "key": "fcfs",
+      "scenario": "FCFS 波次",
+      "status": "HEURISTIC",
+      "waves": 37,
+      "avg_orders": 5.405405405405405,
+      "avg_lines": 34.2972972972973,
+      "travel_m": 7296.200000000001,
+      "travel_per_order": 36.481,
+      "travel_saving": 0.5827810403883873,
+      "labor_minutes": 1031.446111111111,
+      "labor_per_order": 5.157230555555555,
+      "labor_saving": 0.3793926675459093,
+      "orders_per_hour": 11.634151189026413,
+      "labor_cost": 464.1507499999999,
+      "max_lines": 40,
+      "max_units": 2243.0,
+      "solve_seconds": 0.0,
+      "pool_size": 0
+    },
+    {
+      "key": "savings",
+      "scenario": "节省算法波次",
+      "status": "HEURISTIC",
+      "waves": 36,
+      "avg_orders": 5.555555555555555,
+      "avg_lines": 35.25,
+      "travel_m": 5723.899999999999,
+      "travel_per_order": 28.619499999999995,
+      "travel_saving": 0.6726899477918766,
+      "labor_minutes": 1006.608611111111,
+      "labor_per_order": 5.033043055555555,
+      "labor_saving": 0.3943370591663532,
+      "orders_per_hour": 11.921217310821735,
+      "labor_cost": 452.97387499999996,
+      "max_lines": 40,
+      "max_units": 2310.0,
+      "solve_seconds": 0.0,
+      "pool_size": 0
+    },
+    {
+      "key": "milp",
+      "scenario": "集合划分 CP-SAT",
+      "status": "OPTIMAL",
+      "waves": 36,
+      "avg_orders": 5.555555555555555,
+      "avg_lines": 35.25,
+      "travel_m": 5723.899999999999,
+      "travel_per_order": 28.619499999999995,
+      "travel_saving": 0.6726899477918766,
+      "labor_minutes": 1006.608611111111,
+      "labor_per_order": 5.033043055555555,
+      "labor_saving": 0.3943370591663532,
+      "orders_per_hour": 11.921217310821735,
+      "labor_cost": 452.97387499999996,
+      "max_lines": 40,
+      "max_units": 2310.0,
+      "solve_seconds": 2.296476099989377,
+      "pool_size": 2516
+    }
+  ],
+  "sensitivity": [
+    {
+      "caps": "8/25",
+      "savings_waves": 53,
+      "savings_travel": 38.12500000000001,
+      "savings_labor": 5.420063888888889,
+      "mip_status": "FEASIBLE",
+      "mip_waves": 53,
+      "mip_travel": 38.12500000000001,
+      "mip_labor": 5.420063888888889,
+      "mip_gap": 0.015994413091485502,
+      "pool_size": 2080
+    },
+    {
+      "caps": "4/19",
+      "savings_waves": 74,
+      "savings_travel": 47.98049999999999,
+      "savings_labor": 5.871945833333333,
+      "mip_status": "FEASIBLE",
+      "mip_waves": 71,
+      "mip_travel": 47.602999999999966,
+      "mip_labor": 5.8217027777777774,
+      "mip_gap": 0.010036787069489997,
+      "pool_size": 1274
+    },
+    {
+      "caps": "3/19",
+      "savings_waves": 81,
+      "savings_travel": 49.62049999999999,
+      "savings_labor": 5.9997236111111105,
+      "mip_status": "FEASIBLE",
+      "mip_waves": 75,
+      "mip_travel": 49.101499999999994,
+      "mip_labor": 5.902515277777777,
+      "mip_gap": 0.005467792323507354,
+      "pool_size": 1311
+    }
+  ],
+  "detail": [
+    {
+      "wave": "W1",
+      "orders": 8,
+      "lines": 32,
+      "units": 296.0,
+      "travel_m": 162.0,
+      "invoices": "579069, 579158, 579274, 579623, 579749, 580135, 580277, 580375"
+    },
+    {
+      "wave": "W2",
+      "orders": 8,
+      "lines": 21,
+      "units": 597.0,
+      "travel_m": 89.8,
+      "invoices": "579089, 579159, 579403, 579449, 579531, 580158, 580395, 580517"
+    },
+    {
+      "wave": "W3",
+      "orders": 8,
+      "lines": 27,
+      "units": 262.0,
+      "travel_m": 130.4,
+      "invoices": "579095, 579145, 579153, 579285, 579445, 579711, 580393, 580438"
+    },
+    {
+      "wave": "W4",
+      "orders": 8,
+      "lines": 19,
+      "units": 824.0,
+      "travel_m": 94.60000000000001,
+      "invoices": "579098, 579249, 579279, 579513, 579921, 580051, 580070, 580506"
+    },
+    {
+      "wave": "W5",
+      "orders": 8,
+      "lines": 36,
+      "units": 418.0,
+      "travel_m": 142.39999999999998,
+      "invoices": "579103, 579136, 579391, 579548, 579689, 579690, 580118, 580309"
+    },
+    {
+      "wave": "W6",
+      "orders": 8,
+      "lines": 38,
+      "units": 680.0,
+      "travel_m": 128.39999999999998,
+      "invoices": "579131, 579514, 579840, 580096, 580258, 580281, 580516, 580534"
+    },
+    {
+      "wave": "W7",
+      "orders": 8,
+      "lines": 19,
+      "units": 383.0,
+      "travel_m": 128.0,
+      "invoices": "579163, 579358, 579406, 579740, 579868, 579954, 580166, 580490"
+    },
+    {
+      "wave": "W8",
+      "orders": 8,
+      "lines": 40,
+      "units": 383.0,
+      "travel_m": 142.6,
+      "invoices": "579171, 579507, 579600, 579675, 579693, 579747, 579943, 580098"
+    }
+  ]
+}

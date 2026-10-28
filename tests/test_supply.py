@@ -62,6 +62,34 @@ def test_forecast_engine():
     print("[OK] 预测引擎数值合理")
 
 
+def test_idempotent_writes():
+    """重复执行不应在数据库里堆积预测/订单"""
+    with tempfile.TemporaryDirectory() as tmp:
+        db = Database(db_path=str(Path(tmp) / "idem.db"))
+        agent = SupplyChainAgent(db=db, enable_rag=False)
+        agent.decision_report(horizon=3)
+        first = db.get_data_stats()
+        agent.decision_report(horizon=3)
+        second = db.get_data_stats()
+
+        assert first == second, f"重跑后记录数变化: {first} -> {second}"
+        assert first["forecasts"] == 5 * 3, first
+        assert first["orders"] == 5 * 3, first
+        print("[OK] 预测/订单写入幂等")
+
+
+def test_instruction_parsing():
+    """中文分号与产品数量参数"""
+    with tempfile.TemporaryDirectory() as tmp:
+        db = Database(db_path=str(Path(tmp) / "parse.db"))
+        agent = SupplyChainAgent(db=db, enable_rag=False)
+        results = agent.run("生成数据 产品=3 周期=6；预测周期=2")
+        assert len(results) == 2, f"中文分号未正确切分: {results}"
+        assert results[0][1]["products"] == 3, results[0]
+        assert db.get_data_stats()["products"] == 3
+        print("[OK] 中文分号与产品数量参数")
+
+
 def test_rag_tool():
     """RAG 工具：能检索到知识库内容"""
     agent = SupplyChainAgent()
@@ -75,7 +103,14 @@ def main():
     print("=" * 50)
     print("供应链智能体测试")
     print("=" * 50)
-    tests = [test_agent_routing, test_pipeline, test_forecast_engine, test_rag_tool]
+    tests = [
+        test_agent_routing,
+        test_pipeline,
+        test_forecast_engine,
+        test_idempotent_writes,
+        test_instruction_parsing,
+        test_rag_tool,
+    ]
     for t in tests:
         t()
     print("=" * 50)
