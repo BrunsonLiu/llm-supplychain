@@ -181,6 +181,11 @@ from .order_acceptance_report import (
     build_order_acceptance_report,
     write_order_acceptance_report,
 )
+from .promise_door_report import (
+    build_promise_door_report,
+    summarize_promise_door,
+    write_promise_door_report,
+)
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -347,6 +352,9 @@ __all__ = [
     "write_promise_frontier_report",
     "build_order_acceptance_report",
     "write_order_acceptance_report",
+    "build_promise_door_report",
+    "summarize_promise_door",
+    "write_promise_door_report",
     "run_flow_e2e",
     "run_single_week_e2e",
     "summarize_flow",
