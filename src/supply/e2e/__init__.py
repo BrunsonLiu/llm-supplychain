@@ -143,6 +143,16 @@ from .quote import (
     tier_for_days,
 )
 from .quote_report import build_quote_report, write_quote_report
+from .rolling import (
+    FLOW_DAYS,
+    ROLLING_POLICIES,
+    RollingCell,
+    order_day_map,
+    rolling_cells,
+    run_rolling_policy,
+    single_week_baseline,
+)
+from .rolling_report import build_rolling_report, write_rolling_report
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -286,6 +296,15 @@ __all__ = [
     "tier_for_days",
     "build_quote_report",
     "write_quote_report",
+    "FLOW_DAYS",
+    "ROLLING_POLICIES",
+    "RollingCell",
+    "order_day_map",
+    "rolling_cells",
+    "run_rolling_policy",
+    "single_week_baseline",
+    "build_rolling_report",
+    "write_rolling_report",
     "DEFAULT_CAPACITY",
     "DEFAULT_DEPARTURES",
     "DEFAULT_DISPATCH_COST",

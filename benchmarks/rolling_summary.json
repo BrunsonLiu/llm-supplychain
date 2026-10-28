@@ -1,0 +1,777 @@
+{
+  "title": "Multi-day rolling allocation and replenishment (Week 19)",
+  "dataset": {
+    "week": "2011-11-28",
+    "orders": 400,
+    "order_lines": 2477,
+    "skus": 189,
+    "units": 33060,
+    "dcs": [
+      "London",
+      "Rotterdam",
+      "Frankfurt"
+    ],
+    "promise_mix": "2d=120, 3d=200, 5d=80",
+    "handling_days": 1,
+    "transit_km_per_day": 700.0,
+    "freight_cost_per_unit_km": 0.0006,
+    "eligible_invoices": 444,
+    "sampled_invoices": 400,
+    "median_lines_per_order": 5.0,
+    "stock_factor": 0.85,
+    "stock_units": 28104,
+    "stock_coverage": 0.8500907441016334,
+    "stock_shares": [
+      0.34,
+      0.28,
+      0.38
+    ],
+    "capacity_shares": [
+      0.55,
+      0.4,
+      0.35
+    ],
+    "dc_capacity": [
+      18183,
+      13224,
+      11571
+    ],
+    "promise_days": {
+      "2": 120,
+      "3": 200,
+      "5": 80
+    },
+    "promise_tiers": [
+      [
+        2,
+        0.3
+      ],
+      [
+        3,
+        0.5
+      ],
+      [
+        5,
+        0.2
+      ]
+    ],
+    "transit_days_range": [
+      2,
+      5
+    ],
+    "fixed_ship_cost": 25.0,
+    "late_penalty_per_unit_day": 0.35,
+    "unmet_penalty_per_unit": 6.0,
+    "handling_cost_per_unit": [
+      0.02,
+      0.04,
+      0.05
+    ],
+    "seed": 42,
+    "assumptions": [
+      "订单/行/数量/目的国来自 Online Retail II 真实发票",
+      "DC 库存、产能、转运天数、SLA 承诺与费率是显式假设",
+      "库存按 SKU 需求 stock_factor 分配并加入确定性偏斜",
+      "承诺天数 2/3/5 映射到拣选截单 12:00/16:00/18:00",
+      "班中到达占比与到达窗口是显式假设",
+      "三个 DC 共用同一 ABC 布局与拣选工时模型，每 DC 独立拣货员"
+    ],
+    "promise_cutoffs": {
+      "express": 240,
+      "standard": 480,
+      "economy": 600
+    },
+    "promise_tier_map": {
+      "2": "express",
+      "3": "standard",
+      "5": "economy"
+    },
+    "pick_tier_counts": {
+      "express": 120,
+      "standard": 200,
+      "economy": 80
+    },
+    "arrival_seed": 1,
+    "tier_onsite": {
+      "express": 0.7,
+      "standard": 0.5,
+      "economy": 0.4
+    },
+    "tier_windows": {
+      "express": 120.0,
+      "standard": 360.0,
+      "economy": 480.0
+    },
+    "arrival_profile": null,
+    "arrival_curve": null,
+    "onsite_orders": 216,
+    "mid_shift_orders": 184,
+    "pickers_per_dc": 1,
+    "shift_minutes": 600.0,
+    "max_orders_per_wave": 8,
+    "max_lines_per_wave": 40,
+    "layout_aisles": 8,
+    "layout_bays": 16,
+    "slotting": "abc",
+    "lines": 2477,
+    "clean_rows": 1014625
+  },
+  "settings": {
+    "orders": 400,
+    "max_lines": 20,
+    "stock_factor": 0.85,
+    "seed": 42,
+    "service_time": 3.0,
+    "milp_time": 8.0,
+    "workers": 2,
+    "safety": 0.1,
+    "policies": [
+      "none",
+      "daily_1d",
+      "daily_2d",
+      "daily_1d_safety",
+      "batch_2d"
+    ]
+  },
+  "order_days": {
+    "0": 66,
+    "1": 73,
+    "2": 68,
+    "3": 85,
+    "4": 108
+  },
+  "baseline": {
+    "policy": "single_week",
+    "label": "单周一次性快照（Week-18 口径）",
+    "days": 1,
+    "demand_units": 33060,
+    "allocated_units": 27444,
+    "fill_rate": 0.8301270417422868,
+    "otif_rate": 0.5325,
+    "late_units": 12,
+    "backlog_units": 5616,
+    "replenished_units": 0,
+    "stockout_days": 0,
+    "avg_inventory_units": 28104.0,
+    "orders": 400,
+    "fully_allocated": 214,
+    "solve_seconds": 60.05774069996551
+  },
+  "summary": [
+    {
+      "policy": "single_week",
+      "label": "单周一次性快照（Week-18 口径）",
+      "days": 1,
+      "demand_units": 33060,
+      "allocated_units": 27444,
+      "fill_rate": 0.8301270417422868,
+      "otif_rate": 0.5325,
+      "late_units": 12,
+      "backlog_units": 5616,
+      "replenished_units": 0,
+      "stockout_days": 0,
+      "avg_inventory_units": 28104.0,
+      "orders": 400,
+      "fully_allocated": 214,
+      "solve_seconds": 60.05774069996551
+    },
+    {
+      "policy": "none",
+      "label": "不补货（仅 85% 初始库存）",
+      "days": 5,
+      "demand_units": 33060,
+      "allocated_units": 27797,
+      "fill_rate": 0.8408045977011495,
+      "otif_rate": 0.5525,
+      "late_units": 1640,
+      "backlog_units": 5263,
+      "replenished_units": 0,
+      "stockout_days": 5,
+      "avg_inventory_units": 15715.2,
+      "orders": 400,
+      "fully_allocated": 232,
+      "solve_seconds": NaN
+    },
+    {
+      "policy": "daily_1d",
+      "label": "每日回补 · 1 天前置期",
+      "days": 5,
+      "demand_units": 33060,
+      "allocated_units": 32334,
+      "fill_rate": 0.9780399274047187,
+      "otif_rate": 0.87,
+      "late_units": 3147,
+      "backlog_units": 726,
+      "replenished_units": 11408,
+      "stockout_days": 5,
+      "avg_inventory_units": 22086.0,
+      "orders": 400,
+      "fully_allocated": 372,
+      "solve_seconds": NaN
+    },
+    {
+      "policy": "daily_2d",
+      "label": "每日回补 · 2 天前置期",
+      "days": 5,
+      "demand_units": 33060,
+      "allocated_units": 30991,
+      "fill_rate": 0.9374168179068361,
+      "otif_rate": 0.7175,
+      "late_units": 4642,
+      "backlog_units": 2069,
+      "replenished_units": 5309,
+      "stockout_days": 5,
+      "avg_inventory_units": 18036.6,
+      "orders": 400,
+      "fully_allocated": 313,
+      "solve_seconds": NaN
+    },
+    {
+      "policy": "daily_1d_safety",
+      "label": "每日回补 +10% 安全量 · 1 天",
+      "days": 5,
+      "demand_units": 33060,
+      "allocated_units": 32480,
+      "fill_rate": 0.9824561403508771,
+      "otif_rate": 0.875,
+      "late_units": 3447,
+      "backlog_units": 580,
+      "replenished_units": 12873,
+      "stockout_days": 5,
+      "avg_inventory_units": 23053.6,
+      "orders": 400,
+      "fully_allocated": 371,
+      "solve_seconds": NaN
+    },
+    {
+      "policy": "batch_2d",
+      "label": "每 2 天批量回补 · 1 天",
+      "days": 5,
+      "demand_units": 33060,
+      "allocated_units": 31975,
+      "fill_rate": 0.9671808832425892,
+      "otif_rate": 0.81,
+      "late_units": 5294,
+      "backlog_units": 1085,
+      "replenished_units": 8400,
+      "stockout_days": 5,
+      "avg_inventory_units": 19659.2,
+      "orders": 400,
+      "fully_allocated": 359,
+      "solve_seconds": NaN
+    }
+  ],
+  "daily": [
+    {
+      "day": 0,
+      "orders_open": 66,
+      "units_open": 6866,
+      "allocated_units": 6488,
+      "backlog_units": 26572,
+      "replenished_units": 0,
+      "inventory_units": 21616,
+      "solve_seconds": 8.020934199914336,
+      "policy": "none",
+      "label": "不补货（仅 85% 初始库存）"
+    },
+    {
+      "day": 1,
+      "orders_open": 77,
+      "units_open": 6424,
+      "allocated_units": 6063,
+      "backlog_units": 20509,
+      "replenished_units": 0,
+      "inventory_units": 15553,
+      "solve_seconds": 8.022745300084352,
+      "policy": "none",
+      "label": "不补货（仅 85% 初始库存）"
+    },
+    {
+      "day": 2,
+      "orders_open": 81,
+      "units_open": 6756,
+      "allocated_units": 6253,
+      "backlog_units": 14256,
+      "replenished_units": 0,
+      "inventory_units": 9300,
+      "solve_seconds": 8.020388399949297,
+      "policy": "none",
+      "label": "不补货（仅 85% 初始库存）"
+    },
+    {
+      "day": 3,
+      "orders_open": 114,
+      "units_open": 6407,
+      "allocated_units": 5297,
+      "backlog_units": 8959,
+      "replenished_units": 0,
+      "inventory_units": 4003,
+      "solve_seconds": 8.023485000012442,
+      "policy": "none",
+      "label": "不补货（仅 85% 初始库存）"
+    },
+    {
+      "day": 4,
+      "orders_open": 178,
+      "units_open": 8959,
+      "allocated_units": 3696,
+      "backlog_units": 5263,
+      "replenished_units": 0,
+      "inventory_units": 307,
+      "solve_seconds": 8.0256147000473,
+      "policy": "none",
+      "label": "不补货（仅 85% 初始库存）"
+    },
+    {
+      "day": 0,
+      "orders_open": 66,
+      "units_open": 6866,
+      "allocated_units": 6500,
+      "backlog_units": 26560,
+      "replenished_units": 0,
+      "inventory_units": 21604,
+      "solve_seconds": 8.020484199980274,
+      "policy": "daily_1d",
+      "label": "每日回补 · 1 天前置期"
+    },
+    {
+      "day": 1,
+      "orders_open": 77,
+      "units_open": 6412,
+      "allocated_units": 6185,
+      "backlog_units": 20375,
+      "replenished_units": 4206,
+      "inventory_units": 19625,
+      "solve_seconds": 8.01285109994933,
+      "policy": "daily_1d",
+      "label": "每日回补 · 1 天前置期"
+    },
+    {
+      "day": 2,
+      "orders_open": 73,
+      "units_open": 6622,
+      "allocated_units": 6447,
+      "backlog_units": 13928,
+      "replenished_units": 3324,
+      "inventory_units": 16502,
+      "solve_seconds": 8.011233799858019,
+      "policy": "daily_1d",
+      "label": "每日回补 · 1 天前置期"
+    },
+    {
+      "day": 3,
+      "orders_open": 91,
+      "units_open": 6079,
+      "allocated_units": 5781,
+      "backlog_units": 8147,
+      "replenished_units": 2466,
+      "inventory_units": 13187,
+      "solve_seconds": 8.014574700035155,
+      "policy": "daily_1d",
+      "label": "每日回补 · 1 天前置期"
+    },
+    {
+      "day": 4,
+      "orders_open": 117,
+      "units_open": 8147,
+      "allocated_units": 7421,
+      "backlog_units": 726,
+      "replenished_units": 1412,
+      "inventory_units": 7178,
+      "solve_seconds": 8.0218241000548,
+      "policy": "daily_1d",
+      "label": "每日回补 · 1 天前置期"
+    },
+    {
+      "day": 0,
+      "orders_open": 66,
+      "units_open": 6866,
+      "allocated_units": 6488,
+      "backlog_units": 26572,
+      "replenished_units": 0,
+      "inventory_units": 21616,
+      "solve_seconds": 8.018440499901772,
+      "policy": "daily_2d",
+      "label": "每日回补 · 2 天前置期"
+    },
+    {
+      "day": 1,
+      "orders_open": 77,
+      "units_open": 6424,
+      "allocated_units": 6050,
+      "backlog_units": 20522,
+      "replenished_units": 0,
+      "inventory_units": 15566,
+      "solve_seconds": 8.016708200098947,
+      "policy": "daily_2d",
+      "label": "每日回补 · 2 天前置期"
+    },
+    {
+      "day": 2,
+      "orders_open": 80,
+      "units_open": 6769,
+      "allocated_units": 6493,
+      "backlog_units": 14029,
+      "replenished_units": 2733,
+      "inventory_units": 11806,
+      "solve_seconds": 8.017613400006667,
+      "policy": "daily_2d",
+      "label": "每日回补 · 2 天前置期"
+    },
+    {
+      "day": 3,
+      "orders_open": 97,
+      "units_open": 6180,
+      "allocated_units": 5636,
+      "backlog_units": 8393,
+      "replenished_units": 1612,
+      "inventory_units": 7782,
+      "solve_seconds": 8.012407899834216,
+      "policy": "daily_2d",
+      "label": "每日回补 · 2 天前置期"
+    },
+    {
+      "day": 4,
+      "orders_open": 136,
+      "units_open": 8393,
+      "allocated_units": 6324,
+      "backlog_units": 2069,
+      "replenished_units": 964,
+      "inventory_units": 2422,
+      "solve_seconds": 8.01567510003224,
+      "policy": "daily_2d",
+      "label": "每日回补 · 2 天前置期"
+    },
+    {
+      "day": 0,
+      "orders_open": 66,
+      "units_open": 6866,
+      "allocated_units": 6476,
+      "backlog_units": 26584,
+      "replenished_units": 0,
+      "inventory_units": 21628,
+      "solve_seconds": 8.02666680002585,
+      "policy": "daily_1d_safety",
+      "label": "每日回补 +10% 安全量 · 1 天"
+    },
+    {
+      "day": 1,
+      "orders_open": 77,
+      "units_open": 6436,
+      "allocated_units": 6238,
+      "backlog_units": 20346,
+      "replenished_units": 5170,
+      "inventory_units": 20560,
+      "solve_seconds": 8.019649900030345,
+      "policy": "daily_1d_safety",
+      "label": "每日回补 +10% 安全量 · 1 天"
+    },
+    {
+      "day": 2,
+      "orders_open": 73,
+      "units_open": 6593,
+      "allocated_units": 6421,
+      "backlog_units": 13925,
+      "replenished_units": 3417,
+      "inventory_units": 17556,
+      "solve_seconds": 8.01512399991043,
+      "policy": "daily_1d_safety",
+      "label": "每日回补 +10% 安全量 · 1 天"
+    },
+    {
+      "day": 3,
+      "orders_open": 92,
+      "units_open": 6076,
+      "allocated_units": 5754,
+      "backlog_units": 8171,
+      "replenished_units": 2745,
+      "inventory_units": 14547,
+      "solve_seconds": 8.006109399953857,
+      "policy": "daily_1d_safety",
+      "label": "每日回补 +10% 安全量 · 1 天"
+    },
+    {
+      "day": 4,
+      "orders_open": 121,
+      "units_open": 8171,
+      "allocated_units": 7591,
+      "backlog_units": 580,
+      "replenished_units": 1541,
+      "inventory_units": 8497,
+      "solve_seconds": 8.014412099961191,
+      "policy": "daily_1d_safety",
+      "label": "每日回补 +10% 安全量 · 1 天"
+    },
+    {
+      "day": 0,
+      "orders_open": 66,
+      "units_open": 6866,
+      "allocated_units": 6488,
+      "backlog_units": 26572,
+      "replenished_units": 0,
+      "inventory_units": 21616,
+      "solve_seconds": 8.011431799968705,
+      "policy": "batch_2d",
+      "label": "每 2 天批量回补 · 1 天"
+    },
+    {
+      "day": 1,
+      "orders_open": 77,
+      "units_open": 6424,
+      "allocated_units": 6084,
+      "backlog_units": 20488,
+      "replenished_units": 0,
+      "inventory_units": 15532,
+      "solve_seconds": 8.020610100124031,
+      "policy": "batch_2d",
+      "label": "每 2 天批量回补 · 1 天"
+    },
+    {
+      "day": 2,
+      "orders_open": 78,
+      "units_open": 6735,
+      "allocated_units": 6534,
+      "backlog_units": 13954,
+      "replenished_units": 6181,
+      "inventory_units": 15179,
+      "solve_seconds": 8.02232880005613,
+      "policy": "batch_2d",
+      "label": "每 2 天批量回补 · 1 天"
+    },
+    {
+      "day": 3,
+      "orders_open": 93,
+      "units_open": 6105,
+      "allocated_units": 5714,
+      "backlog_units": 8240,
+      "replenished_units": 0,
+      "inventory_units": 9465,
+      "solve_seconds": 8.012825099984184,
+      "policy": "batch_2d",
+      "label": "每 2 天批量回补 · 1 天"
+    },
+    {
+      "day": 4,
+      "orders_open": 128,
+      "units_open": 8240,
+      "allocated_units": 7155,
+      "backlog_units": 1085,
+      "replenished_units": 2219,
+      "inventory_units": 4529,
+      "solve_seconds": 8.01271739997901,
+      "policy": "batch_2d",
+      "label": "每 2 天批量回补 · 1 天"
+    }
+  ],
+  "by_order_day": [
+    {
+      "day": 0,
+      "orders": 66,
+      "otif_rate": 0.9090909090909091,
+      "fill_rate": 0.9884940285464608,
+      "policy": "none",
+      "label": "不补货（仅 85% 初始库存）"
+    },
+    {
+      "day": 1,
+      "orders": 73,
+      "otif_rate": 0.821917808219178,
+      "fill_rate": 0.9760172014555077,
+      "policy": "none",
+      "label": "不补货（仅 85% 初始库存）"
+    },
+    {
+      "day": 2,
+      "orders": 68,
+      "otif_rate": 0.6911764705882353,
+      "fill_rate": 0.9640344018764659,
+      "policy": "none",
+      "label": "不补货（仅 85% 初始库存）"
+    },
+    {
+      "day": 3,
+      "orders": 85,
+      "otif_rate": 0.5176470588235295,
+      "fill_rate": 0.9093834688346883,
+      "policy": "none",
+      "label": "不补货（仅 85% 初始库存）"
+    },
+    {
+      "day": 4,
+      "orders": 108,
+      "otif_rate": 0.09259259259259259,
+      "fill_rate": 0.455472034654096,
+      "policy": "none",
+      "label": "不补货（仅 85% 初始库存）"
+    },
+    {
+      "day": 0,
+      "orders": 66,
+      "otif_rate": 0.9393939393939394,
+      "fill_rate": 0.9989804835420915,
+      "policy": "daily_1d",
+      "label": "每日回补 · 1 天前置期"
+    },
+    {
+      "day": 1,
+      "orders": 73,
+      "otif_rate": 0.9452054794520548,
+      "fill_rate": 0.9900760833608998,
+      "policy": "daily_1d",
+      "label": "每日回补 · 1 天前置期"
+    },
+    {
+      "day": 2,
+      "orders": 68,
+      "otif_rate": 0.9411764705882353,
+      "fill_rate": 0.9962470680218921,
+      "policy": "daily_1d",
+      "label": "每日回补 · 1 天前置期"
+    },
+    {
+      "day": 3,
+      "orders": 85,
+      "otif_rate": 0.8823529411764706,
+      "fill_rate": 0.9828929539295393,
+      "policy": "daily_1d",
+      "label": "每日回补 · 1 天前置期"
+    },
+    {
+      "day": 4,
+      "orders": 108,
+      "otif_rate": 0.7222222222222222,
+      "fill_rate": 0.9319658555229966,
+      "policy": "daily_1d",
+      "label": "每日回补 · 1 天前置期"
+    },
+    {
+      "day": 0,
+      "orders": 66,
+      "otif_rate": 0.9090909090909091,
+      "fill_rate": 0.9989804835420915,
+      "policy": "daily_2d",
+      "label": "每日回补 · 2 天前置期"
+    },
+    {
+      "day": 1,
+      "orders": 73,
+      "otif_rate": 0.863013698630137,
+      "fill_rate": 0.9895798875289448,
+      "policy": "daily_2d",
+      "label": "每日回补 · 2 天前置期"
+    },
+    {
+      "day": 2,
+      "orders": 68,
+      "otif_rate": 0.8823529411764706,
+      "fill_rate": 0.9946833463643472,
+      "policy": "daily_2d",
+      "label": "每日回补 · 2 天前置期"
+    },
+    {
+      "day": 3,
+      "orders": 85,
+      "otif_rate": 0.7294117647058823,
+      "fill_rate": 0.9557926829268293,
+      "policy": "daily_2d",
+      "label": "每日回补 · 2 天前置期"
+    },
+    {
+      "day": 4,
+      "orders": 108,
+      "otif_rate": 0.3888888888888889,
+      "fill_rate": 0.7829022805452924,
+      "policy": "daily_2d",
+      "label": "每日回补 · 2 天前置期"
+    },
+    {
+      "day": 0,
+      "orders": 66,
+      "otif_rate": 0.9393939393939394,
+      "fill_rate": 0.9989804835420915,
+      "policy": "daily_1d_safety",
+      "label": "每日回补 +10% 安全量 · 1 天"
+    },
+    {
+      "day": 1,
+      "orders": 73,
+      "otif_rate": 0.9315068493150684,
+      "fill_rate": 0.9900760833608998,
+      "policy": "daily_1d_safety",
+      "label": "每日回补 +10% 安全量 · 1 天"
+    },
+    {
+      "day": 2,
+      "orders": 68,
+      "otif_rate": 0.9411764705882353,
+      "fill_rate": 0.9962470680218921,
+      "policy": "daily_1d_safety",
+      "label": "每日回补 +10% 安全量 · 1 天"
+    },
+    {
+      "day": 3,
+      "orders": 85,
+      "otif_rate": 0.8823529411764706,
+      "fill_rate": 0.9840785907859079,
+      "policy": "daily_1d_safety",
+      "label": "每日回补 +10% 安全量 · 1 天"
+    },
+    {
+      "day": 4,
+      "orders": 108,
+      "otif_rate": 0.75,
+      "fill_rate": 0.9496751178494076,
+      "policy": "daily_1d_safety",
+      "label": "每日回补 +10% 安全量 · 1 天"
+    },
+    {
+      "day": 0,
+      "orders": 66,
+      "otif_rate": 0.9090909090909091,
+      "fill_rate": 0.9989804835420915,
+      "policy": "batch_2d",
+      "label": "每 2 天批量回补 · 1 天"
+    },
+    {
+      "day": 1,
+      "orders": 73,
+      "otif_rate": 0.863013698630137,
+      "fill_rate": 0.9897452861395964,
+      "policy": "batch_2d",
+      "label": "每 2 天批量回补 · 1 天"
+    },
+    {
+      "day": 2,
+      "orders": 68,
+      "otif_rate": 0.9117647058823529,
+      "fill_rate": 0.9945269741985927,
+      "policy": "batch_2d",
+      "label": "每 2 天批量回补 · 1 天"
+    },
+    {
+      "day": 3,
+      "orders": 85,
+      "otif_rate": 0.8,
+      "fill_rate": 0.9708672086720868,
+      "policy": "batch_2d",
+      "label": "每 2 天批量回补 · 1 天"
+    },
+    {
+      "day": 4,
+      "orders": 108,
+      "otif_rate": 0.6574074074074074,
+      "fill_rate": 0.8969295451649891,
+      "policy": "batch_2d",
+      "label": "每 2 天批量回补 · 1 天"
+    }
+  ],
+  "limitations": [
+    "只重放分单层：拣选、在线释放、发车与月台不重跑；交付日按“分单日 + 声明转运日”计算，不含截单/发车/门位。",
+    "订单日来自发票日期（周一至周五）；周六/周日发票并入周五，仓库当日可用性没有单独建模。",
+    "补货采用剩余周 cover 的 order-up-to：目标从 85% 周库存线性降到 0，只把同一批库存往后几天移动，不额外创造总量；不做需求预测、MOQ、补货批量上限、供应商产能或 DC 间调拨。",
+    "前置期是声明值（1/2 天），到货只发生在早晨；安全量按目标 cover 的 10% 向上取整。",
+    "单周快照用 60s MILP，日滚动用 8s/天；求解器在时间预算内的差异会混入 OTIF；只验证一个目标周、一个库存/布局。",
+    "绝对 OTIF 不可迁移；结果用于比较库存结转与补货前置期的方向，不是生产承诺。"
+  ],
+  "generated": "2026-10-28T17:34:38.594418+00:00"
+}

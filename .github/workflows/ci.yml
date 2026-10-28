@@ -127,6 +127,11 @@ jobs:
           PYTHONPATH: src:.
         run: python tests/test_e2e_quote.py
 
+      - name: Run rolling-allocation tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_e2e_rolling.py
+
       - name: Run function-agent tests
         env:
           PYTHONPATH: src:.
@@ -211,6 +216,11 @@ jobs:
         env:
           PYTHONPATH: src:.
         run: python scripts/run_e2e_quote.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir /tmp/quote-bench
+
+      - name: Run rolling-allocation benchmark
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_rolling.py --orders 80 --milp-time 2 --service-time 1 --workers 2 --baseline-milp-time 3 --baseline-service-time 2 --out-dir /tmp/rolling-bench
 
       - name: Install optional UI dependency
         run: pip install "streamlit>=1.49"
