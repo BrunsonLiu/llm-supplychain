@@ -165,6 +165,9 @@ def run_flow_e2e(
     for seed in seeds:
         delivered: Dict[int, int] = {}
         unshipped: set = set()
+        door_used = 0.0
+        door_capacity = 0.0
+        door_blocked = 0
         for prepared in flow.days:
             _, outcome = run_dispatch_cell(
                 _dispatch_instance(prepared),
@@ -176,6 +179,9 @@ def run_flow_e2e(
             )
             if outcome is None:
                 continue
+            door_used += float(outcome.play.door_minutes_used)
+            door_capacity += float(outcome.play.door_capacity_minutes)
+            door_blocked += int(outcome.play.door_blocked)
             mapping = {
                 local: int(order)
                 for local, order in enumerate(prepared.open_orders)
@@ -208,6 +214,12 @@ def run_flow_e2e(
             ),
             "replenished_units": int(flow.replenished_units),
             "orders": int(base.n_orders),
+            "door_minutes_used": door_used,
+            "door_capacity_minutes": door_capacity,
+            "door_utilization": (
+                door_used / door_capacity if door_capacity > 0 else 0.0
+            ),
+            "door_blocked": int(door_blocked),
         }
         for day in range(FLOW_DAYS):
             mask = np.asarray(order_day) == day
@@ -252,6 +264,15 @@ def run_single_week_e2e(
                 ),
                 "replenished_units": 0,
                 "orders": int(instance.n_orders),
+                "door_minutes_used": float(outcome.play.door_minutes_used),
+                "door_capacity_minutes": float(outcome.play.door_capacity_minutes),
+                "door_utilization": (
+                    float(outcome.play.door_minutes_used)
+                    / float(outcome.play.door_capacity_minutes)
+                    if outcome.play.door_capacity_minutes > 0
+                    else 0.0
+                ),
+                "door_blocked": int(outcome.play.door_blocked),
                 "otif_day_0": float(outcome.order_dock_ok.mean()),
                 **{
                     f"otif_day_{day}": float("nan")
@@ -282,6 +303,16 @@ def summarize_flow(frame: pd.DataFrame) -> pd.DataFrame:
                 "backlog_units": int(group["backlog_units"].iloc[0]),
                 "avg_delivery_day": float(group["avg_delivery_day"].mean()),
                 "replenished_units": int(group["replenished_units"].iloc[0]),
+                "door_utilization": (
+                    float(group["door_utilization"].mean())
+                    if "door_utilization" in group
+                    else 0.0
+                ),
+                "door_blocked_mean": (
+                    float(group["door_blocked"].mean())
+                    if "door_blocked" in group
+                    else 0.0
+                ),
                 **{
                     f"otif_day_{day}": float(group[f"otif_day_{day}"].mean())
                     for day in range(FLOW_DAYS)
