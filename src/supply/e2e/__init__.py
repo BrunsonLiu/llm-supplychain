@@ -165,6 +165,18 @@ from .rolling_e2e import (
 from .rolling_e2e_report import build_rolling_e2e_report, write_rolling_e2e_report
 from .rolling_dock_report import build_rolling_dock_report, write_rolling_dock_report
 from .rolling_quote_report import build_rolling_quote_report, write_rolling_quote_report
+from .promise_frontier import (
+    FRONTIER_QUOTE_POLICIES,
+    QUOTE_LABELS as FRONTIER_QUOTE_LABELS,
+    annotate_two_way_frontier,
+    pareto_frontier,
+    service_frontiers,
+    summarize_frontier,
+)
+from .promise_frontier_report import (
+    build_promise_frontier_report,
+    write_promise_frontier_report,
+)
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -321,6 +333,14 @@ __all__ = [
     "paired_e2e_delta",
     "prepare_baseline",
     "prepare_flow",
+    "FRONTIER_QUOTE_POLICIES",
+    "FRONTIER_QUOTE_LABELS",
+    "pareto_frontier",
+    "annotate_two_way_frontier",
+    "service_frontiers",
+    "summarize_frontier",
+    "build_promise_frontier_report",
+    "write_promise_frontier_report",
     "run_flow_e2e",
     "run_single_week_e2e",
     "summarize_flow",
