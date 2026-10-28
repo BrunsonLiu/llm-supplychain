@@ -32,6 +32,8 @@ from supply.network import (
     build_picking_orders,
 )
 
+from .arrival import ArrivalCurve
+
 PROMISE_TIER = {2: "express", 3: "standard", 5: "economy"}
 TIER_CUTOFFS = {"express": 240, "standard": 480, "economy": 600}
 DEFAULT_TIER_ONSITE = {"express": 0.70, "standard": 0.50, "economy": 0.40}
@@ -55,6 +57,7 @@ class PickPlan:
     tier_windows: Dict[str, float]
     seed: int
     arrival_profile: Optional[Dict[str, float]] = None
+    arrival_curve: Optional[Dict[str, Any]] = None
 
     @property
     def orders(self) -> int:
@@ -156,10 +159,21 @@ def _pick_plan(
     tier_windows: Optional[Mapping[str, float]],
     seed: int,
     arrival_profile: Optional[Mapping[str, float]] = None,
+    arrival_curve: Optional[ArrivalCurve | Mapping[str, Any]] = None,
 ) -> PickPlan:
     onsite_share = dict(DEFAULT_TIER_ONSITE if tier_onsite is None else tier_onsite)
     windows = dict(DEFAULT_TIER_WINDOWS if tier_windows is None else tier_windows)
     profile = normalize_arrival_profile(arrival_profile)
+    if arrival_curve is not None:
+        if profile is not None:
+            raise ValueError("到达尖峰与经验到达曲线只能二选一")
+        curve = (
+            arrival_curve
+            if isinstance(arrival_curve, ArrivalCurve)
+            else ArrivalCurve.from_dict(arrival_curve)
+        )
+    else:
+        curve = None
     if set(onsite_share) != set(TIER_CUTOFFS) or set(windows) != set(TIER_CUTOFFS):
         raise ValueError("到达参数必须覆盖 express/standard/economy 三层")
     if any(not 0.0 <= share <= 1.0 for share in onsite_share.values()):
@@ -192,6 +206,10 @@ def _pick_plan(
             arrival_of[invoice] = 0.0
         mid_shift = shuffled[count:]
         window = float(windows[tier])
+        if curve is not None:
+            for invoice in mid_shift:
+                arrival_of[invoice] = float(curve.sample(rng, window))
+            continue
         if profile is None:
             for invoice in mid_shift:
                 arrival_of[invoice] = float(rng.uniform(0.0, window))
@@ -221,6 +239,7 @@ def _pick_plan(
         tier_windows={tier: float(windows[tier]) for tier in TIER_CUTOFFS},
         seed=int(seed),
         arrival_profile=None if profile is None else dict(profile),
+        arrival_curve=None if curve is None else curve.as_dict(),
     )
 
 
@@ -239,6 +258,7 @@ def build_e2e_instance(
     tier_onsite: Optional[Mapping[str, float]] = None,
     tier_windows: Optional[Mapping[str, float]] = None,
     arrival_profile: Optional[Mapping[str, float]] = None,
+    arrival_curve: Optional[ArrivalCurve | Mapping[str, Any]] = None,
     layout: Optional[WarehouseLayout] = None,
 ) -> E2EInstance:
     """Build one week where allocation, picking and arrivals share a promise."""
@@ -264,7 +284,9 @@ def build_e2e_instance(
     if missing:
         raise ValueError(f"{len(missing)} 个 SKU 没有槽位，例如 {missing[:3]}")
 
-    pick = _pick_plan(fulfillment, tier_onsite, tier_windows, arrival_seed, arrival_profile)
+    pick = _pick_plan(
+        fulfillment, tier_onsite, tier_windows, arrival_seed, arrival_profile, arrival_curve
+    )
     details = dict(fulfillment.meta)
     details.update(
         {
@@ -275,6 +297,7 @@ def build_e2e_instance(
             "tier_onsite": dict(pick.tier_onsite),
             "tier_windows": dict(pick.tier_windows),
             "arrival_profile": pick.arrival_profile,
+            "arrival_curve": pick.arrival_curve,
             "onsite_orders": pick.onsite_orders,
             "mid_shift_orders": pick.mid_shift_orders,
             "pickers_per_dc": int(pickers_per_dc),
@@ -292,6 +315,14 @@ def build_e2e_instance(
             + (
                 ["尖峰画像按层内相对窗口抽样，不是观测到的日内曲线"]
                 if pick.arrival_profile is not None
+                else []
+            )
+            + (
+                [
+                    "日内到达形状取自 Online Retail II 发票时间戳（逐周经验曲线），"
+                    "承诺窗口与班前占比仍是声明值"
+                ]
+                if pick.arrival_curve is not None
                 else []
             )
             + [
@@ -314,6 +345,7 @@ def rebuild_arrivals(
     instance: E2EInstance,
     arrival_seed: int,
     arrival_profile: Optional[Mapping[str, float]] = None,
+    arrival_curve: Optional[ArrivalCurve | Mapping[str, Any]] = None,
 ) -> E2EInstance:
     """Replace only the arrival draw, keeping stock, slots, cutoffs and layout."""
     plan = _pick_plan(
@@ -322,12 +354,14 @@ def rebuild_arrivals(
         instance.pick.tier_windows,
         arrival_seed,
         arrival_profile,
+        arrival_curve,
     )
     meta = dict(instance.meta)
     meta.update(
         {
             "arrival_seed": int(arrival_seed),
             "arrival_profile": plan.arrival_profile,
+            "arrival_curve": plan.arrival_curve,
             "onsite_orders": plan.onsite_orders,
             "mid_shift_orders": plan.mid_shift_orders,
         }

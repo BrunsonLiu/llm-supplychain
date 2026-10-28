@@ -97,6 +97,21 @@ jobs:
           PYTHONPATH: src:.
         run: python tests/test_e2e_recovery.py
 
+      - name: Run joint allocation/placement tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_e2e_joint.py
+
+      - name: Run stochastic placement tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_e2e_stochastic.py
+
+      - name: Run empirical arrival tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_e2e_arrivals.py
+
       - name: Run function-agent tests
         env:
           PYTHONPATH: src:.
@@ -151,6 +166,21 @@ jobs:
         env:
           PYTHONPATH: src:.
         run: python scripts/run_e2e_recovery.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --placements baseline,balanced --skip-review-sweep --out-dir /tmp/recovery-bench
+
+      - name: Run joint allocation/placement benchmark (small)
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_joint.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir /tmp/joint-bench
+
+      - name: Run stochastic placement benchmark (small)
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_stochastic.py --orders 80 --seeds 2 --reps 1 --milp-time 3 --service-time 2 --scenario-time 5 --score-time 3 --workers 4 --sweep-lambdas 0 0.5 --out-dir /tmp/stochastic-bench
+
+      - name: Run empirical intraday arrivals benchmark (small)
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_empirical_arrivals.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir /tmp/empirical-arrivals-bench
 
       - name: Install optional UI dependency
         run: pip install "streamlit>=1.49"
