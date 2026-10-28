@@ -641,10 +641,14 @@ def run_dispatch_cell(
     seed: int,
     arrivals: EmpiricalArrivals,
     scenario: str = "milp_load",
+    keep_cutoffs: bool = False,
 ) -> Tuple[Dict[str, Any], Optional[DispatchOutcome]]:
     """Run one cell for one seed and return a tidy row plus the dock outcome."""
     shifted = rebuild_arrivals(
-        instance, int(seed), arrival_curve=arrivals.curve_for(int(seed))
+        instance,
+        int(seed),
+        arrival_curve=arrivals.curve_for(int(seed)),
+        keep_cutoffs=keep_cutoffs,
     )
     pick_result = run_pick_layer(
         shifted,

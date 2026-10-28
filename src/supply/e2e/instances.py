@@ -153,6 +153,36 @@ def normalize_arrival_profile(
     return values
 
 
+def rebuild_pick_plan(
+    instance: E2EInstance,
+    promise_days: np.ndarray,
+    keep_arrivals: bool = True,
+    keep_cutoffs: bool = False,
+) -> E2EInstance:
+    """Replace promise days and rebuild tiers/cutoffs, optionally keeping both."""
+    promises = np.asarray(promise_days, dtype=np.int64)
+    if promises.shape != (instance.n_orders,):
+        raise ValueError("承诺天数长度应等于订单数")
+    fulfillment = replace(instance.fulfillment, promise_days=promises)
+    plan = _pick_plan(
+        fulfillment,
+        None,
+        None,
+        instance.pick.seed,
+        arrival_profile=instance.pick.arrival_profile,
+        arrival_curve=instance.pick.arrival_curve,
+    )
+    if keep_arrivals:
+        plan = replace(plan, arrival_of=dict(instance.pick.arrival_of))
+    if keep_cutoffs:
+        plan = replace(
+            plan,
+            tier_of=dict(instance.pick.tier_of),
+            cutoff_of=dict(instance.pick.cutoff_of),
+        )
+    return replace(instance, fulfillment=fulfillment, pick=plan)
+
+
 def _pick_plan(
     instance: FulfillmentInstance,
     tier_onsite: Optional[Mapping[str, float]],
@@ -346,6 +376,7 @@ def rebuild_arrivals(
     arrival_seed: int,
     arrival_profile: Optional[Mapping[str, float]] = None,
     arrival_curve: Optional[ArrivalCurve | Mapping[str, Any]] = None,
+    keep_cutoffs: bool = False,
 ) -> E2EInstance:
     """Replace only the arrival draw, keeping stock, slots, cutoffs and layout."""
     plan = _pick_plan(
@@ -356,6 +387,12 @@ def rebuild_arrivals(
         arrival_profile,
         arrival_curve,
     )
+    if keep_cutoffs:
+        plan = replace(
+            plan,
+            tier_of=dict(instance.pick.tier_of),
+            cutoff_of=dict(instance.pick.cutoff_of),
+        )
     meta = dict(instance.meta)
     meta.update(
         {

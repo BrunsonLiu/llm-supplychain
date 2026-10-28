@@ -14,6 +14,7 @@ from .instances import (
     build_e2e_instance,
     normalize_arrival_profile,
     rebuild_arrivals,
+    rebuild_pick_plan,
 )
 from .pipeline import (
     POLICY_LABELS,
@@ -132,6 +133,16 @@ from .dispatch import (
 )
 from .dispatch_report import build_dispatch_report, write_dispatch_report
 from .dock_report import build_dock_report, write_dock_report
+from .quote import (
+    QUOTE_POLICIES,
+    QuoteCell,
+    quote_frontier,
+    quote_promises,
+    run_quote_monte_carlo,
+    solve_quote,
+    tier_for_days,
+)
+from .quote_report import build_quote_report, write_quote_report
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -179,6 +190,7 @@ __all__ = [
     "POLICY_LABELS",
     "DCPickResult",
     "DCTickets",
+    "rebuild_pick_plan",
     "E2EResult",
     "allocation_order_status",
     "pick_tickets",
@@ -265,6 +277,15 @@ __all__ = [
     "write_dispatch_report",
     "build_dock_report",
     "write_dock_report",
+    "QUOTE_POLICIES",
+    "QuoteCell",
+    "quote_frontier",
+    "quote_promises",
+    "run_quote_monte_carlo",
+    "solve_quote",
+    "tier_for_days",
+    "build_quote_report",
+    "write_quote_report",
     "DEFAULT_CAPACITY",
     "DEFAULT_DEPARTURES",
     "DEFAULT_DISPATCH_COST",
