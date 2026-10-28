@@ -112,6 +112,11 @@ jobs:
           PYTHONPATH: src:.
         run: python tests/test_e2e_arrivals.py
 
+      - name: Run outbound dispatch tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_e2e_dispatch.py
+
       - name: Run function-agent tests
         env:
           PYTHONPATH: src:.
@@ -181,6 +186,11 @@ jobs:
         env:
           PYTHONPATH: src:.
         run: python scripts/run_e2e_empirical_arrivals.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir /tmp/empirical-arrivals-bench
+
+      - name: Run outbound dispatch benchmark (small)
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_dispatch.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir /tmp/dispatch-bench
 
       - name: Install optional UI dependency
         run: pip install "streamlit>=1.49"

@@ -39,7 +39,7 @@ SUMMARY_METRICS: Dict[str, str] = {
 }
 
 # Service rates are read from the lower tail; time and cost from the upper tail.
-DOWN_SIDE = {"e2e_otif_rate", "pick_on_time_rate"}
+DOWN_SIDE = {"e2e_otif_rate", "pick_on_time_rate", "dock_otif_rate"}
 
 
 @dataclass(frozen=True)
