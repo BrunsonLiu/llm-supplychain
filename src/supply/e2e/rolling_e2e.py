@@ -20,6 +20,7 @@ from .arrival import EmpiricalArrivals
 from .dispatch import DispatchCell, run_dispatch_cell
 from .instances import E2EInstance
 from .joint import capacity_aware_allocation
+from .quote import QUOTE_POLICIES, quote_promises
 from .rolling import (
     FLOW_DAYS,
     ROLLING_DEADLINES,
@@ -54,6 +55,7 @@ class PreparedFlow:
     demand_units: int
     replenished_units: int
     stock_start: int
+    promise_days: np.ndarray
 
 
 def prepare_flow(
@@ -64,10 +66,18 @@ def prepare_flow(
     milp_time: float = 8.0,
     workers: int = 2,
     safety: float = 0.10,
+    quote_policy: str = "static",
 ) -> PreparedFlow:
-    """Allocate each day's open lines and keep the sub-instance for dispatch."""
+    """Allocate each day's open lines and keep the sub-instance for dispatch.
+
+    ``quote_policy`` refreshes the promise for **newly arriving** orders only:
+    old orders keep the absolute promise they were quoted at arrival. The
+    default ``static`` reproduces Week 20/21 exactly.
+    """
     if policy not in E2E_ROLLING_POLICIES:
         raise ValueError(f"未知端到端补货策略: {policy}")
+    if quote_policy not in QUOTE_POLICIES:
+        raise ValueError(f"未知承诺策略: {quote_policy}")
     fulfillment = instance.fulfillment
     days = min(FLOW_DAYS, int(order_day.max()) + 1 if order_day.size else 0)
     remaining = fulfillment.line_qty.copy()
@@ -76,6 +86,7 @@ def prepare_flow(
     pipeline: Dict[int, np.ndarray] = {}
     prepared: List[PreparedDay] = []
     replenished = 0
+    quotes = fulfillment.promise_days.astype(np.int64).copy()
     for day in range(days):
         if day in pipeline:
             arrival = pipeline.pop(day)
@@ -87,6 +98,19 @@ def prepare_flow(
         if built is None:
             continue
         daily, lines, open_orders = built
+        new_mask = order_day[open_orders] == day
+        if quote_policy != "static" and bool(new_mask.any()):
+            candidates = quote_promises(daily, quote_policy)
+            quotes[open_orders[new_mask]] = candidates[new_mask]
+        residual = np.maximum(
+            1, order_day[open_orders] + quotes[open_orders] - day
+        )
+        daily = replace(
+            daily,
+            fulfillment=replace(
+                daily.fulfillment, promise_days=residual.astype(np.int64)
+            ),
+        )
         before = stock.copy()
         allocation = capacity_aware_allocation(
             daily,
@@ -117,6 +141,7 @@ def prepare_flow(
         demand_units=int(fulfillment.line_qty.sum()),
         replenished_units=replenished,
         stock_start=int(fulfillment.stock.sum()),
+        promise_days=quotes,
     )
 
 
@@ -159,7 +184,8 @@ def run_flow_e2e(
     if cell.policy == "none":
         raise ValueError("Week 20 只比较发车策略，不接受 none")
     fully = _fully_allocated(base, flow.remaining)
-    deadline = _deadline(base, order_day)
+    deadline = order_day + flow.promise_days
+    static_deadline = _deadline(base, order_day)
     rows: List[Dict[str, Any]] = []
     demand = max(1, flow.demand_units)
     for seed in seeds:
@@ -193,6 +219,7 @@ def run_flow_e2e(
             for local in outcome.unshipped_orders:
                 unshipped.add(mapping[int(local)])
         on_time = np.zeros(base.n_orders, dtype=bool)
+        static_on_time = np.zeros(base.n_orders, dtype=bool)
         delivered_days: List[int] = []
         for order in range(base.n_orders):
             if not fully[order] or order in unshipped or order not in delivered:
@@ -201,11 +228,22 @@ def run_flow_e2e(
             delivered_days.append(day)
             if day <= int(deadline[order]):
                 on_time[order] = True
+            if day <= int(static_deadline[order]):
+                static_on_time[order] = True
         late_orders = int(base.n_orders - on_time.sum())
         row = {
             "policy": flow.policy,
             "seed": int(seed),
             "e2e_otif_rate": float(on_time.mean()) if base.n_orders else 0.0,
+            "static_sla_otif_rate": (
+                float(static_on_time.mean()) if base.n_orders else 0.0
+            ),
+            "avg_promise_days": (
+                float(flow.promise_days.mean()) if base.n_orders else 0.0
+            ),
+            "fast_share": (
+                float((flow.promise_days == 2).mean()) if base.n_orders else 0.0
+            ),
             "fill_rate": float(1.0 - flow.remaining.sum() / demand),
             "late_orders": int(late_orders),
             "backlog_units": int(flow.remaining.sum()),
@@ -252,6 +290,13 @@ def run_single_week_e2e(
                 "policy": "single_week",
                 "seed": int(seed),
                 "e2e_otif_rate": float(outcome.order_dock_ok.mean()),
+                "static_sla_otif_rate": float(outcome.order_dock_ok.mean()),
+                "avg_promise_days": float(
+                    instance.fulfillment.promise_days.mean()
+                ),
+                "fast_share": float(
+                    (instance.fulfillment.promise_days == 2).mean()
+                ),
                 "fill_rate": float(allocation.unit_fill_rate),
                 "late_orders": int(
                     (~outcome.order_dock_ok).sum()
@@ -298,6 +343,21 @@ def summarize_flow(frame: pd.DataFrame) -> pd.DataFrame:
                 "e2e_otif_p10": float(np.percentile(otif, 10)),
                 "e2e_otif_p50": float(np.percentile(otif, 50)),
                 "e2e_otif_p90": float(np.percentile(otif, 90)),
+                "static_sla_otif_mean": (
+                    float(group["static_sla_otif_rate"].mean())
+                    if "static_sla_otif_rate" in group
+                    else float(otif.mean())
+                ),
+                "avg_promise_days": (
+                    float(group["avg_promise_days"].mean())
+                    if "avg_promise_days" in group
+                    else 0.0
+                ),
+                "fast_share": (
+                    float(group["fast_share"].mean())
+                    if "fast_share" in group
+                    else 0.0
+                ),
                 "fill_mean": float(group["fill_rate"].mean()),
                 "late_orders_mean": float(group["late_orders"].mean()),
                 "backlog_units": int(group["backlog_units"].iloc[0]),

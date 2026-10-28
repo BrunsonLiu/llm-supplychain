@@ -164,6 +164,7 @@ from .rolling_e2e import (
 )
 from .rolling_e2e_report import build_rolling_e2e_report, write_rolling_e2e_report
 from .rolling_dock_report import build_rolling_dock_report, write_rolling_dock_report
+from .rolling_quote_report import build_rolling_quote_report, write_rolling_quote_report
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -327,6 +328,8 @@ __all__ = [
     "write_rolling_e2e_report",
     "build_rolling_dock_report",
     "write_rolling_dock_report",
+    "build_rolling_quote_report",
+    "write_rolling_quote_report",
     "DEFAULT_CAPACITY",
     "DEFAULT_DEPARTURES",
     "DEFAULT_DISPATCH_COST",
