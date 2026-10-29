@@ -246,6 +246,11 @@ from .dc_capacity_report import (
     summarize_dc_capacity,
     write_dc_capacity_report,
 )
+from .transit_report import (
+    build_transit_report,
+    summarize_transit,
+    write_transit_report,
+)
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -451,6 +456,9 @@ __all__ = [
     "build_dc_capacity_report",
     "summarize_dc_capacity",
     "write_dc_capacity_report",
+    "build_transit_report",
+    "summarize_transit",
+    "write_transit_report",
     "run_flow_e2e",
     "run_single_week_e2e",
     "summarize_flow",
