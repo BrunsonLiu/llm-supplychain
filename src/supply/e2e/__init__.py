@@ -251,6 +251,11 @@ from .transit_report import (
     summarize_transit,
     write_transit_report,
 )
+from .local_stock_report import (
+    build_local_stock_report,
+    summarize_local_stock,
+    write_local_stock_report,
+)
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -459,6 +464,9 @@ __all__ = [
     "build_transit_report",
     "summarize_transit",
     "write_transit_report",
+    "build_local_stock_report",
+    "summarize_local_stock",
+    "write_local_stock_report",
     "run_flow_e2e",
     "run_single_week_e2e",
     "summarize_flow",
