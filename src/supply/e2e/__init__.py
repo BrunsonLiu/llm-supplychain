@@ -206,6 +206,11 @@ from .value_frontier_report import (
     summarize_value_frontier,
     write_value_frontier_report,
 )
+from .service_upgrade_report import (
+    build_service_upgrade_report,
+    summarize_service_upgrade,
+    write_service_upgrade_report,
+)
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -387,6 +392,9 @@ __all__ = [
     "build_value_frontier_report",
     "summarize_value_frontier",
     "write_value_frontier_report",
+    "build_service_upgrade_report",
+    "summarize_service_upgrade",
+    "write_service_upgrade_report",
     "run_flow_e2e",
     "run_single_week_e2e",
     "summarize_flow",

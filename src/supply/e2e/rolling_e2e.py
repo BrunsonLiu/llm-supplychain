@@ -72,6 +72,8 @@ def prepare_flow(
     accept_cutoff_days: int = 5,
     accept_value_threshold: Optional[float] = None,
     order_value: Optional[np.ndarray] = None,
+    upgrade_value_threshold: Optional[float] = None,
+    upgrade_to_days: Optional[int] = None,
 ) -> PreparedFlow:
     """Allocate each day's open lines and keep the sub-instance for dispatch.
 
@@ -88,6 +90,12 @@ def prepare_flow(
     orders: a long-promise order is kept when its ``order_value`` is at least
     this threshold. This is a revenue-protection rule, not a margin rule;
     ``order_value`` must align with ``instance.fulfillment.order_ids``.
+
+    ``upgrade_value_threshold`` + ``upgrade_to_days`` optionally accelerate a
+    new high-value order's promise: its quote is capped at ``upgrade_to_days``
+    even when ATP returns a longer promise. This is deliberately an
+    over-promise stress test: the earlier deadline makes the order compete for
+    stock/picking earlier, but does not guarantee that the inventory exists.
     """
     if policy not in E2E_ROLLING_POLICIES:
         raise ValueError(f"未知端到端补货策略: {policy}")
@@ -95,11 +103,14 @@ def prepare_flow(
         raise ValueError(f"未知承诺策略: {quote_policy}")
     if accept_cutoff_days < 2 or accept_cutoff_days > 5:
         raise ValueError("接单截止承诺必须在 2..5 天")
-    if accept_value_threshold is not None:
+    if accept_value_threshold is not None or upgrade_value_threshold is not None:
         if order_value is None:
             raise ValueError("价值阈值需要 order_value")
         if np.asarray(order_value).shape != (instance.n_orders,):
             raise ValueError("order_value 必须与订单数一致")
+    if upgrade_value_threshold is not None:
+        if upgrade_to_days is None or upgrade_to_days < 2 or upgrade_to_days > 5:
+            raise ValueError("承诺升级必须给出 2..5 天")
     fulfillment = instance.fulfillment
     days = min(FLOW_DAYS, int(order_day.max()) + 1 if order_day.size else 0)
     remaining = fulfillment.line_qty.copy()
@@ -126,6 +137,14 @@ def prepare_flow(
         if quote_policy != "static" and bool(new_mask.any()):
             candidates = quote_promises(daily, quote_policy)
             quotes[open_orders[new_mask]] = candidates[new_mask]
+        if upgrade_value_threshold is not None and bool(new_mask.any()):
+            new_orders = open_orders[new_mask]
+            values = np.asarray(order_value, dtype=float)[new_orders]
+            high_value = new_orders[values >= float(upgrade_value_threshold)]
+            if high_value.size:
+                quotes[high_value] = np.minimum(
+                    quotes[high_value], int(upgrade_to_days)
+                )
         if accept_cutoff_days < 5 and bool(new_mask.any()):
             new_orders = open_orders[new_mask]
             long_promise = quotes[new_orders] > accept_cutoff_days
@@ -225,8 +244,15 @@ def run_flow_e2e(
     seeds: Sequence[int],
     arrivals: EmpiricalArrivals,
     cell: DispatchCell,
+    segments: Optional[Dict[str, np.ndarray]] = None,
 ) -> pd.DataFrame:
-    """Run one seed through every day and score absolute delivery dates."""
+    """Run one seed through every day and score absolute delivery dates.
+
+    ``segments`` optionally maps a label to an order mask. Each label adds
+    ``{label}_accepted_otif_rate`` and ``{label}_all_otif_rate``, which is how
+    Week 30 checks whether a high-value promise upgrade helps the target
+    segment or just moves lateness to everyone else.
+    """
     if cell.policy == "none":
         raise ValueError("Week 20 只比较发车策略，不接受 none")
     fully = _fully_allocated(base, flow.remaining)
@@ -240,6 +266,12 @@ def run_flow_e2e(
     accepted_backlog = int(flow.remaining[accepted_lines].sum())
     rows: List[Dict[str, Any]] = []
     demand = max(1, flow.demand_units)
+    segment_masks: Dict[str, np.ndarray] = {}
+    for name, mask in (segments or {}).items():
+        array = np.asarray(mask, dtype=bool)
+        if array.shape != (base.n_orders,):
+            raise ValueError(f"segment {name} 必须与订单数一致")
+        segment_masks[str(name)] = array
     for seed in seeds:
         delivered: Dict[int, int] = {}
         unshipped: set = set()
@@ -381,6 +413,15 @@ def run_flow_e2e(
             ),
             "door_blocked": int(door_blocked),
         }
+        for name, mask in segment_masks.items():
+            selected = mask & accepted
+            row[f"{name}_accepted_orders"] = int(selected.sum())
+            row[f"{name}_accepted_otif_rate"] = (
+                float(on_time[selected].mean()) if selected.any() else 0.0
+            )
+            row[f"{name}_all_otif_rate"] = (
+                float(on_time[mask].mean()) if mask.any() else 0.0
+            )
         for day in range(FLOW_DAYS):
             mask = np.asarray(order_day) == day
             if mask.any():

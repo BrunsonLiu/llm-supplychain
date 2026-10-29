@@ -182,6 +182,11 @@ jobs:
           PYTHONPATH: src:.
         run: python tests/test_e2e_value_frontier.py
 
+      - name: Run service-upgrade tests
+        env:
+          PYTHONPATH: src:.
+        run: python tests/test_e2e_service_upgrade.py
+
       - name: Run function-agent tests
         env:
           PYTHONPATH: src:.
@@ -321,6 +326,11 @@ jobs:
         env:
           PYTHONPATH: src:.
         run: python scripts/run_e2e_value_frontier.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time 3 --baseline-service-time 2 --workers 2 --out-dir /tmp/value-frontier-bench
+
+      - name: Run service-upgrade benchmark
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_service_upgrade.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time 3 --baseline-service-time 2 --workers 2 --out-dir /tmp/service-upgrade-bench
 
       - name: Install optional UI dependency
         run: pip install "streamlit>=1.49"
