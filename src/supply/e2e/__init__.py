@@ -186,6 +186,11 @@ from .promise_door_report import (
     summarize_promise_door,
     write_promise_door_report,
 )
+from .consolidation_report import (
+    build_consolidation_report,
+    summarize_consolidation,
+    write_consolidation_report,
+)
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -355,6 +360,9 @@ __all__ = [
     "build_promise_door_report",
     "summarize_promise_door",
     "write_promise_door_report",
+    "build_consolidation_report",
+    "summarize_consolidation",
+    "write_consolidation_report",
     "run_flow_e2e",
     "run_single_week_e2e",
     "summarize_flow",

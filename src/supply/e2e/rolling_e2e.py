@@ -230,6 +230,12 @@ def run_flow_e2e(
         door_used = 0.0
         door_capacity = 0.0
         door_blocked = 0
+        departures = 0
+        dispatch_cost = 0.0
+        holding_cost = 0.0
+        shipped_tickets = 0
+        roll_tickets = 0
+        wait_minutes = 0.0
         for prepared in flow.days:
             _, outcome = run_dispatch_cell(
                 _dispatch_instance(prepared),
@@ -244,6 +250,14 @@ def run_flow_e2e(
             door_used += float(outcome.play.door_minutes_used)
             door_capacity += float(outcome.play.door_capacity_minutes)
             door_blocked += int(outcome.play.door_blocked)
+            metrics = outcome.metrics
+            departures += int(metrics.get("departures", 0))
+            dispatch_cost += float(metrics.get("dispatch_cost", 0.0))
+            holding_cost += float(metrics.get("holding_cost", 0.0))
+            tickets = int(len(outcome.play.tickets))
+            shipped_tickets += tickets
+            roll_tickets += int(metrics.get("roll_tickets", 0.0))
+            wait_minutes += float(metrics.get("mean_wait_minutes", 0.0)) * tickets
             mapping = {
                 local: int(order)
                 for local, order in enumerate(prepared.open_orders)
@@ -324,6 +338,25 @@ def run_flow_e2e(
                 float(np.mean(accepted_delivered)) if accepted_delivered else 0.0
             ),
             "replenished_units": int(flow.replenished_units),
+            "departures": departures,
+            "dispatch_cost": dispatch_cost,
+            "holding_cost": holding_cost,
+            "dock_cost": dispatch_cost + holding_cost,
+            "shipped_tickets": shipped_tickets,
+            "orders_per_departure": (
+                shipped_tickets / departures if departures else 0.0
+            ),
+            "load_factor": (
+                shipped_tickets / (departures * cell.capacity)
+                if departures and cell.capacity
+                else 0.0
+            ),
+            "roll_rate": (
+                roll_tickets / shipped_tickets if shipped_tickets else 0.0
+            ),
+            "mean_wait_minutes": (
+                wait_minutes / shipped_tickets if shipped_tickets else 0.0
+            ),
             "orders": int(base.n_orders),
             "door_minutes_used": door_used,
             "door_capacity_minutes": door_capacity,
@@ -365,6 +398,9 @@ def run_single_week_e2e(
         )
         if outcome is None:
             raise ValueError("单周基线需要发车策略")
+        metrics = outcome.metrics
+        tickets = int(len(outcome.play.tickets))
+        departures = int(metrics.get("departures", 0))
         rows.append(
             {
                 "policy": "single_week",
@@ -406,6 +442,23 @@ def run_single_week_e2e(
                     else 0.0
                 ),
                 "replenished_units": 0,
+                "departures": departures,
+                "dispatch_cost": float(metrics.get("dispatch_cost", 0.0)),
+                "holding_cost": float(metrics.get("holding_cost", 0.0)),
+                "dock_cost": float(metrics.get("dock_cost", 0.0)),
+                "shipped_tickets": tickets,
+                "orders_per_departure": (
+                    tickets / departures if departures else 0.0
+                ),
+                "load_factor": (
+                    tickets / (departures * cell.capacity)
+                    if departures and cell.capacity
+                    else 0.0
+                ),
+                "roll_rate": float(metrics.get("roll_rate", 0.0)),
+                "mean_wait_minutes": float(
+                    metrics.get("mean_wait_minutes", 0.0)
+                ),
                 "orders": int(instance.n_orders),
                 "door_minutes_used": float(outcome.play.door_minutes_used),
                 "door_capacity_minutes": float(outcome.play.door_capacity_minutes),
