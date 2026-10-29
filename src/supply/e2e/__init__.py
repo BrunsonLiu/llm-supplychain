@@ -221,6 +221,11 @@ from .dispatch_priority_report import (
     summarize_dispatch_priority,
     write_dispatch_priority_report,
 )
+from .pick_priority_report import (
+    build_pick_priority_report,
+    summarize_pick_priority,
+    write_pick_priority_report,
+)
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -411,6 +416,9 @@ __all__ = [
     "build_dispatch_priority_report",
     "summarize_dispatch_priority",
     "write_dispatch_priority_report",
+    "build_pick_priority_report",
+    "summarize_pick_priority",
+    "write_pick_priority_report",
     "run_flow_e2e",
     "run_single_week_e2e",
     "summarize_flow",

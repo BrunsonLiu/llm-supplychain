@@ -15,7 +15,7 @@ plan is executable inside the warehouse.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Mapping, Optional
+from typing import Dict, List, Mapping, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -201,6 +201,7 @@ def _run_dc(
     name: str,
     duration_noise: Optional[float],
     noise_seed: int,
+    priority_orders: Optional[Sequence[int]] = None,
 ) -> tuple[DCPickResult, Dict[str, float]]:
     wave_instance = build_wave_instance(
         tickets.frame[["invoice", "sku", "quantity"]],
@@ -211,6 +212,14 @@ def _run_dc(
         meta={"dc": tickets.dc},
     )
     plan, arrivals = _pick_plan_for(instance, tickets)
+    priority = {
+        int(order) for order in ([] if priority_orders is None else priority_orders)
+    }
+    priority_tickets = {
+        ticket
+        for ticket, order in tickets.order_index.items()
+        if int(order) in priority
+    }
     schedule = simulate_online(
         wave_instance,
         plan,
@@ -223,6 +232,7 @@ def _run_dc(
         duration_noise=duration_noise,
         noise_seed=noise_seed,
         name=f"{name} · {tickets.dc}",
+        priority_invoices=priority_tickets or None,
     )
 
     end_of: Dict[str, float] = {}
@@ -274,6 +284,7 @@ def run_pick_layer(
     duration_noise: Optional[float] = None,
     noise_seed: int = 0,
     name: Optional[str] = None,
+    priority_orders: Optional[Sequence[int]] = None,
 ) -> E2EResult:
     """Run every DC's online release and score the end-to-end order outcome."""
     if policy not in POLICY_LABELS:
@@ -300,6 +311,7 @@ def run_pick_layer(
             label,
             duration_noise,
             noise_seed + 7919 * index,
+            priority_orders=priority_orders,
         )
         dc_results.append(dc_result)
         for ticket, end in end_of.items():

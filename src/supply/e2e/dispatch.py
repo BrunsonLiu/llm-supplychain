@@ -666,8 +666,14 @@ def run_dispatch_cell(
     scenario: str = "milp_load",
     keep_cutoffs: bool = False,
     priority_orders: Optional[Sequence[int]] = None,
+    pick_priority_orders: Optional[Sequence[int]] = None,
 ) -> Tuple[Dict[str, Any], Optional[DispatchOutcome]]:
-    """Run one cell for one seed and return a tidy row plus the dock outcome."""
+    """Run one cell for one seed and return a tidy row plus the dock outcome.
+
+    ``priority_orders`` reorders loading at the dock; ``pick_priority_orders``
+    releases those orders earlier in the pick wave. They are separate levers so
+    a run can move one stage without silently moving the other.
+    """
     shifted = rebuild_arrivals(
         instance,
         int(seed),
@@ -683,6 +689,7 @@ def run_dispatch_cell(
         duration_noise=cell.duration_noise or None,
         noise_seed=int(seed),
         name=f"{scenario} · {cell.label}",
+        priority_orders=pick_priority_orders,
     )
     if cell.policy == "none":
         metrics = _control_metrics(pick_result)

@@ -19,7 +19,16 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from typing import (
+    AbstractSet,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
 import numpy as np
 
@@ -177,7 +186,12 @@ def _earliest(
     plan: PromisePlan,
     arrivals: ArrivalPlan,
     available: Sequence[str],
+    priority_invoices: Optional[AbstractSet[str]] = None,
 ) -> str:
+    if priority_invoices:
+        preferred = [invoice for invoice in available if invoice in priority_invoices]
+        if preferred:
+            available = preferred
     return min(
         available,
         key=lambda invoice: (
@@ -195,10 +209,11 @@ def _form_wave(
     available: Sequence[str],
     policy: str,
     pair_savings: Optional[Mapping[Tuple[int, int], float]] = None,
+    priority_invoices: Optional[AbstractSet[str]] = None,
 ) -> List[str]:
     if not available:
         raise ValueError("没有可派工的订单")
-    first = _earliest(instance, plan, arrivals, available)
+    first = _earliest(instance, plan, arrivals, available, priority_invoices)
     tier = plan.tier_of[first]
     if policy == "single":
         return [first]
@@ -207,6 +222,7 @@ def _form_wave(
         candidates = sorted(
             (invoice for invoice in available if invoice != first and plan.tier_of[invoice] == tier),
             key=lambda invoice: (
+                0 if priority_invoices and invoice in priority_invoices else 1,
                 plan.cutoff_of[invoice],
                 arrivals.arrival_of[invoice],
                 invoice,
@@ -245,6 +261,7 @@ def simulate_online(
     name: Optional[str] = None,
     start_time: float = 0.0,
     picker_free: Optional[Sequence[float]] = None,
+    priority_invoices: Optional[AbstractSet[str]] = None,
 ) -> Schedule:
     """Event-driven shift simulation; waves dispatch whenever a picker is free.
 
@@ -306,6 +323,7 @@ def simulate_online(
                 available,
                 policy,
                 pair_savings=pair_savings,
+                priority_invoices=priority_invoices,
             )
             if policy == "savings_wait" and len(invoice_wave) < min_fill and pending:
                 next_arrival = pending[0][0]
