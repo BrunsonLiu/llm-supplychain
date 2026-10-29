@@ -262,6 +262,7 @@ def run_flow_e2e(
     arrivals: EmpiricalArrivals,
     cell: DispatchCell,
     segments: Optional[Dict[str, np.ndarray]] = None,
+    priority_orders: Optional[Sequence[int]] = None,
 ) -> pd.DataFrame:
     """Run one seed through every day and score absolute delivery dates.
 
@@ -301,7 +302,20 @@ def run_flow_e2e(
         shipped_tickets = 0
         roll_tickets = 0
         wait_minutes = 0.0
+        wanted_priority = (
+            None
+            if priority_orders is None
+            else {int(order) for order in priority_orders}
+        )
         for prepared in flow.days:
+            if wanted_priority is None:
+                day_priority = None
+            else:
+                day_priority = [
+                    local
+                    for local, order in enumerate(prepared.open_orders)
+                    if int(order) in wanted_priority
+                ]
             _, outcome = run_dispatch_cell(
                 _dispatch_instance(prepared),
                 prepared.allocation,
@@ -309,6 +323,7 @@ def run_flow_e2e(
                 int(seed),
                 arrivals,
                 scenario="milp_load",
+                priority_orders=day_priority,
             )
             if outcome is None:
                 continue

@@ -372,10 +372,21 @@ def _should_dispatch(
 def dispatch_tickets(
     records: Sequence[DispatchTicket],
     config: DispatchConfig = DispatchConfig(),
+    priority_orders: Optional[Sequence[int]] = None,
 ) -> DispatchPlay:
-    """Run the dock simulation over already-picked tickets."""
+    """Run the dock simulation over already-picked tickets.
+
+    ``priority_orders`` is a real dispatch priority: within a lane, tickets of
+    those orders are loaded before lower-priority tickets (then EDF). It can
+    move a high-value parcel onto an earlier departure, but it can also push a
+    low-value parcel past its promise; it does not add capacity.
+    """
     if not isinstance(config, DispatchConfig):
         raise TypeError("config 必须是 DispatchConfig")
+    priority = {
+        int(order)
+        for order in ([] if priority_orders is None else priority_orders)
+    }
     pending = list(records)
     if not pending:
         return DispatchPlay(config=config, departures=[], tickets=[], unshipped=[])
@@ -396,7 +407,13 @@ def dispatch_tickets(
         last_of_day = abs(minute - config.last_departure) <= EPS
         for (dc, lane), group in by_lane.items():
             ordered = sorted(
-                group, key=lambda t: (t.deadline_day, t.pick_end, t.ticket)
+                group,
+                key=lambda t: (
+                    0 if t.order in priority else 1,
+                    t.deadline_day,
+                    t.pick_end,
+                    t.ticket,
+                ),
             )
             if not _should_dispatch(config, ordered, day, last_of_day, slot_minute):
                 continue
@@ -578,10 +595,11 @@ def simulate_dispatch(
     pick_result: E2EResult,
     tickets: Sequence[DCTickets],
     config: DispatchConfig = DispatchConfig(),
+    priority_orders: Optional[Sequence[int]] = None,
 ) -> DispatchOutcome:
     """Add the line-haul layer and re-score every order at delivery."""
     records = ticket_records(instance, pick_result, tickets)
-    play = dispatch_tickets(records, config)
+    play = dispatch_tickets(records, config, priority_orders=priority_orders)
     delivered: Dict[int, int] = {}
     for row in play.tickets:
         day = int(row.ship_day) + int(row.transit_days)
@@ -647,6 +665,7 @@ def run_dispatch_cell(
     arrivals: EmpiricalArrivals,
     scenario: str = "milp_load",
     keep_cutoffs: bool = False,
+    priority_orders: Optional[Sequence[int]] = None,
 ) -> Tuple[Dict[str, Any], Optional[DispatchOutcome]]:
     """Run one cell for one seed and return a tidy row plus the dock outcome."""
     shifted = rebuild_arrivals(
@@ -675,6 +694,7 @@ def run_dispatch_cell(
             pick_result,
             pick_tickets(shifted, allocation),
             cell.config(),
+            priority_orders=priority_orders,
         )
         metrics = outcome.metrics
     row: Dict[str, Any] = {
