@@ -413,9 +413,14 @@ def capacity_aware_allocation(
     service_otif_bonus: float = 200.0,
     pick_overload_penalty: float = 5.0,
     pick_deadlines: Optional[Mapping[int, float]] = None,
+    order_priority: Optional[np.ndarray] = None,
     name: Optional[str] = None,
 ) -> FulfillmentResult:
-    """Week-9 two-stage allocation on a fixed placement (service warm start)."""
+    """Week-9 two-stage allocation on a fixed placement (service warm start).
+
+    ``order_priority`` raises the objective penalty for leaving an order
+    unmet/late; it does not reserve stock or guarantee service.
+    """
     fulfillment = instance.fulfillment
     label = name or str(fulfillment.meta.get("stock_plan", "placement"))
     deadlines = dict(pick_deadlines or DEFAULT_PICK_DEADLINES)
@@ -427,6 +432,7 @@ def capacity_aware_allocation(
         late_penalty_per_unit_day=fulfillment.late_penalty_per_unit_day
         * service_late_weight,
         otif_bonus=service_otif_bonus,
+        order_priority=order_priority,
         name=f"{label} · 服务优先",
     )
     return allocate_milp(
@@ -439,6 +445,7 @@ def capacity_aware_allocation(
         otif_bonus=service_otif_bonus,
         pick_deadlines=deadlines,
         pick_overload_penalty=pick_overload_penalty,
+        order_priority=order_priority,
         hint=service,
         name=f"{label} · 拣选容量感知",
     )

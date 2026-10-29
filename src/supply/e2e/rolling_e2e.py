@@ -74,6 +74,7 @@ def prepare_flow(
     order_value: Optional[np.ndarray] = None,
     upgrade_value_threshold: Optional[float] = None,
     upgrade_to_days: Optional[int] = None,
+    allocation_priority: Optional[np.ndarray] = None,
 ) -> PreparedFlow:
     """Allocate each day's open lines and keep the sub-instance for dispatch.
 
@@ -96,6 +97,11 @@ def prepare_flow(
     even when ATP returns a longer promise. This is deliberately an
     over-promise stress test: the earlier deadline makes the order compete for
     stock/picking earlier, but does not guarantee that the inventory exists.
+
+    ``allocation_priority`` optionally multiplies each order's unmet/late
+    penalty inside the daily allocation. This is real stock prioritisation, not
+    a promise relabel: a high-value order is more expensive to leave unmet, so
+    the solver gives it scarce stock first. It still cannot create inventory.
     """
     if policy not in E2E_ROLLING_POLICIES:
         raise ValueError(f"未知端到端补货策略: {policy}")
@@ -111,6 +117,12 @@ def prepare_flow(
     if upgrade_value_threshold is not None:
         if upgrade_to_days is None or upgrade_to_days < 2 or upgrade_to_days > 5:
             raise ValueError("承诺升级必须给出 2..5 天")
+    if allocation_priority is not None:
+        priority = np.asarray(allocation_priority, dtype=float)
+        if priority.shape != (instance.n_orders,):
+            raise ValueError("allocation_priority 必须与订单数一致")
+        if not np.all(np.isfinite(priority)) or np.any(priority <= 0):
+            raise ValueError("allocation_priority 必须为有限正数")
     fulfillment = instance.fulfillment
     days = min(FLOW_DAYS, int(order_day.max()) + 1 if order_day.size else 0)
     remaining = fulfillment.line_qty.copy()
@@ -181,6 +193,11 @@ def prepare_flow(
             milp_time=milp_time,
             workers=workers,
             pick_deadlines=ROLLING_DEADLINES,
+            order_priority=(
+                None
+                if allocation_priority is None
+                else np.asarray(allocation_priority, dtype=float)[open_orders]
+            ),
             name=f"Week 20 · {policy} · day {day}",
         )
         for position, line in enumerate(lines):

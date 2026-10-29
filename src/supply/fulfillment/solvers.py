@@ -290,6 +290,7 @@ def allocate_milp(
     pick_minutes_per_unit: float = PICK_MINUTES_PER_UNIT,
     pick_minutes_per_shipment: float = PICK_MINUTES_PER_SHIPMENT,
     pick_overload_penalty: float = 0.0,
+    order_priority: Optional[np.ndarray] = None,
     hint: Optional["FulfillmentResult"] = None,
 ) -> FulfillmentResult:
     """CP-SAT allocation with inventory, throughput, and split constraints.
@@ -298,6 +299,12 @@ def allocate_milp(
     costs and OTIF always use the instance's base penalty, so service-weighted
     runs stay comparable with the base scenarios. ``otif_bonus`` adds a
     per-order reward for being fully shipped on time.
+
+    ``order_priority`` optionally multiplies each order's unmet and late
+    penalties in the objective (not the reported costs). A high-value order
+    with priority 3 is three times as expensive to leave unmet or late, so
+    scarce stock moves toward it. The weights do not create inventory; they
+    only change who gets it.
 
     ``pick_deadlines`` activates the pick-capacity proxy: for each DC, the
     pick-minutes of all shipments whose promise (in days) is at most ``days``
@@ -316,6 +323,13 @@ def allocate_milp(
         raise ValueError("workers 必须 >= 1")
     if otif_bonus < 0:
         raise ValueError("otif_bonus 不能为负")
+    priority = None
+    if order_priority is not None:
+        priority = np.asarray(order_priority, dtype=float)
+        if priority.shape != (instance.n_orders,):
+            raise ValueError("order_priority 必须与订单数一致")
+        if not np.all(np.isfinite(priority)) or np.any(priority <= 0):
+            raise ValueError("order_priority 必须为有限正数")
     late_penalty = (
         instance.late_penalty_per_unit_day
         if late_penalty_per_unit_day is None
@@ -420,6 +434,7 @@ def allocate_milp(
     terms = []
     for line in lines:
         order = int(instance.line_order[line])
+        weight = float(priority[order]) if priority is not None else 1.0
         for dc in dcs:
             coefficient = float(instance.ship_cost[dc, order])
             late_days = max(
@@ -427,7 +442,7 @@ def allocate_milp(
                 int(instance.transit_days[dc, order])
                 - int(instance.promise_days[order]),
             )
-            coefficient += late_days * late_penalty
+            coefficient += late_days * late_penalty * weight
             terms.append(
                 max(1, int(round(coefficient * COST_SCALE))) * x[line, dc]
             )
@@ -438,8 +453,17 @@ def allocate_milp(
                 * shipment[order, dc]
             )
     for line in lines:
+        order = int(instance.line_order[line])
+        weight = float(priority[order]) if priority is not None else 1.0
         terms.append(
-            max(1, int(round(instance.unmet_penalty_per_unit * COST_SCALE)))
+            max(
+                1,
+                int(
+                    round(
+                        instance.unmet_penalty_per_unit * weight * COST_SCALE
+                    )
+                ),
+            )
             * unmet[line]
         )
     flags: Dict[int, Any] = {}
@@ -464,7 +488,10 @@ def allocate_milp(
             )
             model.Add(unmet_expression + demand * flag <= demand)
             model.Add(late_expression + demand * flag <= demand)
-            terms.append(-int(round(otif_bonus * COST_SCALE)) * flag)
+            weight = float(priority[order]) if priority is not None else 1.0
+            terms.append(
+                -int(round(otif_bonus * weight * COST_SCALE)) * flag
+            )
     model.Minimize(sum(terms) + sum(pick_terms))
 
     if hint is not None:
