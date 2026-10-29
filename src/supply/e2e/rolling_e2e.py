@@ -264,6 +264,7 @@ def run_flow_e2e(
     segments: Optional[Dict[str, np.ndarray]] = None,
     priority_orders: Optional[Sequence[int]] = None,
     pick_priority_orders: Optional[Sequence[int]] = None,
+    arrival_priority_orders: Optional[Sequence[int]] = None,
 ) -> pd.DataFrame:
     """Run one seed through every day and score absolute delivery dates.
 
@@ -315,6 +316,11 @@ def run_flow_e2e(
             if pick_priority_orders is None
             else {int(order) for order in pick_priority_orders}
         )
+        wanted_arrival_priority = (
+            None
+            if arrival_priority_orders is None
+            else {int(order) for order in arrival_priority_orders}
+        )
         for prepared in flow.days:
             if wanted_priority is None:
                 day_priority = None
@@ -332,6 +338,14 @@ def run_flow_e2e(
                     for local, order in enumerate(prepared.open_orders)
                     if int(order) in wanted_pick_priority
                 ]
+            if wanted_arrival_priority is None:
+                day_arrival_priority = None
+            else:
+                day_arrival_priority = [
+                    local
+                    for local, order in enumerate(prepared.open_orders)
+                    if int(order) in wanted_arrival_priority
+                ]
             dispatch_row, outcome = run_dispatch_cell(
                 _dispatch_instance(prepared),
                 prepared.allocation,
@@ -341,6 +355,7 @@ def run_flow_e2e(
                 scenario="milp_load",
                 priority_orders=day_priority,
                 pick_priority_orders=day_pick_priority,
+                arrival_priority_orders=day_arrival_priority,
             )
             if outcome is None:
                 continue

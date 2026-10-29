@@ -667,6 +667,7 @@ def run_dispatch_cell(
     keep_cutoffs: bool = False,
     priority_orders: Optional[Sequence[int]] = None,
     pick_priority_orders: Optional[Sequence[int]] = None,
+    arrival_priority_orders: Optional[Sequence[int]] = None,
 ) -> Tuple[Dict[str, Any], Optional[DispatchOutcome]]:
     """Run one cell for one seed and return a tidy row plus the dock outcome.
 
@@ -679,6 +680,7 @@ def run_dispatch_cell(
         int(seed),
         arrival_curve=arrivals.curve_for(int(seed)),
         keep_cutoffs=keep_cutoffs,
+        priority_orders=arrival_priority_orders,
     )
     pick_result = run_pick_layer(
         shifted,

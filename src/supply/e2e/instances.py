@@ -16,7 +16,7 @@ and the promise-to-cutoff mapping are an explicit assumption layer.
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
-from typing import Any, Dict, Iterable, Mapping, Optional
+from typing import Any, Dict, Iterable, Mapping, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -377,8 +377,14 @@ def rebuild_arrivals(
     arrival_profile: Optional[Mapping[str, float]] = None,
     arrival_curve: Optional[ArrivalCurve | Mapping[str, Any]] = None,
     keep_cutoffs: bool = False,
+    priority_orders: Optional[Sequence[int]] = None,
 ) -> E2EInstance:
-    """Replace only the arrival draw, keeping stock, slots, cutoffs and layout."""
+    """Replace only the arrival draw, keeping stock, slots, cutoffs and layout.
+
+    ``priority_orders`` is a physical inbound expedite: those orders are marked
+    onsite at minute zero instead of receiving the sampled arrival time. It
+    changes arrival only; stock, promises and pick capacity stay fixed.
+    """
     plan = _pick_plan(
         instance.fulfillment,
         instance.pick.tier_onsite,
@@ -393,6 +399,13 @@ def rebuild_arrivals(
             tier_of=dict(instance.pick.tier_of),
             cutoff_of=dict(instance.pick.cutoff_of),
         )
+    if priority_orders is not None:
+        wanted = {int(order) for order in priority_orders}
+        arrival_of = dict(plan.arrival_of)
+        for order in wanted:
+            if 0 <= order < instance.n_orders:
+                arrival_of[instance.order_ids[int(order)]] = 0.0
+        plan = replace(plan, arrival_of=arrival_of)
     meta = dict(instance.meta)
     meta.update(
         {
