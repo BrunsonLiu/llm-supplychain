@@ -9,7 +9,7 @@ fails that order rather than rolling into a later day.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -70,6 +70,8 @@ def prepare_flow(
     safety: float = 0.10,
     quote_policy: str = "static",
     accept_cutoff_days: int = 5,
+    accept_value_threshold: Optional[float] = None,
+    order_value: Optional[np.ndarray] = None,
 ) -> PreparedFlow:
     """Allocate each day's open lines and keep the sub-instance for dispatch.
 
@@ -81,6 +83,11 @@ def prepare_flow(
     longer than the cutoff. Rejected lines are removed from allocation and
     stock is not consumed; they remain in the demand denominator and are
     reported separately so acceptance cannot look free.
+
+    ``accept_value_threshold`` optionally overrides the cutoff for high-value
+    orders: a long-promise order is kept when its ``order_value`` is at least
+    this threshold. This is a revenue-protection rule, not a margin rule;
+    ``order_value`` must align with ``instance.fulfillment.order_ids``.
     """
     if policy not in E2E_ROLLING_POLICIES:
         raise ValueError(f"未知端到端补货策略: {policy}")
@@ -88,6 +95,11 @@ def prepare_flow(
         raise ValueError(f"未知承诺策略: {quote_policy}")
     if accept_cutoff_days < 2 or accept_cutoff_days > 5:
         raise ValueError("接单截止承诺必须在 2..5 天")
+    if accept_value_threshold is not None:
+        if order_value is None:
+            raise ValueError("价值阈值需要 order_value")
+        if np.asarray(order_value).shape != (instance.n_orders,):
+            raise ValueError("order_value 必须与订单数一致")
     fulfillment = instance.fulfillment
     days = min(FLOW_DAYS, int(order_day.max()) + 1 if order_day.size else 0)
     remaining = fulfillment.line_qty.copy()
@@ -116,7 +128,11 @@ def prepare_flow(
             quotes[open_orders[new_mask]] = candidates[new_mask]
         if accept_cutoff_days < 5 and bool(new_mask.any()):
             new_orders = open_orders[new_mask]
-            rejected = new_orders[quotes[new_orders] > accept_cutoff_days]
+            long_promise = quotes[new_orders] > accept_cutoff_days
+            if accept_value_threshold is not None:
+                values = np.asarray(order_value, dtype=float)[new_orders]
+                long_promise &= values < float(accept_value_threshold)
+            rejected = new_orders[long_promise]
             if rejected.size:
                 accepted[rejected] = False
                 for order in rejected:
