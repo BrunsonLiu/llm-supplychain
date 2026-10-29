@@ -201,6 +201,11 @@ from .value_acceptance_report import (
     summarize_value_acceptance,
     write_value_acceptance_report,
 )
+from .value_frontier_report import (
+    build_value_frontier_report,
+    summarize_value_frontier,
+    write_value_frontier_report,
+)
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -379,6 +384,9 @@ __all__ = [
     "build_value_acceptance_report",
     "summarize_value_acceptance",
     "write_value_acceptance_report",
+    "build_value_frontier_report",
+    "summarize_value_frontier",
+    "write_value_frontier_report",
     "run_flow_e2e",
     "run_single_week_e2e",
     "summarize_flow",
