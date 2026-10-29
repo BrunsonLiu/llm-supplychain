@@ -241,6 +241,11 @@ from .stock_report import (
     summarize_stock,
     write_stock_report,
 )
+from .dc_capacity_report import (
+    build_dc_capacity_report,
+    summarize_dc_capacity,
+    write_dc_capacity_report,
+)
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -443,6 +448,9 @@ __all__ = [
     "build_stock_report",
     "summarize_stock",
     "write_stock_report",
+    "build_dc_capacity_report",
+    "summarize_dc_capacity",
+    "write_dc_capacity_report",
     "run_flow_e2e",
     "run_single_week_e2e",
     "summarize_flow",
