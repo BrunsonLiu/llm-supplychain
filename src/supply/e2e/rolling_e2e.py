@@ -303,6 +303,8 @@ def run_flow_e2e(
         shipped_tickets = 0
         roll_tickets = 0
         wait_minutes = 0.0
+        labor_minutes = 0.0
+        pick_makespan_minutes = 0.0
         wanted_priority = (
             None
             if priority_orders is None
@@ -330,7 +332,7 @@ def run_flow_e2e(
                     for local, order in enumerate(prepared.open_orders)
                     if int(order) in wanted_pick_priority
                 ]
-            _, outcome = run_dispatch_cell(
+            dispatch_row, outcome = run_dispatch_cell(
                 _dispatch_instance(prepared),
                 prepared.allocation,
                 cell,
@@ -353,6 +355,12 @@ def run_flow_e2e(
             shipped_tickets += tickets
             roll_tickets += int(metrics.get("roll_tickets", 0.0))
             wait_minutes += float(metrics.get("mean_wait_minutes", 0.0)) * tickets
+            labor_minutes += float(
+                dispatch_row.get("pick_labor_minutes", 0.0)
+            )
+            pick_makespan_minutes += float(
+                dispatch_row.get("pick_makespan", 0.0)
+            )
             mapping = {
                 local: int(order)
                 for local, order in enumerate(prepared.open_orders)
@@ -388,6 +396,7 @@ def run_flow_e2e(
         row = {
             "policy": flow.policy,
             "seed": int(seed),
+            "pickers_per_dc": int(cell.pickers_per_dc or 0),
             "e2e_otif_rate": float(on_time.mean()) if base.n_orders else 0.0,
             "static_sla_otif_rate": (
                 float(static_on_time.mean()) if base.n_orders else 0.0
@@ -437,6 +446,8 @@ def run_flow_e2e(
             "dispatch_cost": dispatch_cost,
             "holding_cost": holding_cost,
             "dock_cost": dispatch_cost + holding_cost,
+            "labor_minutes": labor_minutes,
+            "pick_makespan_minutes": pick_makespan_minutes,
             "shipped_tickets": shipped_tickets,
             "orders_per_departure": (
                 shipped_tickets / departures if departures else 0.0
