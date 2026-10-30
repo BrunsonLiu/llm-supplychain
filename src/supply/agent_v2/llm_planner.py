@@ -246,6 +246,42 @@ class LLMPlanner:
             f"{self.max_attempts} 次尝试后仍无合法计划；最后错误：{last_error}"
         )
 
+    def replan(self, context: Mapping[str, Any]) -> Plan:
+        """Repair a failed plan from the runtime's verification context.
+
+        The model sees the original plan, compact trace, facts already obtained
+        and the verifier failures.  It re-emits ``submit_plan``; the same
+        allowlist/schema checks apply.  A raised ``PlannerError`` is caught by
+        the runtime and reported as ``replan_error``.
+        """
+        plan = context.get("plan")
+        trace = context.get("trace", ())
+        facts = context.get("facts", {})
+        verification = context.get("verification")
+        trace_lines = []
+        for event in trace:
+            compact = event.compact() if hasattr(event, "compact") else event
+            trace_lines.append(json.dumps(compact, ensure_ascii=False, default=str))
+        reasons = (
+            "; ".join(verification.failures)
+            if verification is not None and getattr(verification, "failures", None)
+            else "验证未通过"
+        )
+        context_text = "\n".join(
+            [
+                "原计划（可能已部分执行）："
+                + (plan.describe() if hasattr(plan, "describe") else str(plan)),
+                f"verifier 失败原因：{reasons}",
+                "已执行 trace：",
+                *trace_lines,
+                "已获得事实："
+                + json.dumps(facts, ensure_ascii=False, default=str)[:4000],
+                "请只提交修复后的 submit_plan；不要重复已经成功的取数步骤，"
+                "不要编造事实，失败步骤要么修正参数，要么用合法 fallback 工具。",
+            ]
+        )
+        return self.plan(str(context.get("question", "")), context=context_text)
+
 
 class OpenAIPlannerClient:
     """Optional adapter for an OpenAI-compatible chat.completions endpoint.

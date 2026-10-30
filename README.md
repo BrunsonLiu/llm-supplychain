@@ -19,7 +19,7 @@
 - **LLM / Planner** 负责把业务问题拆成带依赖的工具调用 DAG；
 - **OR-Tools / LightGBM / 实验诊断工具** 负责真正的求解与取数；
 - **Verifier** 负责检查步骤是否成功、数字是否与事实一致、引用是否存在、步数是否超预算；
-- **Replan** 在验证失败时执行显式 fallback，而不是让模型“再说一遍”。
+- **Replan** 在验证失败时执行显式模型重规划或脚本 fallback，而不是让模型“再说一遍”。
 
 ```mermaid
 flowchart LR
@@ -72,7 +72,9 @@ checker = Verifier(required_steps=(plan.steps[-1].id,), min_facts=1)
 run = AgentRuntime(registry, checker).run(plan)
 ```
 
-模型只允许调用 `submit_plan`，提交带 `id/tool/args/depends_on` 的 DAG；planner 在进入 runtime 前逐项校验 allowlist、JSON Schema、依赖和环。非法计划会带结构化错误回传并重试（`max_attempts`），不会让模型直接执行工具或改数字。测试用 fake client 覆盖“合法 DAG / 非法工具重试 / 缺 submit_plan / OpenAI adapter”，全部离线、无网络。模型卡见 [`docs/model_cards/llm_planner.md`](docs/model_cards/llm_planner.md)。
+模型只允许调用 `submit_plan`，提交带 `id/tool/args/depends_on` 的 DAG；planner 在进入 runtime 前逐项校验 allowlist、JSON Schema、依赖和环。非法计划会带结构化错误回传并重试（`max_attempts`），不会让模型直接执行工具或改数字。测试用 fake client 覆盖“合法 DAG / 非法工具重试 / 缺 submit_plan / 模型 replan / 模型失败回退 / OpenAI adapter”，全部离线、无网络。模型卡见 [`docs/model_cards/llm_planner.md`](docs/model_cards/llm_planner.md)。
+
+**模型驱动 Replan**：`AgentRuntime(..., replanner=planner.replan)` 在 verifier 失败时把原计划、compact trace、已得事实和失败原因交给模型，要求重新提交 `submit_plan`；模型抛错或超次数时退回脚本 `fallback_plan`。`run.summary()` 的 `replanned_by` 记录 `model` 或 `fallback`，`replan_error` 保留模型修复失败原因，不会把“兜底成功”伪装成“模型修好了”。
 
 ```bash
 # Agent v2 30 任务基准（离线、确定性）
@@ -159,7 +161,7 @@ flowchart LR
 
 | 模块 | 能力 |
 |---|---|
-| Agent v2 | Plan DAG + 工具契约 + Verifier + 显式 Replan；5 个决策工具（真实 benchmark 诊断/对比/汇总 + OR-Tools SCIP 分配 MILP）；`submit_plan` function-calling planner（`llm_planner.py`，fake-client 测试，未跑真实模型）；30 任务 `raw`/`verified`/`adaptive` 消融；结构化 trace 与假成功/恢复指标 |
+| Agent v2 | Plan DAG + 工具契约 + Verifier + 显式 Replan；5 个决策工具（真实 benchmark 诊断/对比/汇总 + OR-Tools SCIP 分配 MILP）；`submit_plan` function-calling planner（`llm_planner.py`，fake-client 测试，未跑真实模型）；verifier 失败可交给模型 replan，失败再退回脚本 fallback；30 任务 `raw`/`verified`/`adaptive` 消融；结构化 trace 与假成功/恢复指标 |
 | 数据 | 模拟数据生成 / CSV·JSON 导入 / SQLite 持久化；Online Retail II 下载、清洗、ABC Top-N 周度面板 |
 | 预测 | 滚动回测（WMAPE/Bias/RMSE/RMSSE）+ 6 个经典基线 + 全局 LightGBM 直接多步预测；SKU 级与仓库总量双口径 |
 | 库存 | 显式假设层 + SKU 经济参数（EOQ/MOQ/安全库存）；（s,Q）/（R,S）/（s,S）三种策略的周度仿真、replay 与 300 路径 Monte Carlo（缺货率/周转/成本） |

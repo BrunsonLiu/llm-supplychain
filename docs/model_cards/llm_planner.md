@@ -11,8 +11,10 @@ Agent v2 的 runtime 已经能执行带依赖的 `Plan` DAG，但 30 任务基�
   → 非法计划带错误回传，最多 max_attempts 次
   → AgentRuntime 执行 Plan DAG
   → Verifier 检查步骤、数字、引用、预算
-  → 通过则回答；失败则显式 fallback / Replan
+  → 通过则回答；失败则模型 replan 或显式 fallback
 ```
+
+模型驱动 replan 的入口是 `AgentRuntime(..., replanner=planner.replan)`。runtime 把原计划、compact trace、已得事实和 verifier failures 放进 context；模型重新提交 `submit_plan`。如果模型连续失败/超时，runtime 才使用脚本 `fallback_plan`，并在 `AgentRun.summary()` 中区分 `replanned_by="model"` 与 `"fallback"`，同时保留 `replan_error`。
 
 模型不执行工具、不做算术、不写数据库。所有数字来自工具，所有工具调用经过 `ToolRegistry` 的 allowlist 和参数校验。
 
@@ -64,7 +66,8 @@ OpenAI function calling 默认可以一次返回多个业务工具调用，但�
 | 工具不在 allowlist | 拒绝并回传可用工具名 |
 | 参数枚举/类型错 | 拒绝并回传 schema 错误 |
 | 依赖不存在 / 成环 | 拒绝；不会执行半截计划 |
-| 计划合法但工具运行失败 | runtime trace 标记；verifier 判 failed；由 fallback plan 修复 |
+| 计划合法但工具运行失败 | runtime trace 标记；verifier 判 failed；模型 replan 或 fallback plan 修复 |
+| replan 模型超时/抛错 | 记录 `replan_error`，退回脚本 fallback；不伪装成模型修复 |
 | 模型编造数字 | verifier 用 `require_facts` 对照工具事实；不通过 |
 
 ## 5. 真实模型评测边界
@@ -72,8 +75,10 @@ OpenAI function calling 默认可以一次返回多个业务工具调用，但�
 **本仓库没有跑真实 LLM。** `LLMPlanner` 与 `OpenAIPlannerClient` 已实现，测试使用 fake client，覆盖：
 
 - 合法 `submit_plan` 被 runtime 执行并通过 verifier；
-- 非法工具被拒绝后重试成功；
+- 非法工具 / 非法 JSON 被拒绝后重试成功；
 - 缺少 `submit_plan` 被拒绝；
+- verifier 失败后模型 replan 成功，`replanned_by="model"`；
+- 模型 replan 抛错时显式回退到脚本 fallback，保留 `replan_error`；
 - OpenAI adapter 只解析 `tool_calls`，不访问网络。
 
 真实评测需要 `OPENAI_API_KEY`（或兼容端点），并且必须单独报告：

@@ -14,6 +14,7 @@ from .registry import ToolRegistry
 from .verifier import Verifier
 
 AnswerBuilder = Callable[[Mapping[str, Any], Sequence[TraceEvent]], str]
+Replanner = Callable[[Mapping[str, Any]], Optional[Plan]]
 
 
 def default_answer(facts: Mapping[str, Any], trace: Sequence[TraceEvent]) -> str:
@@ -110,6 +111,8 @@ class AgentRuntime:
         plan: Plan,
         fallback_plan: Optional[Plan] = None,
         verifier: Optional[Verifier] = None,
+        replanner: Optional[Replanner] = None,
+        question: str = "",
     ) -> AgentRun:
         started = time.perf_counter()
         trace: list[TraceEvent] = []
@@ -122,14 +125,44 @@ class AgentRuntime:
             else Verification(ok=True, checked_facts=0)
         )
         replanned = False
-        if not verification.ok and fallback_plan is not None:
-            replanned = True
-            self._execute(fallback_plan, trace, facts)
-            verification = (
-                checker.verify(trace, facts)
-                if checker is not None
-                else Verification(ok=True, checked_facts=0)
-            )
+        replanned_by = ""
+        replan_error = ""
+        effective_plan = plan
+        if not verification.ok:
+            repaired: Optional[Plan] = None
+            if replanner is not None:
+                try:
+                    repaired = replanner(
+                        {
+                            "question": question or plan.goal,
+                            "plan": plan,
+                            "trace": list(trace),
+                            "facts": dict(facts),
+                            "verification": verification,
+                        }
+                    )
+                except Exception as exc:  # noqa: BLE001 - repair errors are data
+                    replan_error = f"{type(exc).__name__}: {exc}"
+            if repaired is not None:
+                replanned = True
+                replanned_by = "model"
+                effective_plan = repaired
+                self._execute(repaired, trace, facts)
+                verification = (
+                    checker.verify(trace, facts)
+                    if checker is not None
+                    else Verification(ok=True, checked_facts=0)
+                )
+            elif fallback_plan is not None:
+                replanned = True
+                replanned_by = "fallback"
+                effective_plan = fallback_plan
+                self._execute(fallback_plan, trace, facts)
+                verification = (
+                    checker.verify(trace, facts)
+                    if checker is not None
+                    else Verification(ok=True, checked_facts=0)
+                )
         answer = self.answer_builder(facts, trace)
         failures = [event for event in trace if event.status in {"blocked", "error"}]
         budget_exceeded = any(event.tool == "__budget__" for event in trace)
@@ -148,6 +181,8 @@ class AgentRuntime:
             trace=trace,
             verification=verification,
             replanned=replanned,
-            plan=fallback_plan if replanned else plan,
+            replanned_by=replanned_by,
+            replan_error=replan_error,
+            plan=effective_plan,
             elapsed_ms=(time.perf_counter() - started) * 1000,
         )

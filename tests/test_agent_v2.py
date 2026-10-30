@@ -127,6 +127,7 @@ def test_adaptive_fallback_repairs_failed_step():
     )
     run = AgentRuntime(registry, checker).run(plan, fallback_plan=fallback)
     assert run.replanned, run.summary()
+    assert run.replanned_by == "fallback", run.summary()
     assert run.status == "success", run.summary()
     assert run.facts["optimal_cost"] == 880.0
     assert any(event.status == "error" for event in run.trace)
@@ -272,6 +273,62 @@ def test_llm_planner_rejects_missing_submit_plan():
     print("[OK] 缺少 submit_plan 与 schema 必填项均被拒绝")
 
 
+def test_model_replanner_repairs_verifier_failure():
+    registry = build_registry()
+    initial = Plan((PlanStep("list", "list_experiments", {}),), goal="诊断")
+    checker = Verifier(required_steps=("diag",))
+    client = _ScriptedClient(
+        [
+            _plan_response(
+                [
+                    {
+                        "id": "diag",
+                        "tool": "diagnose_service_gap",
+                        "args": {"constraint": "stock"},
+                    }
+                ]
+            )
+        ]
+    )
+    planner = LLMPlanner(registry, client)
+    run = AgentRuntime(registry, checker).run(
+        initial,
+        replanner=planner.replan,
+        question="库存是不是瓶颈？",
+    )
+    assert run.replanned, run.summary()
+    assert run.replanned_by == "model", run.summary()
+    assert run.status == "success", run.summary()
+    assert [event.step_id for event in run.trace] == ["list", "diag"]
+    assert "verifier 失败原因" in client.calls[0][0][-1]["content"]
+    print("[OK] verifier 失败后模型重规划并恢复")
+
+
+def test_model_replanner_error_falls_back_explicitly():
+    registry = build_registry()
+    initial = Plan((PlanStep("list", "list_experiments", {}),), goal="诊断")
+    fallback = Plan(
+        (PlanStep("diag", "diagnose_service_gap", {"constraint": "stock"}),),
+        goal="诊断",
+    )
+    checker = Verifier(required_steps=("diag",))
+
+    def broken(_context):
+        raise RuntimeError("model endpoint down")
+
+    run = AgentRuntime(registry, checker).run(
+        initial,
+        fallback_plan=fallback,
+        replanner=broken,
+        question="库存是不是瓶颈？",
+    )
+    assert run.replanned
+    assert run.replanned_by == "fallback"
+    assert "model endpoint down" in run.replan_error
+    assert run.status == "success", run.summary()
+    print("[OK] 模型重规划抛错时显式回退到脚本 fallback")
+
+
 def test_openai_adapter_normalizes_tool_call_without_network():
     class _Function:
         name = "submit_plan"
@@ -327,5 +384,7 @@ if __name__ == "__main__":
     test_llm_planner_rejects_then_repairs_bad_tool()
     test_llm_planner_retries_malformed_json()
     test_llm_planner_rejects_missing_submit_plan()
+    test_model_replanner_repairs_verifier_failure()
+    test_model_replanner_error_falls_back_explicitly()
     test_openai_adapter_normalizes_tool_call_without_network()
     print("\nAgent v2 tests passed")

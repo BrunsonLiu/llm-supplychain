@@ -142,6 +142,8 @@ class AgentRun:
     trace: List[TraceEvent]
     verification: Verification
     replanned: bool = False
+    replanned_by: str = ""
+    replan_error: str = ""
     plan: Optional[Plan] = None
     elapsed_ms: float = 0.0
 
@@ -153,6 +155,8 @@ class AgentRun:
             "verified": self.verification.ok,
             "verification_failures": list(self.verification.failures),
             "replanned": self.replanned,
+            "replanned_by": self.replanned_by,
+            "replan_error": self.replan_error,
             "steps": len(self.trace),
             "elapsed_ms": round(self.elapsed_ms, 3),
             "plan": self.plan.describe() if self.plan else "",
