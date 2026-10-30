@@ -401,6 +401,82 @@ def test_react_agent_budget_is_explicit():
     print("[OK] ReAct 步数预算显式阻断")
 
 
+def test_planner_guardrail_matrix_never_reaches_handler():
+    registry = build_registry()
+    bad_payloads = [
+        {"steps": []},
+        {"steps": "not-a-list"},
+        {"steps": [{"id": "a", "tool": "drop_database", "args": {}}]},
+        {
+            "steps": [
+                {
+                    "id": "a",
+                    "tool": "diagnose_service_gap",
+                    "args": {"constraint": "not-an-experiment"},
+                }
+            ]
+        },
+        {
+            "steps": [
+                {
+                    "id": "a",
+                    "tool": "list_experiments",
+                    "args": {"unexpected": 1},
+                }
+            ]
+        },
+        {
+            "steps": [
+                {"id": "a", "tool": "list_experiments", "args": {}},
+                {"id": "a", "tool": "list_experiments", "args": {}},
+            ]
+        },
+        {
+            "steps": [
+                {
+                    "id": "a",
+                    "tool": "list_experiments",
+                    "args": {},
+                    "depends_on": ["missing"],
+                }
+            ]
+        },
+        {
+            "steps": [
+                {
+                    "id": "a",
+                    "tool": "list_experiments",
+                    "args": {},
+                    "depends_on": ["a"],
+                }
+            ]
+        },
+        {
+            "steps": [
+                {"id": f"s{i}", "tool": "list_experiments", "args": {}}
+                for i in range(13)
+            ]
+        },
+        {"goal": 42, "steps": [{"id": "a", "tool": "list_experiments", "args": {}}]},
+    ]
+    for payload in bad_payloads:
+        client = _ScriptedClient(
+            [
+                PlannerResponse(
+                    tool_calls=(ToolCall("submit_plan", payload),),
+                )
+            ]
+        )
+        try:
+            LLMPlanner(registry, client, max_attempts=1).plan("诊断")
+        except PlannerError:
+            pass
+        else:
+            raise AssertionError(f"非法计划没有被拒绝: {payload!r}")
+    assert registry.calls() == {}
+    print("[OK] planner 防护矩阵全部在 handler 前拒绝")
+
+
 def test_openai_adapter_normalizes_tool_call_without_network():
     class _Function:
         name = "submit_plan"
@@ -467,5 +543,6 @@ if __name__ == "__main__":
     test_react_agent_observes_before_finishing()
     test_react_agent_recovers_from_blocked_tool()
     test_react_agent_budget_is_explicit()
+    test_planner_guardrail_matrix_never_reaches_handler()
     test_openai_adapter_normalizes_tool_call_without_network()
     print("\nAgent v2 tests passed")

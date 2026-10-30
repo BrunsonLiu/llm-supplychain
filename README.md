@@ -87,12 +87,13 @@ PYTHONPATH=src;. python scripts/run_agent_v2_benchmark.py
 PYTHONPATH=src;. python tests/test_agent_v2.py
 ```
 
-技术细节见 4 份 model card：
+技术细节见 5 份 model card：
 
 - [分单 MILP：变量、约束、目标、复杂度、gap](docs/model_cards/allocation_milp.md)
 - [滚动端到端仿真：事件流、确定性、指标、边界](docs/model_cards/rolling_e2e.md)
 - [约束诊断：估计量、10 周实验、null result、效度威胁](docs/model_cards/binding_constraint.md)
 - [LLM planner：`submit_plan` 契约、拒绝/重试、真实评测边界](docs/model_cards/llm_planner.md)
+- [Agent runtime：执行语义、不变量、复杂度、失败分类](docs/model_cards/agent_runtime.md)
 
 
 ## 架构一览
@@ -2637,7 +2638,7 @@ PYTHONPATH=src;. python scripts/run_e2e_placement.py
 │   ├── run_retrieval_eval.py # 15 条查询的 Recall@k/MRR 评测 CLI
 │   └── demo.py               # 一键演示
 ├── benchmarks/               # 回测/库存/网络/履约/波次/排程/端到端/稳健性/布点/回写/联合/随机布点/经验到达/发车/门位/报价/滚动补货/滚动端到端/滚动门位/滚动报价/承诺前沿/接单/承诺×门位/同日集批/收入口径接单/价值分层接单/价值阈值前沿/高价值承诺升级/高价值分单优先级/高价值发车插队/高价值优先拣选/第二拣货员/到达加急/库存上界/DC 产能上界/承运商时效/局部库存缓冲/固定总量布点/Agent v2/Agent/检索基准产物
-├── docs/model_cards/         # 4 份技术 model card（分配 MILP / 滚动 E2E / 约束诊断 / LLM planner）
+├── docs/model_cards/         # 5 份技术 model card（分配 MILP / 滚动 E2E / 约束诊断 / LLM planner / Agent runtime）
 ├── config/config.yaml        # 配置（默认 mock，密钥走环境变量）
 ├── data/
 │   ├── raw/                  # 原始 zip/xlsx（gitignored）
