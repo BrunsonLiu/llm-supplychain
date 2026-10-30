@@ -30,6 +30,7 @@ from supply.e2e import (  # noqa: E402
     history_access,
     order_day_map,
     oracle_access,
+    paired_differences,
     placement_milp,
     prepare_flow,
     run_flow_e2e,
@@ -415,6 +416,7 @@ def main() -> None:
             for day in range(int(order_day.max()) + 1)
         },
         "summary": summary.to_dict("records"),
+        "paired": paired_differences(frame),
         "rows": frame.to_dict("records"),
         "limitations": limitations,
     }

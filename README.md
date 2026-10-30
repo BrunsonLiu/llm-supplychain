@@ -213,7 +213,7 @@ flowchart LR
 | 固定总量布点 | 100% 总量、2× 产能、transit −1、ATP accept-all 同一批 400 单，只改 DC 占比（34/28/38、33/33/34、30/40/30、40/24/36）；目标 95.0%→97.5%（+2.5pp）、积压 170→127，但 baseline 重复运行 92.5/95.0/97.5（5pp），臂间差异不稳健、排名翻转 |
 | 布点 MILP | 同一固定总量，按“最佳准点 DC”的需求分区解每个 SKU 的 DC 库存，CP-SAT + 10%–60% 份额上下界；400 单 × 30 种子 × 3 重复，baseline 目标 97.5%、历史需求 96.7%（95.0–97.5%）、oracle 97.5%；oracle target 持平但非目标 −1.6pp、全量 −1.4pp，history 全量 +0.1pp 但 target −0.8pp、积压 392，均不是 Pareto 改进 |
 | 布点 MILP + 负荷 | 在布点 MILP 上加 stock-implied 拣选分钟 cap（0.052 min/件、600 min/DC、软超载）；load 臂把 DC 占比拉到 35/30/35、峰值 600 min，但目标 95.0%/95.8%、覆盖率 26.1%/37.7%，只换来积压 116/149；是目标↔积压 trade-off，不是 Pareto 改进 |
-| 布点 MILP + covered 负荷 | 同一 cap 改为只按覆盖需求 `Σ z·c` 计；历史臂只调拨 383 单位、峰值 600 min、target 96.7%/all 98.9%/积压 148，对 baseline 是 Pareto-looking（+0.1pp/all、积压 −5），但 target 范围仍 95.0–97.5，不能称稳健收益；oracle+covered 修好 oracle 自己但仍不如 baseline |
+| 布点 MILP + covered 负荷 | 同一 cap 改为只按覆盖需求 `Σ z·c` 计；历史臂只调拨 383 单位、峰值 600 min、target 96.7%/all 98.9%/积压 148，对 baseline 是 Pareto-looking，但配对 90 对 target 差值恰好 0、all +0.08pp ±0.06、积压 −5.3±1.7，运营上可忽略；oracle+covered 修好 oracle 自己但仍不如 baseline |
 | 报告 | 模板化决策报告 + 可选 LLM 执行摘要 + 预测/库存基准报告（Markdown/JSON/CSV） |
 | 知识库 | 文档加载 → 分节切分 → 嵌入 → 向量检索 → 标题加权重排 → RAG 问答（返回来源/标题/检索分数引用） |
 | Agent | 6 工具 Function Calling（JSON Schema）+ 原生 tool calling / 离线规则规划器 + allowlist / 参数校验 / 写操作开关 + 结构化引用 + 12 用例评测 |
@@ -2593,6 +2593,7 @@ L[d] = Σ_s z[d,s] · c
 2. **history + covered 是 Pareto-looking，但不是稳健收益。** 对 baseline：target 持平 96.7%、rest +0.1pp、all +0.1pp、积压 153→148；但 target 范围 95.0–97.5 与 baseline 重叠，收益远小于 5pp 噪声，不能写成“covered 负荷解决了布点问题”。
 3. **oracle + covered 修好了 oracle 自己，但仍不如 baseline。** 对 oracle：target +0.8pp、all +1.4pp、积压 180→131；对 baseline 仍是 rest −0.2pp、all −0.1pp。它说明“别把库存搬到拣选更忙的 DC”是对的，但先知需求本身没有把 fixed-total 布点变成 Pareto 杠杆。
 4. **负荷 basis 比 cap 数值更关键。** stock-implied 的 600 min 是保守代理；covered 的 600 min 只约束真实覆盖需求，因此同样容量下 target 不同。下一步应接真实波次/到达队列，而不是继续调 cap。
+5. **配对检验把“看起来赢了”缩小成“统计上可测、运营上可忽略”。** 同 `(repeat, seed)` 的 90 对：`history + covered` 的 **target 差值恰好 0.00pp**，全量 **+0.08pp ±0.06**，积压 **−5.3 ±1.7 单位**；`history` 原版 target +0.83pp，但全量差值 0.00、积压 **+153.7**。covered 的“改善”约等于 400 单里 0.3 单，不能当业务收益。
 
 完整报告：[`benchmarks/ACCESS_LOAD_COVERED_REPORT.md`](benchmarks/ACCESS_LOAD_COVERED_REPORT.md)。
 
@@ -2870,7 +2871,7 @@ PYTHONPATH=src;. python scripts/run_e2e_access.py --load-aware --load-basis cove
 - 用 **Week 40 的固定总量布点**回答 Week39 的遗留问题：100% 总量、2× 产能、transit −1、400 单全接，只改 DC 占比，最好 95.0%→97.5%（+2.5pp）、积压 170→127；但同一 baseline 重复运行 92.5/95.0/97.5（5pp 跨度），臂间差异在噪声内且排名翻转，固定总量重摆位不稳健。Week39 150% 仍是唯一到 100% 的臂，说明残差主要由总量而非摆位驱动；四个占比不是全可行域优化。
 - 用 **Week 41 的布点 MILP**把“4 个手选占比”升级为优化：在 100% 总量、2× 产能、transit −1、400 单 × 30 种子 × 3 次重复下，按“最佳准点 DC”的需求分区解每个 SKU 的 DC 库存，并加 10%–60% 份额约束。结果 **没有稳健收益**：baseline 目标 **97.5%**，历史需求 MILP **96.7%**（范围 95.0–97.5%），本周 oracle MILP **97.5%**；oracle 目标持平但非目标 −1.6pp、全量 −1.4pp，history 全量 +0.1pp 但目标 −0.8pp、积压 392，均不是 Pareto 改进。覆盖代理（44.9%/63.1%）与端到端 OTIF 不对齐，说明固定总量下布点不是主要杠杆。
 - 用 **Week 42 的 stock-implied 拣选负荷 cap** 检验“把货摆开”能否把 coverage 代理变成端到端收益：0.052 min/件、600 min/DC；load 臂把占比拉到 35/30/35、峰值 600 min、超载 0，但目标 OTIF 95.0%/95.8%、覆盖率 26.1%/37.7%，只把积压从 263→116 / 172→149；目标↔积压是真实 trade-off，仍没有 Pareto 赢家。
-- 用 **Week 43 的 covered 负荷** 修正 Week42 的保守代理：只按 `Σ z·c` 计覆盖需求的拣选分钟。历史臂只调拨 383 单位、峰值 600 min、target 96.7%/all 98.9%/积压 148，对 baseline 是 Pareto-looking（all +0.1pp、积压 153→148）；但 target 范围 95.0–97.5 与 baseline 重叠，不能称稳健收益。oracle+covered 把 oracle 自己从 96.7%/97.3%/180 修到 97.5%/98.7%/131，但仍低于 baseline 的 rest/all；说明 **负荷 basis 比 cap 数值更关键**，fixed-total 布点仍不是主杠杆。
+- 用 **Week 43 的 covered 负荷** 修正 Week42 的保守代理：只按 `Σ z·c` 计覆盖需求的拣选分钟。历史臂只调拨 383 单位、峰值 600 min、target 96.7%/all 98.9%/积压 148；配对 90 对 target 差值恰好 **0.00pp**、all **+0.08±0.06pp**、积压 **−5.3±1.7**，统计上可测但只相当于 400 单里 0.3 单，运营上可忽略。oracle+covered 把 oracle 自己从 96.7%/97.3%/180 修到 97.5%/98.7%/131，但仍低于 baseline 的 rest/all；说明 **负荷 basis 比 cap 数值更关键**，fixed-total 布点仍不是主杠杆。
 - 用 **Week 38 的承运商时效**继续拆残差：100% 库存、2× 产能、400 单全接，transit −1 天让目标 OTIF 92.5%→97.5%（+5.0pp），非目标保持 99.2%，平均交付日 4.52→3.55；−2 天目标仍 97.5%，饱和，残差约 1.7pp。三臂接受集相同；−2 是上界，不建模加急运费/容量。
 - 用 **Week 37 的 DC 产能上界**继续拆残差：100% 库存、400 单全接，产能 1×→2× 让目标 OTIF 92.5%→95.0%（+2.5pp），但 2× 与 10× 完全相同——产能在 2× 饱和，剩余 4.4pp 不是吞吐，而是 transit/promise/placement。三臂接受集相同；不建模扩产 capex。
 - 用 **Week 36 的库存上界**做正面对照：同一批 400 单全部接受，库存 85%→100% 把目标 OTIF 从 85.0% 拉到 95.0%（+10.0pp），非目标 +3.1pp，积压 509→157。库存不足才是前六周所有排序/人力/到达杠杆失败的原因；但 100% 是上界，不建模采购/持有成本，且仍有 3.9pp 残差（DC 分布/ATP/transit）。

@@ -34952,5 +34952,71 @@
     "oracle/history 的 target 只由当前实例的订单结构决定，不随 arrival seed 变化；种子只改变到达/拣选噪声。",
     "本次每个策略重复 3 次；报告同时给出 target 的 min–max，单次 2.5pp 不能当效应。"
   ],
-  "title": "Covered-demand pick-load placement (Week 43)"
+  "title": "Covered-demand pick-load placement (Week 43)",
+  "paired": [
+    {
+      "policy": "access_history",
+      "pairs": 90,
+      "target_accepted_otif_rate_mean": 0.00833333333333334,
+      "target_accepted_otif_rate_ci95": 0.0024484701840531494,
+      "target_accepted_otif_rate_wins": 30,
+      "target_accepted_otif_rate_losses": 0,
+      "target_accepted_otif_rate_ties": 60,
+      "e2e_otif_rate_mean": 0.0,
+      "e2e_otif_rate_ci95": 0.0011220299955265946,
+      "e2e_otif_rate_wins": 30,
+      "e2e_otif_rate_losses": 60,
+      "e2e_otif_rate_ties": 0,
+      "accepted_backlog_units_mean": 153.66666666666666,
+      "accepted_backlog_units_ci95": 21.258813291709984
+    },
+    {
+      "policy": "access_history_load_covered",
+      "pairs": 90,
+      "target_accepted_otif_rate_mean": 0.0,
+      "target_accepted_otif_rate_ci95": 0.0,
+      "target_accepted_otif_rate_wins": 0,
+      "target_accepted_otif_rate_losses": 0,
+      "target_accepted_otif_rate_ties": 90,
+      "e2e_otif_rate_mean": 0.0008333333333333156,
+      "e2e_otif_rate_ci95": 0.0006478043199561221,
+      "e2e_otif_rate_wins": 30,
+      "e2e_otif_rate_losses": 30,
+      "e2e_otif_rate_ties": 30,
+      "accepted_backlog_units_mean": -5.333333333333333,
+      "accepted_backlog_units_ci95": 1.7160265342258818
+    },
+    {
+      "policy": "access_oracle",
+      "pairs": 90,
+      "target_accepted_otif_rate_mean": 0.0,
+      "target_accepted_otif_rate_ci95": 0.004240874759597575,
+      "target_accepted_otif_rate_wins": 30,
+      "target_accepted_otif_rate_losses": 30,
+      "target_accepted_otif_rate_ties": 30,
+      "e2e_otif_rate_mean": -0.015000000000000015,
+      "e2e_otif_rate_ci95": 0.00169634990383903,
+      "e2e_otif_rate_wins": 0,
+      "e2e_otif_rate_losses": 90,
+      "e2e_otif_rate_ties": 0,
+      "accepted_backlog_units_mean": 27.0,
+      "accepted_backlog_units_ci95": 3.1416839874744813
+    },
+    {
+      "policy": "access_oracle_load_covered",
+      "pairs": 90,
+      "target_accepted_otif_rate_mean": 0.00833333333333334,
+      "target_accepted_otif_rate_ci95": 0.0024484701840531494,
+      "target_accepted_otif_rate_wins": 30,
+      "target_accepted_otif_rate_losses": 0,
+      "target_accepted_otif_rate_ties": 60,
+      "e2e_otif_rate_mean": -0.0008333333333333526,
+      "e2e_otif_rate_ci95": 0.0004896940368106245,
+      "e2e_otif_rate_wins": 30,
+      "e2e_otif_rate_losses": 60,
+      "e2e_otif_rate_ties": 0,
+      "accepted_backlog_units_mean": -22.666666666666668,
+      "accepted_backlog_units_ci95": 3.8133301904075476
+    }
+  ]
 }

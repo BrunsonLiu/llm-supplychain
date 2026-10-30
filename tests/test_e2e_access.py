@@ -17,6 +17,7 @@ from supply.e2e import (  # noqa: E402
     history_access,
     moved_units,
     oracle_access,
+    paired_differences,
     placement_milp,
     summarize_access,
     write_access_report,
@@ -212,6 +213,35 @@ def test_moved_units_rejects_non_conserved_stock() -> None:
     print("[OK] 非守恒库存被 moved_units 拒绝")
 
 
+def test_paired_differences_use_repeat_seed_pairs() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "policy": policy,
+                "repeat": repeat,
+                "seed": seed,
+                "target_accepted_otif_rate": target,
+                "e2e_otif_rate": overall,
+                "accepted_backlog_units": backlog,
+            }
+            for policy, target, overall, backlog in (
+                ("baseline", 0.90, 0.90, 10.0),
+                ("access_history_load_covered", 0.95, 0.92, 8.0),
+            )
+            for repeat in range(2)
+            for seed in range(1, 31)
+        ]
+    )
+    paired = paired_differences(frame)
+    assert len(paired) == 1
+    item = paired[0]
+    assert item["pairs"] == 60
+    assert abs(item["target_accepted_otif_rate_mean"] - 0.05) < 1e-9
+    assert abs(item["e2e_otif_rate_mean"] - 0.02) < 1e-9
+    assert abs(item["accepted_backlog_units_mean"] + 2.0) < 1e-9
+    print("[OK] 配对差值按 repeat×seed 对齐")
+
+
 def test_summarize_access_averages_seeds() -> None:
     frame = pd.DataFrame(
         [
@@ -284,4 +314,4 @@ if __name__ == "__main__":
             else:
                 func()
             print(f"[OK] {name}")
-    print("11 access placement tests passed")
+    print("12 access placement tests passed")

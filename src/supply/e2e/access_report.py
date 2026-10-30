@@ -14,6 +14,63 @@ def _mean(group: pd.DataFrame, column: str) -> float:
     return float(pd.to_numeric(group[column], errors="coerce").mean())
 
 
+PAIR_COLUMNS = (
+    "target_accepted_otif_rate",
+    "e2e_otif_rate",
+    "accepted_backlog_units",
+)
+
+
+def paired_differences(
+    frame: pd.DataFrame,
+    baseline: str = "baseline",
+) -> list[Dict[str, float]]:
+    """Paired policy-minus-baseline differences on ``(repeat, seed)`` keys.
+
+    The end-to-end runs share arrival and pick-noise seeds, so these pairs are
+    less noisy than comparing two independent means. A normal 95% interval is
+    reported; it is a diagnostic, not a claim of causal identification.
+    """
+    needed = {"policy", "repeat", "seed", *PAIR_COLUMNS}
+    if not needed.issubset(frame.columns):
+        return []
+    work = frame[["policy", "repeat", "seed", *PAIR_COLUMNS]].copy()
+    for column in PAIR_COLUMNS:
+        work[column] = pd.to_numeric(work[column], errors="coerce")
+    base = (
+        work[work["policy"] == baseline]
+        .drop_duplicates(["repeat", "seed"])
+        .set_index(["repeat", "seed"])[list(PAIR_COLUMNS)]
+    )
+    if base.empty:
+        return []
+    rows: list[Dict[str, float]] = []
+    for policy, group in work[work["policy"] != baseline].groupby(
+        "policy", sort=False
+    ):
+        current = (
+            group.drop_duplicates(["repeat", "seed"])
+            .set_index(["repeat", "seed"])[list(PAIR_COLUMNS)]
+        )
+        diff = current.sub(base, axis=0).dropna()
+        pairs = len(diff)
+        if pairs < 2:
+            continue
+        item: Dict[str, float] = {"policy": str(policy), "pairs": pairs}
+        for column in PAIR_COLUMNS:
+            values = diff[column].astype(float)
+            mean = float(values.mean())
+            sd = float(values.std(ddof=1))
+            item[f"{column}_mean"] = mean
+            item[f"{column}_ci95"] = 1.96 * sd / (pairs**0.5)
+            if column != "accepted_backlog_units":
+                item[f"{column}_wins"] = int((values > 0).sum())
+                item[f"{column}_losses"] = int((values < 0).sum())
+                item[f"{column}_ties"] = int((values == 0).sum())
+        rows.append(item)
+    return rows
+
+
 def summarize_access(frame: pd.DataFrame) -> pd.DataFrame:
     """One row per policy, averaging seeds within each policy."""
     rows = []
@@ -169,6 +226,36 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
         )
     lines.append("")
 
+    paired = payload.get("paired") or []
+    if paired:
+        lines += [
+            "## Paired differences vs baseline",
+            "",
+            "Same `(repeat, seed)` pairs; a normal 95% interval on the paired "
+            "mean is shown. This is a noise diagnostic, not a causal estimate.",
+            "",
+            "| policy | pairs | Δ target | Δ all | Δ backlog | all wins/ties/losses |",
+            "|---|---:|---:|---:|---:|---:|",
+        ]
+        for item in paired:
+            target_mean = 100.0 * float(item.get("target_accepted_otif_rate_mean", 0))
+            target_ci = 100.0 * float(item.get("target_accepted_otif_rate_ci95", 0))
+            all_mean = 100.0 * float(item.get("e2e_otif_rate_mean", 0))
+            all_ci = 100.0 * float(item.get("e2e_otif_rate_ci95", 0))
+            backlog_mean = float(item.get("accepted_backlog_units_mean", 0))
+            backlog_ci = float(item.get("accepted_backlog_units_ci95", 0))
+            wins = int(item.get("e2e_otif_rate_wins", 0))
+            ties = int(item.get("e2e_otif_rate_ties", 0))
+            losses = int(item.get("e2e_otif_rate_losses", 0))
+            lines.append(
+                f"| {item.get('policy')} | {int(item.get('pairs', 0))} | "
+                f"{target_mean:+.2f}pp ±{target_ci:.2f} | "
+                f"{all_mean:+.2f}pp ±{all_ci:.2f} | "
+                f"{backlog_mean:+.1f} ±{backlog_ci:.1f} | "
+                f"{wins}/{ties}/{losses} |"
+            )
+        lines.append("")
+
     if baseline:
         base_target = float(baseline.get("target_accepted_otif_mean", 0))
         lines += ["## Findings", ""]
@@ -258,6 +345,18 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
                 "- **No arm is a Pareto improvement.** Each non-baseline arm "
                 "loses at least one of target, rest or all-order OTIF."
             )
+        for item in paired:
+            if abs(float(item.get("target_accepted_otif_rate_mean", 0))) < 1e-9:
+                all_pp = 100.0 * float(item.get("e2e_otif_rate_mean", 0))
+                all_ci = 100.0 * float(item.get("e2e_otif_rate_ci95", 0))
+                backlog = float(item.get("accepted_backlog_units_mean", 0))
+                lines.append(
+                    f"- **Paired check**: `{item.get('policy')}` has target "
+                    f"difference exactly 0 across {int(item.get('pairs', 0))} "
+                    f"pairs; all-order is {all_pp:+.2f}pp ±{all_ci:.2f} and "
+                    f"backlog {backlog:+.1f}. A non-zero interval means the "
+                    "effect is detectable, not that it is operationally large."
+                )
         if oracle and history:
             gap_pp = 100.0 * (
                 float(oracle.get("target_accepted_otif_mean", 0))

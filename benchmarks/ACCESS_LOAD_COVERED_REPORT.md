@@ -38,12 +38,25 @@ This is a placement proxy, not a queue simulation: it penalises load where the p
 | access_oracle | 96.7% | 97.4% | 97.3% | 180 | 99.5% | 3.44 | 63.1% | — | 8,222 | OPTIMAL |
 | access_oracle_load_covered | 97.5% | 98.9% | 98.7% | 131 | 99.6% | 3.53 | 37.7% | 600 min | 0 | OPTIMAL |
 
+## Paired differences vs baseline
+
+Same `(repeat, seed)` pairs; a normal 95% interval on the paired mean is shown. This is a noise diagnostic, not a causal estimate.
+
+| policy | pairs | Δ target | Δ all | Δ backlog | all wins/ties/losses |
+|---|---:|---:|---:|---:|---:|
+| access_history | 90 | +0.83pp ±0.24 | +0.00pp ±0.11 | +153.7 ±21.3 | 30/0/60 |
+| access_history_load_covered | 90 | +0.00pp ±0.00 | +0.08pp ±0.06 | -5.3 ±1.7 | 30/30/30 |
+| access_oracle | 90 | +0.00pp ±0.42 | -1.50pp ±0.17 | +27.0 ±3.1 | 0/0/90 |
+| access_oracle_load_covered | 90 | +0.83pp ±0.24 | -0.08pp ±0.05 | -22.7 ±3.8 | 30/0/60 |
+
 ## Findings
 
 - **oracle**: target 96.7% -> 96.7% (+0.0pp, flat), moved 8,222 units; not material on this run.
 - **history**: target 96.7% -> 97.5% (+0.8pp, higher), moved 9,212 units; not material on this run.
 - **Repeated runs**: target OTIF ranges baseline 95.0%–97.5%; access_history 97.5%–97.5%; access_oracle 95.0%–97.5%. Treat differences smaller than this range as solver/arrival noise, not a treatment effect.
 - **Pareto-looking on this run**: `access_history_load_covered` is at least as good as baseline on target, rest and all-order OTIF, with a strict gain somewhere. `access_history_load_covered` backlog 148 vs baseline 153. This is a mean across repeats; check the ranges and backlog before calling it robust.
+- **Paired check**: `access_history_load_covered` has target difference exactly 0 across 90 pairs; all-order is +0.08pp ±0.06 and backlog -5.3. A non-zero interval means the effect is detectable, not that it is operationally large.
+- **Paired check**: `access_oracle` has target difference exactly 0 across 90 pairs; all-order is -1.50pp ±0.17 and backlog +27.0. A non-zero interval means the effect is detectable, not that it is operationally large.
 - **oracle - history gap**: -0.8pp. A gap of this size suggests forecast quality matters, but even the oracle does not turn better demand information into a Pareto gain at this fixed total.
 - **The oracle does not buy target service.** Its target moves +0.0pp while rest moves -1.7pp and all-order OTIF -1.5pp versus baseline: this is reallocation, not a Pareto gain.
 - **access_history_load_covered vs access_history**: target 97.5% -> 96.7% (-0.8pp); all-order 98.8% -> 98.9%; backlog 307 -> 148; peak covered-demand pick 600 min/DC, overload 0 min. The load cap is a placement proxy, so this tests whether avoiding concentration helps, not whether the real queue is optimised.

@@ -276,6 +276,7 @@ from .access import (
 )
 from .access_report import (
     build_access_report,
+    paired_differences,
     summarize_access,
     write_access_report,
 )
@@ -505,6 +506,7 @@ __all__ = [
     "oracle_access",
     "placement_milp",
     "build_access_report",
+    "paired_differences",
     "summarize_access",
     "write_access_report",
     "run_flow_e2e",
