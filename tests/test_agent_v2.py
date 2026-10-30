@@ -115,7 +115,9 @@ def test_verifier_rejects_wrong_fact():
     failed = AgentRuntime(registry, bad).run(plan)
     assert failed.status == "failed"
     assert "target_delta_pp" in failed.verification.reason
-    print("[OK] verifier 拒绝与事实不符的答案")
+    assert "未通过验证" in failed.answer
+    assert "target_delta_pp" in failed.answer
+    print("[OK] verifier 拒绝与事实不符的答案并 abstain")
 
 
 def test_adaptive_fallback_repairs_failed_step():
@@ -401,6 +403,27 @@ def test_react_agent_budget_is_explicit():
     print("[OK] ReAct 步数预算显式阻断")
 
 
+def test_react_agent_abstains_on_failed_verification():
+    registry = build_registry()
+    client = _ScriptedClient(
+        [
+            PlannerResponse(tool_calls=(ToolCall("list_experiments", {}),)),
+            PlannerResponse(
+                tool_calls=(ToolCall("finish", {"answer": "这是未经验证的结论"}),)
+            ),
+        ]
+    )
+    checker = Verifier(
+        required_steps=("s0",),
+        expected_facts={"target_delta_pp": 999.0},
+    )
+    run = ReActAgent(registry, client, checker).run("库存是不是瓶颈？")
+    assert run.status == "failed"
+    assert "未通过验证" in run.answer
+    assert "未经验证的结论" not in run.answer
+    print("[OK] ReAct verifier 失败时拒绝模型 prose")
+
+
 def test_planner_guardrail_matrix_never_reaches_handler():
     registry = build_registry()
     bad_payloads = [
@@ -543,6 +566,7 @@ if __name__ == "__main__":
     test_react_agent_observes_before_finishing()
     test_react_agent_recovers_from_blocked_tool()
     test_react_agent_budget_is_explicit()
+    test_react_agent_abstains_on_failed_verification()
     test_planner_guardrail_matrix_never_reaches_handler()
     test_openai_adapter_normalizes_tool_call_without_network()
     print("\nAgent v2 tests passed")

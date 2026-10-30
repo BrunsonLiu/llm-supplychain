@@ -17,6 +17,12 @@ AnswerBuilder = Callable[[Mapping[str, Any], Sequence[TraceEvent]], str]
 Replanner = Callable[[Mapping[str, Any]], Optional[Plan]]
 
 
+def abstain_answer(verification: Verification) -> str:
+    """Return an explicit refusal instead of leaking an unverified conclusion."""
+    reasons = "；".join(verification.failures) if verification.failures else "验证未通过"
+    return f"未通过验证，拒绝给出结论。原因：{reasons}"
+
+
 def default_answer(facts: Mapping[str, Any], trace: Sequence[TraceEvent]) -> str:
     if "finding" in facts:
         lines = [str(facts["finding"])]
@@ -163,7 +169,11 @@ class AgentRuntime:
                     if checker is not None
                     else Verification(ok=True, checked_facts=0)
                 )
-        answer = self.answer_builder(facts, trace)
+        answer = (
+            self.answer_builder(facts, trace)
+            if verification.ok
+            else abstain_answer(verification)
+        )
         failures = [event for event in trace if event.status in {"blocked", "error"}]
         budget_exceeded = any(event.tool == "__budget__" for event in trace)
         if budget_exceeded:

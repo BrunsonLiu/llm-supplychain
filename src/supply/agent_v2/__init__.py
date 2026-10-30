@@ -21,7 +21,7 @@ from .llm_planner import (
 )
 from .react import ReActAgent, react_tools
 from .registry import ToolRegistry
-from .runtime import AgentRuntime, default_answer
+from .runtime import AgentRuntime, abstain_answer, default_answer
 from .tools import EXPERIMENTS, build_registry
 from .verifier import Verifier
 
@@ -44,6 +44,7 @@ __all__ = [
     "TraceEvent",
     "Verification",
     "Verifier",
+    "abstain_answer",
     "build_registry",
     "default_answer",
     "plan_tool_schema",

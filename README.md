@@ -76,7 +76,7 @@ run = AgentRuntime(registry, checker).run(plan)
 
 **模型驱动 Replan**：`AgentRuntime(..., replanner=planner.replan)` 在 verifier 失败时把原计划、compact trace、已得事实和失败原因交给模型，要求重新提交 `submit_plan`；模型抛错或超次数时退回脚本 `fallback_plan`。`run.summary()` 的 `replanned_by` 记录 `model` 或 `fallback`，`replan_error` 保留模型修复失败原因，不会把“兜底成功”伪装成“模型修好了”。
 
-**两种执行形态**：静态 `Plan` DAG（30 任务基准，一次规划后执行）和可选的 `ReActAgent`（每轮只调一个工具，看到 observation 再决定下一步，`finish` 结束）。两者共用同一个 `ToolRegistry`、`TraceEvent` 和 `Verifier`；ReAct 的非法工具/参数会作为 observation 回传，步数预算显式阻断。ReAct 未进入 30 任务基准，测试同样使用 fake client。
+**两种执行形态**：静态 `Plan` DAG（30 任务基准，一次规划后执行）和可选的 `ReActAgent`（每轮只调一个工具，看到 observation 再决定下一步，`finish` 结束）。两者共用同一个 `ToolRegistry`、`TraceEvent` 和 `Verifier`；ReAct 的非法工具/参数会作为 observation 回传，步数预算显式阻断。验证失败时 runtime 返回显式 abstain，不把模型 prose 当结论。ReAct 未进入 30 任务基准，测试同样使用 fake client。
 
 ```bash
 # Agent v2 30 任务基准（离线、确定性）

@@ -109,7 +109,7 @@ client = OpenAIPlannerClient(model="gpt-4o-mini", forced_tool=None)
 run = ReActAgent(registry, client, Verifier(...)).run("库存还是产能是瓶颈？")
 ```
 
-ReAct 没有进入 30 任务基准，也没有跑真实模型；测试覆盖“先观察再 finish / 非法工具恢复 / 步数预算”，全部 fake client。`finish.answer` 是模型 prose，verifier 只检查 trace/事实，不做语义蕴含检查；因此 ReAct 的失败不会被 fallback 自动修复，需要上层显式处理。
+ReAct 没有进入 30 任务基准，也没有跑真实模型；测试覆盖“先观察再 finish / 非法工具恢复 / 步数预算 / 验证失败 abstain”，全部 fake client。`finish.answer` 是模型 prose，verifier 只检查 trace/事实，不做语义蕴含检查；验证失败时 runtime 用显式 abstain 替换模型 prose。ReAct 的失败不会被 fallback 自动修复，需要上层显式处理。
 
 ## 7. 复现
 

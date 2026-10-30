@@ -39,7 +39,7 @@ status ← status_of(τ, V, replanned)
 2. **schema 先于 handler。** 缺字段、坏类型、坏枚举、越界、未知字段返回 `blocked`。
 3. **依赖失败不执行。** 上游不是 `success` 时，下游记 `blocked`，不会“带病执行”。
 4. **步数预算硬阻断。** 达到 `max_steps` 后追加 `__budget__` 事件；verifier 把预算事件判为失败，runtime 状态为 `blocked`。
-5. **verifier 在 answer 之前。** 没有 verifier 的 `raw` 只表示“未验证”，不是“正确”；有 verifier 时，答案生成不改变验证结果。
+5. **verifier 在 answer 之前，失败则 abstain。** 没有 verifier 的 `raw` 只表示“未验证”，不是“正确”；有 verifier 且失败时，runtime 返回 `未通过验证，拒绝给出结论`，不会把模型 prose 或工具拼接答案当结论。facts/trace 仍保留供审计。
 6. **replan 最多一次。** 模型 replan 与脚本 fallback 不会无限递归；`replanned_by` 记录来源，`replan_error` 保留模型修复失败原因。
 7. **模型没有执行权。** LLM 只输出 `submit_plan` / 单步工具名与参数；执行、校验、计时、trace 都由 runtime 完成。
 
@@ -59,7 +59,7 @@ status ← status_of(τ, V, replanned)
 |---|---|---|---|
 | 规划 | 非法 JSON / 未知工具 / 坏参数 / 坏依赖 / 环 | `blocked`（planner 抛 `PlannerError`） | 否 |
 | 执行 | 工具抛异常 / 返回 `error` | `failed` 或 `blocked` | 是，已记录 trace |
-| 验证 | 必需步骤缺失、数字不符、引用缺失、事实不足 | `failed` | 是 |
+| 验证 | 必需步骤缺失、数字不符、引用缺失、事实不足 | `failed`，answer 为 abstain | 是 |
 | 修复 | 模型 replan 抛错/超次数 | 退回 fallback；`replan_error` 保留 | 取决于 fallback |
 | 预算 | 超过 `max_steps` | `blocked` | 只执行预算内的步骤 |
 

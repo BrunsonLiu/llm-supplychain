@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 from .contracts import AgentRun, PlanStep, ToolResult, TraceEvent, Verification
 from .llm_planner import PlannerClient, PlannerResponse, ToolCall
 from .registry import ToolRegistry
-from .runtime import AnswerBuilder, default_answer
+from .runtime import AnswerBuilder, abstain_answer, default_answer
 from .verifier import Verifier
 
 FINISH = "finish"
@@ -241,6 +241,7 @@ class ReActAgent:
             status = "success"
         else:
             status = "failed"
+            answer = abstain_answer(verification)
         return AgentRun(
             status=status,
             answer=answer or self.answer_builder(facts, trace),
