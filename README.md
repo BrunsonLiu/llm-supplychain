@@ -2589,7 +2589,7 @@ L[d] = Σ_s z[d,s] · c
 
 **关键结论**：
 
-1. **covered cap 真的生效，而且不再误伤目标。** 峰值 600 min、软超载 0，但历史臂只调拨 **383** 单位（stock-implied 是 9,212），目标从 Week42 的 95.0% 回到 **96.7%**，与非目标/全量一起接近 baseline。它把 60/18/22 拉回 37/28/36，而不是像 stock cap 那样大刀阔斧地重摆。
+1. **covered cap 真的生效，而且不再误伤目标。** 峰值 600 min、软超载 0，但历史臂只调拨 **383** 单位（history 原版 9,212，Week42 stock cap 1,179），目标从 Week42 的 95.0% 回到 **96.7%**，与非目标/全量一起接近 baseline。它把 60/18/22 拉回 37/28/36，而不是像 stock cap 那样大刀阔斧地重摆。
 2. **history + covered 是 Pareto-looking，但不是稳健收益。** 对 baseline：target 持平 96.7%、rest +0.1pp、all +0.1pp、积压 153→148；但 target 范围 95.0–97.5 与 baseline 重叠，收益远小于 5pp 噪声，不能写成“covered 负荷解决了布点问题”。
 3. **oracle + covered 修好了 oracle 自己，但仍不如 baseline。** 对 oracle：target +0.8pp、all +1.4pp、积压 180→131；对 baseline 仍是 rest −0.2pp、all −0.1pp。它说明“别把库存搬到拣选更忙的 DC”是对的，但先知需求本身没有把 fixed-total 布点变成 Pareto 杠杆。
 4. **负荷 basis 比 cap 数值更关键。** stock-implied 的 600 min 是保守代理；covered 的 600 min 只约束真实覆盖需求，因此同样容量下 target 不同。下一步应接真实波次/到达队列，而不是继续调 cap。

@@ -107,7 +107,7 @@ L[d] = Σ_s z[d,s] · c
 
 结论：
 
-- covered cap 也真的生效（峰值 600 min、超载 0），但只调拨 383 单位，而不是 stock-implied 的 9,212；target 回到 96.7%，不再像 Week42 那样掉到 95.0%。
+- covered cap 也真的生效（峰值 600 min、超载 0），但只调拨 383 单位（history 原版 9,212，Week42 stock cap 1,179）；target 回到 96.7%，不再像 Week42 那样掉到 95.0%。
 - `history + covered` 对 baseline 是 Pareto-looking：target 持平、rest +0.1pp、all +0.1pp、积压 153→148；但 target 范围 95.0–97.5 与 baseline 重叠，收益小于 5pp 噪声，不能称稳健收益。
 - `oracle + covered` 修好 oracle 自己（target +0.8pp、all +1.4pp、积压 180→131），但仍低于 baseline 的 rest/all；fixed-total 布点仍不是主杠杆。
 - **负荷 basis 比 cap 数值更关键。** 下一步应接真实波次/到达队列；继续调 600 min 只会改变代理内部的分配。
