@@ -70,7 +70,7 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
     settings = payload.get("settings", {})
     summary: Sequence[Mapping[str, Any]] = payload.get("summary", [])
     rows = {str(row["policy"]): row for row in summary}
-    load_keys = [key for key in rows if key.endswith("_load")]
+    load_keys = [key for key in rows if "load" in key]
     baseline = rows.get("baseline")
     oracle = rows.get("access_oracle")
     history = rows.get("access_history")
@@ -112,22 +112,31 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
         "stop the coverage objective from parking almost all stock in one DC.",
     ]
     if load_keys:
+        basis = str(settings.get("load_basis", "stock"))
+        basis_text = (
+            "stock-implied (parked units)" if basis == "stock" else "covered demand"
+        )
+        load_expr = (
+            "L[d] = sum_s y[d,s] * c"
+            if basis == "stock"
+            else "L[d] = sum_s z[d,s] * c"
+        )
         lines += [
             "",
-            "The `_load` arms add a stock-implied pick-minute cap. With "
+            f"The `_load` arms use a **{basis_text}** pick-minute cap. With "
             f"`c={float(settings.get('pick_load_coeff', 0)):.3f}` minutes per "
             "unit and per-DC capacity "
             f"`{float(settings.get('load_capacity', 0)):.0f}` minutes:",
             "",
             "```",
-            "L[d] = sum_s y[d,s] * c",
+            load_expr,
             "L[d] <= capacity[d] + overload[d]",
             "max coverage - penalty * sum_d overload[d] - moves",
             "```",
             "",
             "This is a placement proxy, not a queue simulation: it penalises "
-            "parking stock where the pick layer would have to work it, but it "
-            "does not know arrival order or wave release.",
+            "load where the pick layer would have to work it, but it does not "
+            "know arrival order or wave release.",
         ]
     lines += [
         "",
@@ -287,9 +296,16 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
                 "stock in the demand-accessible DC can create a pick bottleneck "
                 "that the static proxy never sees."
             )
+        basis_label = (
+            "covered-demand"
+            if str(settings.get("load_basis", "stock")) == "covered"
+            else "stock-implied"
+        )
         for load_key, base_key in (
             ("access_history_load", "access_history"),
+            ("access_history_load_covered", "access_history"),
             ("access_oracle_load", "access_oracle"),
+            ("access_oracle_load_covered", "access_oracle"),
         ):
             load_row = rows.get(load_key)
             base_row = rows.get(base_key)
@@ -308,7 +324,7 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
                 f"{_pct(load_row.get('accepted_otif_mean', 0))}; backlog "
                 f"{_num(base_row.get('accepted_backlog_units', 0))} -> "
                 f"{_num(load_row.get('accepted_backlog_units', 0))}; peak "
-                f"stock-implied pick "
+                f"{basis_label} pick "
                 f"{_num(load_row.get('peak_pick_minutes_mean', 0))} min/DC, "
                 f"overload {_num(load_row.get('overload_minutes_mean', 0))} min. "
                 "The load cap is a placement proxy, so this tests whether "

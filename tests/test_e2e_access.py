@@ -137,6 +137,34 @@ def test_load_aware_placement_caps_stock_implied_pick_minutes() -> None:
     print("[OK] 负荷感知布点把 stock-implied 拣选分钟压在容量内")
 
 
+def test_covered_load_basis_uses_covered_demand() -> None:
+    instance = _instance()
+    target = placement_milp(
+        instance,
+        oracle_access(instance),
+        pick_minutes_per_unit=0.1,
+        pick_capacity=0.6,
+        pick_load_penalty=10_000_000,
+        pick_load_basis="covered",
+    )
+    assert target.pick_load_basis == "covered"
+    assert target.peak_pick_minutes <= 0.61
+    assert target.overload_minutes <= 1e-9
+    try:
+        placement_milp(
+            instance,
+            oracle_access(instance),
+            pick_minutes_per_unit=0.1,
+            pick_capacity=0.6,
+            pick_load_basis="bogus",
+        )
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("非法 pick_load_basis 应被拒绝")
+    print("[OK] covered 负荷按 z 计，且非法 basis 被拒绝")
+
+
 def test_apply_target_keeps_sku_totals() -> None:
     instance = _instance()
     target = placement_milp(instance, oracle_access(instance))
@@ -256,4 +284,4 @@ if __name__ == "__main__":
             else:
                 func()
             print(f"[OK] {name}")
-    print("10 access placement tests passed")
+    print("11 access placement tests passed")

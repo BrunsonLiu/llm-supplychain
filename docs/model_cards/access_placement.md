@@ -87,6 +87,33 @@ max coverage − penalty · Σ_d overload[d] − moves
 
 完整报告：[`benchmarks/ACCESS_LOAD_REPORT.md`](../../benchmarks/ACCESS_LOAD_REPORT.md)。
 
+## 5c. covered 负荷（Week 43）
+
+Week42 的 stock-implied cap 把“停在 DC 的库存”全部算作拣选工作，历史臂因此丢掉 1.7pp target。Week43 把负荷改成只按该 DC **实际覆盖的需求**：
+
+```
+L[d] = Σ_s z[d,s] · c
+```
+
+其余同 Week42：`c=0.052 min/件`、`600 min/DC`、软超载惩罚。新增 `access_history_load_covered` / `access_oracle_load_covered`。
+
+| 策略 | 目标 OTIF | 非目标 | 全量 | 积压 | 覆盖率 | 峰值拣选 | 调拨 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| baseline | 96.7% | 99.1% | 98.8% | 153 | — | — | 0 |
+| history | 97.5% | 99.0% | 98.8% | 307 | 44.9% | — | 9,212 |
+| history + covered | 96.7% | 99.2% | 98.9% | 148 | 26.1% | 600 min | 383 |
+| oracle | 96.7% | 97.4% | 97.3% | 180 | 63.1% | — | 8,222 |
+| oracle + covered | 97.5% | 98.9% | 98.7% | 131 | 37.7% | 600 min | 0 |
+
+结论：
+
+- covered cap 也真的生效（峰值 600 min、超载 0），但只调拨 383 单位，而不是 stock-implied 的 9,212；target 回到 96.7%，不再像 Week42 那样掉到 95.0%。
+- `history + covered` 对 baseline 是 Pareto-looking：target 持平、rest +0.1pp、all +0.1pp、积压 153→148；但 target 范围 95.0–97.5 与 baseline 重叠，收益小于 5pp 噪声，不能称稳健收益。
+- `oracle + covered` 修好 oracle 自己（target +0.8pp、all +1.4pp、积压 180→131），但仍低于 baseline 的 rest/all；fixed-total 布点仍不是主杠杆。
+- **负荷 basis 比 cap 数值更关键。** 下一步应接真实波次/到达队列；继续调 600 min 只会改变代理内部的分配。
+
+完整报告：[`benchmarks/ACCESS_LOAD_COVERED_REPORT.md`](../../benchmarks/ACCESS_LOAD_COVERED_REPORT.md)。
+
 ## 6. 效度威胁
 
 - oracle 使用本周实际订单；history 使用前 6 周数量但仍用本周 destination/transit 矩阵，二者都不是完整因果策略。
@@ -106,6 +133,11 @@ PYTHONPATH=src;. python scripts/run_e2e_access.py --repeats 3
 PYTHONPATH=src;. python scripts/run_e2e_access.py --load-aware --repeats 3 \
   --stem ACCESS_LOAD --week 42
 # 输出：benchmarks/ACCESS_LOAD_REPORT.md + access_load_summary.json
+
+# covered 负荷（Week 43）
+PYTHONPATH=src;. python scripts/run_e2e_access.py --load-aware --load-basis covered \
+  --repeats 3 --stem ACCESS_LOAD_COVERED --week 43
+# 输出：benchmarks/ACCESS_LOAD_COVERED_REPORT.md + access_load_covered_summary.json
 ```
 
-相关文档：[Week 40 布点报告](../../benchmarks/PLACEMENT_REPORT.md)、[Week 42 负荷报告](../../benchmarks/ACCESS_LOAD_REPORT.md)、[约束诊断](binding_constraint.md)、[分单 MILP](allocation_milp.md)。
+相关文档：[Week 40 布点报告](../../benchmarks/PLACEMENT_REPORT.md)、[Week 42 负荷报告](../../benchmarks/ACCESS_LOAD_REPORT.md)、[Week 43 covered 负荷报告](../../benchmarks/ACCESS_LOAD_COVERED_REPORT.md)、[约束诊断](binding_constraint.md)、[分单 MILP](allocation_milp.md)。

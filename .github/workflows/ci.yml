@@ -452,6 +452,11 @@ jobs:
           PYTHONPATH: src:.
         run: python scripts/run_e2e_access.py --orders 80 --seeds 2 --milp-time 2 --service-time 1 --solver-time 2 --repeats 1 --workers 2 --load-aware --stem ACCESS_LOAD --week 42 --out-dir /tmp/access-load-bench
 
+      - name: Run covered-demand placement benchmark (small)
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_access.py --orders 80 --seeds 2 --milp-time 2 --service-time 1 --solver-time 2 --repeats 1 --workers 2 --load-aware --load-basis covered --stem ACCESS_LOAD_COVERED --week 43 --out-dir /tmp/access-load-covered-bench
+
       - name: Run Agent v2 benchmark
         env:
           PYTHONPATH: src:.

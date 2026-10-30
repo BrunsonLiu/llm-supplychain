@@ -80,6 +80,7 @@ class PlacementTarget:
     peak_pick_minutes: float = 0.0
     pick_capacity: float = 0.0
     overload_minutes: float = 0.0
+    pick_load_basis: str = "stock"
 
     @property
     def optimal(self) -> bool:
@@ -215,6 +216,7 @@ def placement_milp(
     pick_minutes_per_unit: Optional[float] = None,
     pick_capacity: Optional[float] = None,
     pick_load_penalty: int = 10_000_000,
+    pick_load_basis: str = "stock",
 ) -> PlacementTarget:
     """Solve the fixed-total coverage model and return integer target stock.
 
@@ -223,10 +225,12 @@ def placement_milp(
     produce an operationally meaningless target; the Week-41 script uses
     10%/60% to keep the target inside the region the pick layer can actually run.
 
-    If ``pick_minutes_per_unit`` and ``pick_capacity`` are given, add a
-    stock-implied pick load ``L[d] = sum_s y[d,s] * coeff`` with a soft cap:
-    overload above ``pick_capacity`` is penalised by ``pick_load_penalty``.
-    This is a placement proxy, not a queue simulation.
+    If ``pick_minutes_per_unit`` and ``pick_capacity`` are given, add a soft
+    pick-minute cap. ``pick_load_basis="stock"`` charges every parked unit
+    (``L[d] = sum_s y[d,s] * coeff``); ``"covered"`` charges only the demand
+    actually covered at that DC (``L[d] = sum_s z[d,s] * coeff``). Overload is
+    penalised by ``pick_load_penalty``. Both are placement proxies, not queue
+    simulations.
     """
     if time_limit <= 0:
         raise ValueError("time_limit 必须为正")
@@ -239,6 +243,8 @@ def placement_milp(
             raise ValueError("拣选分钟系数与容量必须为正")
         if pick_load_penalty < 0:
             raise ValueError("pick_load_penalty 不能为负")
+        if pick_load_basis not in {"stock", "covered"}:
+            raise ValueError("pick_load_basis 必须是 stock 或 covered")
     f = instance.fulfillment
     if demand.units.shape != (f.n_dcs, f.n_skus):
         raise ValueError("demand 形状与实例不一致")
@@ -283,10 +289,19 @@ def placement_milp(
         cap_scaled = int(round(float(pick_capacity) * PICK_LOAD_SCALE))
         if load_coef <= 0 or cap_scaled <= 0:
             raise ValueError("缩放后的拣选负荷系数/容量必须为正")
-        max_load = int(total_stock * load_coef)
-        for dc, row in stock_by_dc.items():
+        max_load = int(
+            (total_stock if pick_load_basis == "stock" else demand_int.sum())
+            * load_coef
+        )
+        for dc in range(f.n_dcs):
             load = model.NewIntVar(0, max_load, f"load_{dc}")
-            model.Add(load == sum(var * load_coef for var in row))
+            if pick_load_basis == "stock":
+                expr = sum(var * load_coef for var in stock_by_dc[dc])
+            else:
+                expr = sum(
+                    covered[(dc, sku)] * load_coef for sku in range(f.n_skus)
+                )
+            model.Add(load == expr)
             load_vars[dc] = load
             over = model.NewIntVar(0, max_load, f"over_{dc}")
             model.Add(over >= load - cap_scaled)
@@ -330,6 +345,7 @@ def placement_milp(
         peak_pick_minutes=peak_pick,
         pick_capacity=float(pick_capacity or 0.0),
         overload_minutes=overload,
+        pick_load_basis=pick_load_basis,
     )
 
 
