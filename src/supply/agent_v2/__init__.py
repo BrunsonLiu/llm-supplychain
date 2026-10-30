@@ -11,6 +11,14 @@ from .contracts import (
     require_facts,
     validate_args,
 )
+from .llm_planner import (
+    LLMPlanner,
+    OpenAIPlannerClient,
+    PlannerError,
+    PlannerResponse,
+    ToolCall,
+    plan_tool_schema,
+)
 from .registry import ToolRegistry
 from .runtime import AgentRuntime, default_answer
 from .tools import EXPERIMENTS, build_registry
@@ -21,8 +29,13 @@ __all__ = [
     "AgentRuntime",
     "ContractError",
     "EXPERIMENTS",
+    "LLMPlanner",
+    "OpenAIPlannerClient",
     "Plan",
     "PlanStep",
+    "PlannerError",
+    "PlannerResponse",
+    "ToolCall",
     "ToolContract",
     "ToolRegistry",
     "ToolResult",
@@ -31,6 +44,7 @@ __all__ = [
     "Verifier",
     "build_registry",
     "default_answer",
+    "plan_tool_schema",
     "require_facts",
     "validate_args",
 ]

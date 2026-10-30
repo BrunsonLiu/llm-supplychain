@@ -15,11 +15,17 @@ sys.path.insert(0, str(ROOT))
 from supply.agent_v2 import (  # noqa: E402
     AgentRuntime,
     ContractError,
+    LLMPlanner,
+    OpenAIPlannerClient,
     Plan,
+    PlannerError,
+    PlannerResponse,
     PlanStep,
+    ToolCall,
     ToolResult,
     Verifier,
     build_registry,
+    plan_tool_schema,
 )
 
 
@@ -152,6 +158,163 @@ def test_budget_and_dependency_guardrails():
     print("[OK] 步数预算与坏依赖均在运行时拦截")
 
 
+class _ScriptedClient:
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.calls = []
+
+    def complete(self, messages, tools):
+        self.calls.append((list(messages), list(tools)))
+        return self.responses.pop(0)
+
+
+def _plan_response(steps, goal="诊断库存约束"):
+    return PlannerResponse(
+        tool_calls=(
+            ToolCall(
+                name="submit_plan",
+                arguments={"goal": goal, "steps": steps},
+            ),
+        ),
+        content="submit_plan",
+    )
+
+
+def test_llm_planner_emits_runtime_executable_dag():
+    registry = build_registry()
+    client = _ScriptedClient(
+        [
+            _plan_response(
+                [
+                    {"id": "list", "tool": "list_experiments", "args": {}},
+                    {
+                        "id": "diag",
+                        "tool": "diagnose_service_gap",
+                        "args": {"constraint": "stock"},
+                        "depends_on": ["list"],
+                    },
+                ]
+            )
+        ]
+    )
+    planner = LLMPlanner(registry, client)
+    plan = planner.plan("库存是不是瓶颈？")
+    assert [step.id for step in plan.topo()] == ["list", "diag"]
+    assert plan.goal == "诊断库存约束"
+    assert client.calls[0][1][-1]["function"]["name"] == "submit_plan"
+
+    run = AgentRuntime(
+        registry,
+        Verifier(required_steps=("diag",), expected_facts={"target_delta_pp": 10.0}),
+    ).run(plan)
+    assert run.status == "success", run.summary()
+    assert run.facts["target_delta_pp"] == 10.0
+    print("[OK] LLM planner 的 submit_plan 可被 runtime 执行并通过 verifier")
+
+
+def test_llm_planner_rejects_then_repairs_bad_tool():
+    registry = build_registry()
+    client = _ScriptedClient(
+        [
+            _plan_response([{"id": "x", "tool": "drop_database", "args": {}}]),
+            _plan_response(
+                [
+                    {
+                        "id": "d",
+                        "tool": "diagnose_service_gap",
+                        "args": {"constraint": "stock"},
+                    }
+                ]
+            ),
+        ]
+    )
+    plan = LLMPlanner(registry, client, max_attempts=2).plan("诊断")
+    assert plan.steps[0].tool == "diagnose_service_gap"
+    assert len(client.calls) == 2
+    assert "上一次 submit_plan 无效" in client.calls[1][0][-1]["content"]
+    print("[OK] 非法工具被拒绝并以结构化错误重试")
+
+
+def test_llm_planner_retries_malformed_json():
+    registry = build_registry()
+    client = _ScriptedClient(
+        [
+            PlannerResponse(tool_calls=(ToolCall("submit_plan", "{not-json"),)),
+            _plan_response(
+                [
+                    {
+                        "id": "d",
+                        "tool": "diagnose_service_gap",
+                        "args": {"constraint": "stock"},
+                    }
+                ]
+            ),
+        ]
+    )
+    plan = LLMPlanner(registry, client, max_attempts=2).plan("诊断")
+    assert plan.steps[0].id == "d"
+    assert len(client.calls) == 2
+    print("[OK] 非法 JSON 被 planner 捕获并重试")
+
+
+def test_llm_planner_rejects_missing_submit_plan():
+    registry = build_registry()
+    client = _ScriptedClient(
+        [PlannerResponse(tool_calls=(ToolCall("list_experiments", {}),))]
+    )
+    try:
+        LLMPlanner(registry, client, max_attempts=1).plan("诊断")
+    except PlannerError as exc:
+        assert "没有调用 submit_plan" in str(exc)
+    else:
+        raise AssertionError("缺少 submit_plan 没有被拒绝")
+    assert plan_tool_schema()["function"]["parameters"]["required"] == ["steps"]
+    print("[OK] 缺少 submit_plan 与 schema 必填项均被拒绝")
+
+
+def test_openai_adapter_normalizes_tool_call_without_network():
+    class _Function:
+        name = "submit_plan"
+        arguments = '{"steps": [{"id": "l", "tool": "list_experiments", "args": {}}]}'
+
+    class _Call:
+        function = _Function()
+
+    class _Message:
+        tool_calls = [_Call()]
+        content = ""
+
+    class _Choice:
+        message = _Message()
+
+    class _Response:
+        choices = [_Choice()]
+
+    class _Completions:
+        def __init__(self):
+            self.kwargs = None
+
+        def create(self, **kwargs):
+            self.kwargs = kwargs
+            return _Response()
+
+    class _Chat:
+        def __init__(self):
+            self.completions = _Completions()
+
+    class _SDK:
+        def __init__(self):
+            self.chat = _Chat()
+
+    sdk = _SDK()
+    response = OpenAIPlannerClient(model="test-model", client=sdk).complete([], [])
+    assert response.tool_calls[0].name == "submit_plan"
+    assert response.tool_calls[0].arguments["steps"][0]["id"] == "l"
+    assert sdk.chat.completions.kwargs["model"] == "test-model"
+    assert sdk.chat.completions.kwargs["tool_choice"]["function"]["name"] == "submit_plan"
+    print("[OK] OpenAI 兼容 adapter 只解析 submit_plan，不执行工具")
+
+
 if __name__ == "__main__":
     test_plan_topo_and_cycle_rejected()
     test_registry_allowlist_and_schema()
@@ -160,4 +323,9 @@ if __name__ == "__main__":
     test_verifier_rejects_wrong_fact()
     test_adaptive_fallback_repairs_failed_step()
     test_budget_and_dependency_guardrails()
+    test_llm_planner_emits_runtime_executable_dag()
+    test_llm_planner_rejects_then_repairs_bad_tool()
+    test_llm_planner_retries_malformed_json()
+    test_llm_planner_rejects_missing_submit_plan()
+    test_openai_adapter_normalizes_tool_call_without_network()
     print("\nAgent v2 tests passed")

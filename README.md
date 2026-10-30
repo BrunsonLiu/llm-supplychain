@@ -53,7 +53,26 @@ flowchart LR
 1. **完成 ≠ 正确。** `raw` 会把工具返回的错误数字包装成 `success`（1 个假成功）；`verified` 把它判成 `failed`，但自己不会修。
 2. **修复需要显式 fallback。** `adaptive` 在“实验名写错 / tight 场景不可行 / 工具返回错数”三个任务上重规划并恢复，30/30。
 3. **护栏在注册表层。** 非法枚举、未知工具、坏依赖、超预算都不会进入 handler；不依赖 prompt 里写“不要调用”。
-4. **这不是 LLM 能力分数。** planner 是脚本 DAG；把同一个 `Plan` 接口接到真实 function calling 才能测模型规划，且要单独报告 token/延迟/方差。
+4. **这不是 LLM 能力分数。** 基准里的 planner 是脚本 DAG；同一个 `Plan` 接口另有 **function-calling 规划器**（`llm_planner.py`），但**没有跑真实模型**，因此不报告模型分数、token 或延迟。真实模型评测必须单独做并报告方差与成本。
+
+**模型规划接口（已实现，未跑真实模型）**：
+
+```python
+from supply.agent_v2 import (
+    AgentRuntime, LLMPlanner, OpenAIPlannerClient, Verifier, build_registry,
+)
+
+registry = build_registry()
+planner = LLMPlanner(
+    registry,
+    OpenAIPlannerClient(model="gpt-4o-mini"),  # 需要 OPENAI_API_KEY
+)
+plan = planner.plan("库存还是产能是目标 OTIF 的瓶颈？")
+checker = Verifier(required_steps=(plan.steps[-1].id,), min_facts=1)
+run = AgentRuntime(registry, checker).run(plan)
+```
+
+模型只允许调用 `submit_plan`，提交带 `id/tool/args/depends_on` 的 DAG；planner 在进入 runtime 前逐项校验 allowlist、JSON Schema、依赖和环。非法计划会带结构化错误回传并重试（`max_attempts`），不会让模型直接执行工具或改数字。测试用 fake client 覆盖“合法 DAG / 非法工具重试 / 缺 submit_plan / OpenAI adapter”，全部离线、无网络。模型卡见 [`docs/model_cards/llm_planner.md`](docs/model_cards/llm_planner.md)。
 
 ```bash
 # Agent v2 30 任务基准（离线、确定性）
@@ -64,11 +83,12 @@ PYTHONPATH=src;. python scripts/run_agent_v2_benchmark.py
 PYTHONPATH=src;. python tests/test_agent_v2.py
 ```
 
-技术细节见 3 份 model card：
+技术细节见 4 份 model card：
 
 - [分单 MILP：变量、约束、目标、复杂度、gap](docs/model_cards/allocation_milp.md)
 - [滚动端到端仿真：事件流、确定性、指标、边界](docs/model_cards/rolling_e2e.md)
 - [约束诊断：估计量、10 周实验、null result、效度威胁](docs/model_cards/binding_constraint.md)
+- [LLM planner：`submit_plan` 契约、拒绝/重试、真实评测边界](docs/model_cards/llm_planner.md)
 
 
 ## 架构一览
@@ -139,7 +159,7 @@ flowchart LR
 
 | 模块 | 能力 |
 |---|---|
-| Agent v2 | Plan DAG + 工具契约 + Verifier + 显式 Replan；5 个决策工具（真实 benchmark 诊断/对比/汇总 + OR-Tools SCIP 分配 MILP）；30 任务 `raw`/`verified`/`adaptive` 消融；结构化 trace 与假成功/恢复指标 |
+| Agent v2 | Plan DAG + 工具契约 + Verifier + 显式 Replan；5 个决策工具（真实 benchmark 诊断/对比/汇总 + OR-Tools SCIP 分配 MILP）；`submit_plan` function-calling planner（`llm_planner.py`，fake-client 测试，未跑真实模型）；30 任务 `raw`/`verified`/`adaptive` 消融；结构化 trace 与假成功/恢复指标 |
 | 数据 | 模拟数据生成 / CSV·JSON 导入 / SQLite 持久化；Online Retail II 下载、清洗、ABC Top-N 周度面板 |
 | 预测 | 滚动回测（WMAPE/Bias/RMSE/RMSSE）+ 6 个经典基线 + 全局 LightGBM 直接多步预测；SKU 级与仓库总量双口径 |
 | 库存 | 显式假设层 + SKU 经济参数（EOQ/MOQ/安全库存）；（s,Q）/（R,S）/（s,S）三种策略的周度仿真、replay 与 300 路径 Monte Carlo（缺货率/周转/成本） |
@@ -2470,6 +2490,7 @@ PYTHONPATH=src;. python scripts/run_e2e_placement.py
 │       ├── function_agent.py # Function Calling：工具 schema/规划器/护栏/轨迹
 │       ├── agent_v2/         # Agent v2：Plan DAG / 工具契约 / Verifier / Replan
 │       │   ├── contracts.py  # Plan/Step/Trace/Verification + schema 校验
+│       │   ├── llm_planner.py # submit_plan function calling + 校验/重试
 │       │   ├── registry.py   # allowlist + 参数校验 + 计时执行
 │       │   ├── verifier.py   # 步骤/事实/引用/预算后置条件
 │       │   ├── runtime.py    # Plan-Act-Verify-Replan 运行时
@@ -2611,7 +2632,7 @@ PYTHONPATH=src;. python scripts/run_e2e_placement.py
 │   ├── run_retrieval_eval.py # 15 条查询的 Recall@k/MRR 评测 CLI
 │   └── demo.py               # 一键演示
 ├── benchmarks/               # 回测/库存/网络/履约/波次/排程/端到端/稳健性/布点/回写/联合/随机布点/经验到达/发车/门位/报价/滚动补货/滚动端到端/滚动门位/滚动报价/承诺前沿/接单/承诺×门位/同日集批/收入口径接单/价值分层接单/价值阈值前沿/高价值承诺升级/高价值分单优先级/高价值发车插队/高价值优先拣选/第二拣货员/到达加急/库存上界/DC 产能上界/承运商时效/局部库存缓冲/固定总量布点/Agent v2/Agent/检索基准产物
-├── docs/model_cards/         # 3 份技术 model card（分配 MILP / 滚动 E2E / 约束诊断）
+├── docs/model_cards/         # 4 份技术 model card（分配 MILP / 滚动 E2E / 约束诊断 / LLM planner）
 ├── config/config.yaml        # 配置（默认 mock，密钥走环境变量）
 ├── data/
 │   ├── raw/                  # 原始 zip/xlsx（gitignored）
