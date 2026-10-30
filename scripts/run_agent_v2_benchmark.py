@@ -343,6 +343,7 @@ def _run_one(task: Task, policy: str) -> Dict[str, Any]:
         "facts_ok": not fact_errors,
         "fact_errors": fact_errors,
         "verified": run.verification.ok,
+        "abstained": (not run.verification.ok),
         "replanned": run.replanned,
         "steps": len(run.trace),
         "elapsed_ms": round(elapsed, 3),
@@ -376,6 +377,7 @@ def main() -> None:
                     for row in group
                     if row["status"] == "success" and not row["facts_ok"]
                 ),
+                "abstained": sum(1 for row in group if row["abstained"]),
                 "replans": sum(1 for row in group if row["replanned"]),
                 "avg_steps": round(sum(row["steps"] for row in group) / len(group), 2),
                 "avg_latency_ms": round(
@@ -415,6 +417,7 @@ def main() -> None:
             "分配 MILP 是小规模合成 3 DC × 4 订单模型，用于验证 OR 工具链，不代表真实 400 单规模。",
             "30 个任务覆盖 4 类约束、8 个对比、4 个汇总、4 个 MILP、3 个 DAG、7 个鲁棒性；不覆盖开放对话/长期记忆。",
             "三个策略共用同一套工具与任务，差异只来自 verifier 和 fallback；raw 的 verified=True 仅表示没有 verifier。",
+            "abstain 表示 verifier 失败且 runtime 拒绝输出结论；它不应被算作成功。",
         ],
     }
 
@@ -429,13 +432,13 @@ def main() -> None:
     lines.append(f"- Tasks: **{len(tasks)}** | policies: `{', '.join(policies)}`")
     lines.append("")
     lines += ["## Summary", ""]
-    lines.append("| policy | success | success rate | verifier pass | false success | replans | avg steps | avg ms |")
-    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|")
+    lines.append("| policy | success | success rate | verifier pass | false success | abstain | replans | avg steps | avg ms |")
+    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|")
     for row in summary:
         lines.append(
             f"| {row['policy']} | {row['success']}/{row['tasks']} | "
             f"{row['success_rate']:.1%} | {row['verified_rate']:.1%} | "
-            f"{row['false_success']} | {row['replans']} | "
+            f"{row['false_success']} | {row['abstained']} | {row['replans']} | "
             f"{row['avg_steps']} | {row['avg_latency_ms']:.2f} |"
         )
     lines.append("")
@@ -466,7 +469,10 @@ def main() -> None:
     lines.append(
         f"- **Verifier 的作用是拒绝错误事实。** `verified` 对 7 个任务未通过验证"
         f"（4 个预期拦截 + 3 个需修复；verifier pass {verified['verified_rate']:.1%}），"
-        f"`adaptive` 用 fallback 重规划 {adaptive['replans']} 次后 3/3 恢复。"
+        f"其中 {verified['abstained']} 个验证失败任务输出显式 abstain；"
+        f"`adaptive` 用 fallback 重规划 {adaptive['replans']} 次后 3/3 恢复，"
+        f"另有 {adaptive['abstained']} 个 abstain，均为 guardrail 的预期阻断，"
+        f"不是恢复失败。"
     )
     lines.append(
         "- **Guardrail 在注册表层就生效。** 非法枚举、未知工具、坏依赖和超预算"

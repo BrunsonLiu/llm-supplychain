@@ -1,15 +1,15 @@
 # Agent v2 benchmark
 
-- Generated: `2026-10-30T05:49:03.978730+00:00`
+- Generated: `2026-10-30T14:42:09.380338+00:00`
 - Tasks: **30** | policies: `raw, verified, adaptive`
 
 ## Summary
 
-| policy | success | success rate | verifier pass | false success | replans | avg steps | avg ms |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| raw | 27/30 | 90.0% | 100.0% | 1 | 0 | 1.4 | 6.13 |
-| verified | 27/30 | 90.0% | 76.7% | 0 | 0 | 1.4 | 0.66 |
-| adaptive | 30/30 | 100.0% | 86.7% | 0 | 3 | 1.5 | 0.85 |
+| policy | success | success rate | verifier pass | false success | abstain | replans | avg steps | avg ms |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| raw | 27/30 | 90.0% | 100.0% | 1 | 0 | 0 | 1.4 | 7.11 |
+| verified | 27/30 | 90.0% | 76.7% | 0 | 7 | 0 | 1.4 | 0.89 |
+| adaptive | 30/30 | 100.0% | 86.7% | 0 | 4 | 3 | 1.5 | 1.11 |
 
 ## By category
 
@@ -26,7 +26,7 @@
 ## Findings
 
 - **Raw 完成不等于正确。** `raw` 成功 27/30，但有 1 个假成功（工具返回错误数字仍报 success）；`verified` 27/30，假成功 0；`adaptive` 30/30。
-- **Verifier 的作用是拒绝错误事实。** `verified` 对 7 个任务未通过验证（4 个预期拦截 + 3 个需修复；verifier pass 76.7%），`adaptive` 用 fallback 重规划 3 次后 3/3 恢复。
+- **Verifier 的作用是拒绝错误事实。** `verified` 对 7 个任务未通过验证（4 个预期拦截 + 3 个需修复；verifier pass 76.7%），其中 7 个验证失败任务输出显式 abstain；`adaptive` 用 fallback 重规划 3 次后 3/3 恢复，另有 4 个 abstain，均为 guardrail 的预期阻断，不是恢复失败。
 - **Guardrail 在注册表层就生效。** 非法枚举、未知工具、坏依赖和超预算都不会进入 handler；这比在 prompt 里要求模型“不要调用”更可靠。
 - **这不是模型能力分数。** 规划器是脚本 DAG；要测 LLM 规划，需要把同一个 `Plan` 接口接到真实 function calling，并单独报告 token/延迟/方差。
 

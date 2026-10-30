@@ -73,7 +73,7 @@ status ← status_of(τ, V, replanned)
 - `verified`：执行 + verifier；衡量拒绝能力，但不会修。
 - `adaptive`：执行 + verifier + 脚本 fallback；衡量显式修复。
 
-指标：任务成功、假成功、verifier 通过率、重规划次数、平均步数。任务矩阵和逐任务状态见 `benchmarks/AGENT_V2_REPORT.md`。
+指标：任务成功、假成功、abstain、verifier 通过率、重规划次数、平均步数。`abstain` 表示验证失败后拒绝输出结论；guardrail 的预期阻断也会计入，因此不能把 abstain 直接等同于“错误”。任务矩阵和逐任务状态见 `benchmarks/AGENT_V2_REPORT.md`。
 
 **边界**：planner 是脚本 DAG；数字只反映 runtime/verifier/fallback，不反映 LLM 规划能力。`LLMPlanner`/`ReActAgent` 有 fake-client 测试，但没有真实模型评测，因此不能把 30 任务结果外推成模型分数。
 
