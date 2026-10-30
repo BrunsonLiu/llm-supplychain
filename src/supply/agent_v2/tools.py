@@ -39,6 +39,12 @@ EXPERIMENTS: Dict[str, Dict[str, Any]] = {
         "baseline": 1.0,
         "label": "局部库存 100%→120%/150%",
     },
+    "placement": {
+        "file": "placement_summary.json",
+        "arm": "shares",
+        "baseline": None,
+        "label": "固定总量 100%：DC 布点重摆",
+    },
 }
 
 METRICS = {
@@ -76,6 +82,47 @@ def _summarize(name: str, metric: str) -> Dict[str, Any]:
     rows = _rows(name)
     spec = EXPERIMENTS[name]
     metric_key = METRICS[metric]
+    if name == "placement":
+        baseline_row = next(
+            (row for row in rows if row.get("placement") == "baseline"), rows[0]
+        )
+        best_row = max(rows, key=lambda row: float(row["target_accepted_otif_mean"]))
+        best_value = float(best_row["target_accepted_otif_mean"])
+        close = [
+            row
+            for row in rows
+            if abs(float(row["target_accepted_otif_mean"]) - best_value) < 0.0005
+        ]
+        baseline_target = _pct(baseline_row["target_accepted_otif_mean"])
+        best_target = _pct(best_value)
+        return {
+            "experiment": name,
+            "label": spec["label"],
+            "rows": [
+                {
+                    "arm": row.get("shares", row.get("placement")),
+                    "label": row.get("label", ""),
+                    "target_pct": _pct(row["target_accepted_otif_mean"]),
+                    "rest_pct": _pct(row.get("rest_accepted_otif_mean", 0.0)),
+                    "all_pct": _pct(row.get("all_otif_mean", 0.0)),
+                    "backlog": float(row.get("accepted_backlog_units", 0.0)),
+                    "metric": _pct(row.get(metric_key, 0.0)),
+                }
+                for row in rows
+            ],
+            "baseline_arm": baseline_row.get("shares", baseline_row.get("placement")),
+            "baseline_target_pct": baseline_target,
+            "best_arm": best_row.get("shares", best_row.get("placement")),
+            "best_target_pct": best_target,
+            "target_delta_pp": round(best_target - baseline_target, 3),
+            "saturates": len(close) > 1,
+            "facts": {
+                "baseline_target_pct": baseline_target,
+                "best_target_pct": best_target,
+                "target_delta_pp": round(best_target - baseline_target, 3),
+                "saturates": len(close) > 1,
+            },
+        }
     target = [
         {
             "arm": _arm(row, name),
@@ -239,12 +286,28 @@ def _diagnose(args: Mapping[str, Any]) -> ToolResult:
             "承运商时效是第三约束。"
         )
         recommendation = "先买一天时效，不要再买第二天。"
-    else:
+    elif name == "local_stock":
         finding = (
             f"局部库存 100%→150% 才让目标 OTIF {delta:+.1f}pp；"
             "120% 反而更差，路径不单调，不能证明固定总量重摆位有效。"
         )
         recommendation = "150% 是上量上界；下一步做固定总量重摆位实验。"
+    else:
+        finding = (
+            f"固定 100% 总量、只改 DC 布点：最好 {summary['best_arm']} "
+            f"让目标 OTIF {delta:+.1f}pp（{summary['baseline_target_pct']}%→"
+            f"{summary['best_target_pct']}%）；"
+            + (
+                "布点本身能改善服务。"
+                if delta >= 5.0
+                else "方向性但不稳健：baseline 重复运行跨度 5pp，臂间 2–3pp 差异在噪声内，不能当因果效应。"
+            )
+        )
+        recommendation = (
+            "先做布点优化。"
+            if delta >= 5.0
+            else "不要用固定总量重摆位替代补货；优先保留库存总量。"
+        )
     facts = {
         **summary["facts"],
         "top_constraint": name,

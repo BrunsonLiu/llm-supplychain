@@ -256,6 +256,11 @@ from .local_stock_report import (
     summarize_local_stock,
     write_local_stock_report,
 )
+from .placement_report import (
+    build_placement_report,
+    summarize_placement,
+    write_placement_report,
+)
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -467,6 +472,9 @@ __all__ = [
     "build_local_stock_report",
     "summarize_local_stock",
     "write_local_stock_report",
+    "build_placement_report",
+    "summarize_placement",
+    "write_placement_report",
     "run_flow_e2e",
     "run_single_week_e2e",
     "summarize_flow",

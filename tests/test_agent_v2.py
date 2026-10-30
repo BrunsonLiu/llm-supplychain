@@ -65,6 +65,7 @@ def test_diagnosis_reads_real_benchmark():
         ("dc_capacity", 2.5),
         ("transit", 5.0),
         ("local_stock", 2.5),
+        ("placement", 2.5),
     ]:
         result = registry.execute(
             PlanStep("d", "diagnose_service_gap", {"constraint": constraint})

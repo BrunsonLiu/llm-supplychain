@@ -34,6 +34,7 @@ weeks or companies.
 | 37 | DC capacity 1×→2×/10× | **+2.5** | binding, saturates at 2× |
 | 38 | transit 0→−1/−2 days | **+5.0** | binding, saturates at −1 |
 | 39 | local stock 100%/120%/150% | **+2.5** | only at 150%, non-monotonic |
+| 40 | fixed-total DC shares (4 plans) | **+2.5** | within 5pp solver noise, not robust |
 
 ## 4. Why the nulls matter
 
@@ -60,7 +61,12 @@ the rest (~1.1pp). Week 39 shows that only 150% local stock reaches 100%, but:
 - the experiment cannot separate "local placement" from "more total units".
 
 Therefore the honest conclusion is **resource-constrained**, not "the optimizer
-should rebalance inventory". The next clean test is a fixed-total reallocation.
+should rebalance inventory". Week 40 ran the clean fixed-total test: at 100%
+total stock, the best DC share was +2.5pp vs baseline, but the same baseline
+produced 92.5%/95.0%/97.5% across repeats (5pp spread) and the arm ranking
+flipped. The effect is directional, not robust; Week 39's 150% arm remains the
+only one at 100%. The residual is still dominated by total units, not a proven
+placement effect.
 
 ## 6. Threats to validity
 
@@ -76,7 +82,7 @@ should rebalance inventory". The next clean test is a fixed-total reallocation.
 The reports and JSON are in `benchmarks/`:
 
 - `STOCK_REPORT.md`, `DC_CAPACITY_REPORT.md`, `TRANSIT_REPORT.md`,
-  `LOCAL_STOCK_REPORT.md`;
+  `LOCAL_STOCK_REPORT.md`, `PLACEMENT_REPORT.md`;
 - `DISPATCH_PRIORITY_REPORT.md`, `PICK_PRIORITY_REPORT.md`,
   `CAPACITY_REPORT.md`, `ARRIVAL_REPORT.md`.
 
