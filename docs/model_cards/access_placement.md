@@ -40,23 +40,52 @@ s.t.  Σ_d y[d,s] = stock_total[s]          ∀s
 
 | policy | target OTIF | rest OTIF | all OTIF | backlog | fill | avg day | coverage | moved units |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| baseline 34/28/38 | **95.8%** | **99.1%** | **98.7%** | 141 | 99.6% | 3.53 | — | 0 |
-| access_history | 94.2% | 98.8% | 98.3% | 214 | 99.4% | 4.04 | 47.1% | 8,619 |
-| access_oracle | 97.5% | 97.4% | 97.4% | 174 | 99.5% | 3.44 | 63.1% | 8,222 |
+| baseline 34/28/38 | **97.5%** | **99.3%** | **99.1%** | 142 | 99.6% | 3.54 | — | 0 |
+| access_history | 96.7% | 99.5% | 99.2% | 392 | 98.8% | 3.46 | 44.9% | 9,212 |
+| access_oracle | 97.5% | 97.7% | 97.7% | 196 | 99.4% | 3.45 | 63.1% | 8,222 |
 
 三次重复的 target 范围：
 
-- baseline：95.0–97.5%
-- access_history：92.5–95.0%
+- baseline：97.5%
+- access_history：95.0–97.5%
 - access_oracle：97.5–97.5%
 
 ## 5. 结论
 
-1. **没有稳健的端到端收益。** 历史需求版均值 −1.7pp（范围 92.5–95.0），低于 baseline；oracle +1.7pp（范围 97.5），但 baseline 的上界也是 97.5%。两者差异都在 5pp 求解器/到达噪声附近。
-2. **oracle 不是 Pareto 改进。** target +1.7pp，但 rest −1.7pp、全量 −1.3pp；它把服务从非目标挪到目标，不是“同样库存服务更多订单”。
-3. **覆盖代理与 OTIF 不对齐。** MILP 只最大化静态可达需求，看不到拣选队列、到达形状、DC 峰值负荷；把 60% 库存放到一个 DC 可能制造拣选瓶颈。历史版 coverage 只有 47.1%，oracle 63.1%，但 coverage 更高不等于 OTIF 更高。
-4. **手选 baseline 仍然最好。** 这与 Week 40 的 null 一致：固定总量下，布点不是主要杠杆；Week39 的 150% 总量才是唯一把目标做到 100% 的臂。
+1. **没有稳健的端到端收益。** 历史需求版均值 −0.8pp（范围 95.0–97.5），低于 baseline；oracle 目标持平（97.5%）。两者差异都在 5pp 求解器/到达噪声附近。
+2. **没有 Pareto 改进。** oracle 目标持平，但 rest −1.6pp、全量 −1.4pp；history 全量 +0.1pp，但 target −0.8pp、积压 392（baseline 142）。两者都至少输一个指标。
+3. **覆盖代理与 OTIF 不对齐。** MILP 只最大化静态可达需求，看不到拣选队列、到达形状、DC 峰值负荷；把 60% 库存放到一个 DC 可能制造拣选瓶颈。历史版 coverage 只有 44.9%，oracle 63.1%，但 coverage 更高不等于 OTIF 更高。
+4. **手选 baseline 在 target 持平下仍有更好的全量。** 这与 Week 40 的 null 一致：固定总量下，布点不是主要杠杆；Week39 的 150% 总量才是唯一把目标做到 100% 的臂。
 5. **oracle 的 97.5% 不是策略上界**，只是“本周订单已知”的一个参照；不能把它写成可部署收益。
+
+## 5b. 负荷 cap 扩展（Week 42）
+
+Week41 的 coverage 代理看不到“库存停在哪会压垮哪个 DC 的拣选”。Week42 加一个 stock-implied 拣选分钟 cap：
+
+```
+L[d] = Σ_s y[d,s] · c
+L[d] ≤ capacity[d] + overload[d]
+max coverage − penalty · Σ_d overload[d] − moves
+```
+
+`c = 0.052` 分钟/件（订单行 0.35 + 件 0.02 + 发货 0.5 的加权总分钟 / 总件数），`capacity = 1 拣货员 × 600 分钟`，超载用 `10,000,000 / 0.001 min` 的软惩罚。
+
+| 策略 | 目标 OTIF | 非目标 | 全量 | 积压 | 覆盖率 | 峰值拣选 |
+|---|---:|---:|---:|---:|---:|---:|
+| baseline | 96.7% | 99.0% | 98.7% | 168 | — | — |
+| history | 96.7% | 99.4% | 99.2% | 263 | 44.9% | — |
+| history + load | 95.0% | 99.3% | 98.8% | 116 | 26.1% | 600 min |
+| oracle | 96.7% | 97.9% | 97.8% | 172 | 63.1% | — |
+| oracle + load | 95.8% | 98.2% | 98.0% | 149 | 37.7% | 600 min |
+
+结论：
+
+- cap **确实生效**：load 臂把 DC 占比拉到 35/30/35，峰值 600 min、软超载 0。
+- 但它是 **目标 ↔ 积压 trade-off**，不是 Pareto 改进：history 目标 −1.7pp、覆盖率 44.9%→26.1%，积压 263→116；oracle 目标 −0.8pp、覆盖率 63.1%→37.7%，积压 172→149。
+- `history` 的 target/rest/all 均值看似 Pareto，但 target 范围 95.0–97.5 与 baseline 重叠、积压 263 vs 168，不能称稳健收益。
+- `L[d]` 仍是 placement proxy，不是真实队列；600 min 是声明容量，不建模到达顺序/波次释放。
+
+完整报告：[`benchmarks/ACCESS_LOAD_REPORT.md`](../../benchmarks/ACCESS_LOAD_REPORT.md)。
 
 ## 6. 效度威胁
 
@@ -72,6 +101,11 @@ s.t.  Σ_d y[d,s] = stock_total[s]          ∀s
 PYTHONPATH=src;. python scripts/run_e2e_access.py --repeats 3
 # 输出：benchmarks/ACCESS_REPORT.md + access_summary.json
 # 快速试跑：--orders 80 --seeds 3 --milp-time 2 --service-time 1 --solver-time 2 --repeats 1
+
+# 负荷 cap 扩展（Week 42）
+PYTHONPATH=src;. python scripts/run_e2e_access.py --load-aware --repeats 3 \
+  --stem ACCESS_LOAD --week 42
+# 输出：benchmarks/ACCESS_LOAD_REPORT.md + access_load_summary.json
 ```
 
-相关文档：[Week 40 布点报告](../../benchmarks/PLACEMENT_REPORT.md)、[约束诊断](binding_constraint.md)、[分单 MILP](allocation_milp.md)。
+相关文档：[Week 40 布点报告](../../benchmarks/PLACEMENT_REPORT.md)、[Week 42 负荷报告](../../benchmarks/ACCESS_LOAD_REPORT.md)、[约束诊断](binding_constraint.md)、[分单 MILP](allocation_milp.md)。

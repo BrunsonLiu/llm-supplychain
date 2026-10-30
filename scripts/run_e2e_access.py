@@ -38,13 +38,21 @@ from supply.e2e import (  # noqa: E402
 )
 from supply.e2e.access import apply_target  # noqa: E402
 from supply.e2e.dispatch import DispatchCell  # noqa: E402
-
+from supply.fulfillment.solvers import (  # noqa: E402
+    PICK_MINUTES_PER_LINE,
+    PICK_MINUTES_PER_SHIPMENT,
+    PICK_MINUTES_PER_UNIT,
+)
 
 BASE_SHARES = (0.34, 0.28, 0.38)
 POLICIES = {
     "baseline": "基线布点 34/28/38（无调拨）",
     "access_history": "历史可达需求 MILP",
     "access_oracle": "本周可达需求 MILP（上界）",
+}
+LOAD_POLICIES = {
+    "access_history_load": "历史需求 + 拣选负荷 MILP",
+    "access_oracle_load": "本周需求 + 拣选负荷 MILP",
 }
 
 
@@ -105,6 +113,11 @@ def main() -> None:
     parser.add_argument("--solver-time", type=float, default=10.0)
     parser.add_argument("--min-share", type=float, default=0.10)
     parser.add_argument("--max-share", type=float, default=0.60)
+    parser.add_argument("--load-aware", action="store_true")
+    parser.add_argument("--load-capacity", type=float, default=600.0)
+    parser.add_argument("--load-penalty", type=int, default=10_000_000)
+    parser.add_argument("--stem", default="ACCESS")
+    parser.add_argument("--week", type=int, default=41)
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--lookback-weeks", type=int, default=6)
     parser.add_argument("--noise", type=float, default=0.15)
@@ -139,6 +152,13 @@ def main() -> None:
         raise ValueError("抽样订单收入为 0")
     target_mask = order_revenue >= float(np.quantile(order_revenue, 0.90))
 
+    units = int(baseline.fulfillment.line_qty.sum())
+    total_pick_minutes = (
+        baseline.fulfillment.n_lines * PICK_MINUTES_PER_LINE
+        + units * PICK_MINUTES_PER_UNIT
+        + baseline.fulfillment.n_orders * PICK_MINUTES_PER_SHIPMENT
+    )
+    pick_load_coeff = total_pick_minutes / units if units else 0.0
     oracle_demand = oracle_access(baseline)
     history_demand = history_access(
         clean,
@@ -146,22 +166,32 @@ def main() -> None:
         last_week,
         lookback_weeks=args.lookback_weeks,
     )
+
+    def _solve(demand, load_aware: bool = False):
+        kwargs = {}
+        if load_aware:
+            kwargs = {
+                "pick_minutes_per_unit": pick_load_coeff,
+                "pick_capacity": args.load_capacity,
+                "pick_load_penalty": args.load_penalty,
+            }
+        return placement_milp(
+            baseline,
+            demand,
+            time_limit=args.solver_time,
+            min_share=args.min_share,
+            max_share=args.max_share,
+            **kwargs,
+        )
+
     targets = {
-        "access_oracle": placement_milp(
-            baseline,
-            oracle_demand,
-            time_limit=args.solver_time,
-            min_share=args.min_share,
-            max_share=args.max_share,
-        ),
-        "access_history": placement_milp(
-            baseline,
-            history_demand,
-            time_limit=args.solver_time,
-            min_share=args.min_share,
-            max_share=args.max_share,
-        ),
+        "access_oracle": _solve(oracle_demand),
+        "access_history": _solve(history_demand),
     }
+    if args.load_aware:
+        targets["access_history_load"] = _solve(history_demand, load_aware=True)
+        targets["access_oracle_load"] = _solve(oracle_demand, load_aware=True)
+    labels = {**POLICIES, **LOAD_POLICIES}
     print("=" * 120)
     print(args.title)
     print("=" * 120)
@@ -179,22 +209,41 @@ def main() -> None:
         f"{targets['access_history'].coverage:.1%} moved "
         f"{targets['access_history'].moved_units:,} units"
     )
+    if args.load_aware:
+        print(
+            f"pick load: coeff {pick_load_coeff:.3f} min/unit | "
+            f"cap {args.load_capacity:.0f} min/DC | "
+            f"oracle peak {targets['access_oracle_load'].peak_pick_minutes:.0f} min "
+            f"over {targets['access_oracle_load'].overload_minutes:.0f} | "
+            f"history peak {targets['access_history_load'].peak_pick_minutes:.0f} min "
+            f"over {targets['access_history_load'].overload_minutes:.0f}"
+        )
 
     seeds = tuple(range(1, int(args.seeds) + 1))
+    policies = ["baseline"] + [
+        key
+        for key in (
+            "access_history",
+            "access_history_load",
+            "access_oracle",
+            "access_oracle_load",
+        )
+        if key in targets
+    ]
     frames = []
     for repeat in range(int(args.repeats)):
         print(f"\n=== repeat {repeat + 1}/{args.repeats} ===")
-        for policy in ("baseline", "access_history", "access_oracle"):
+        for policy in policies:
             if policy == "baseline":
                 instance = baseline
                 target = None
-                label = POLICIES[policy]
+                label = labels[policy]
                 moved = 0
                 status = "—"
             else:
                 target = targets[policy]
                 instance = apply_target(baseline, target)
-                label = POLICIES[policy]
+                label = labels[policy]
                 moved = target.moved_units
                 status = target.status
             shares = instance.fulfillment.stock.sum(axis=1) / stock_total
@@ -242,6 +291,16 @@ def main() -> None:
             frame["coverage"] = (
                 float(target.coverage) if target is not None else 0.0
             )
+            frame["peak_pick_minutes"] = (
+                float(target.peak_pick_minutes) if target is not None else 0.0
+            )
+            frame["pick_capacity"] = (
+                float(target.pick_capacity) if target is not None else 0.0
+            )
+            frame["overload_minutes"] = (
+                float(target.overload_minutes) if target is not None else 0.0
+            )
+            frame["pick_load_coeff"] = float(pick_load_coeff)
             frame["demand_revenue"] = demand_revenue
             frame["accepted_revenue"] = accepted_revenue
             frame["lost_revenue"] = float(demand_revenue - accepted_revenue)
@@ -271,6 +330,14 @@ def main() -> None:
         "调拨假设在周前完成且无运输时间/费用；真实 DC 调拨需要提前期、批次和成本。",
         "布点 MILP 是单线程固定 seed；端到端分单 MILP 仍是 2 workers/时间受限，跨臂重解会带来 1–3pp 差异。",
     ]
+    if args.load_aware:
+        limitations += [
+            "负荷臂的 pick minutes 是 stock-implied 代理：按单位平均拣选分钟乘 DC 库存，"
+            "不是波次/到达仿真的真实队列；cap 是 1 名拣货员 × 600 分钟，软超载惩罚，"
+            "所以它约束的是“库存停在哪”，不是“实际先拣谁”。",
+            "负荷臂用同一份 demand，但目标里 coverage 与 overload 的权重是声明值；"
+            "cap 与惩罚变化会改变 target，不能把单点结果当全局最优。",
+        ]
     if full_scale:
         limitations += [
             "Week 40 同一 baseline 的 400×30 重复运行得到 92.5/95.0/97.5 目标 OTIF（5pp 跨度）；本周臂间差异必须和这个波动一起读。",
@@ -290,6 +357,7 @@ def main() -> None:
             "demand_revenue": demand_revenue,
         },
         "settings": {
+            "week": args.week,
             "orders": args.orders,
             "max_lines": args.max_lines,
             "seed": args.seed,
@@ -301,9 +369,13 @@ def main() -> None:
             "min_share": args.min_share,
             "max_share": args.max_share,
             "workers": args.workers,
+            "load_aware": bool(args.load_aware),
+            "pick_load_coeff": pick_load_coeff,
+            "load_capacity": args.load_capacity,
+            "load_penalty": args.load_penalty,
             "pickers": args.pickers,
             "noise": args.noise,
-            "policies": list(POLICIES),
+            "policies": list(policies),
             "stock_factor": 1.0,
             "stock_units": stock_total,
             "dc_capacity_factor": 2.0,
@@ -330,7 +402,9 @@ def main() -> None:
         "rows": frame.to_dict("records"),
         "limitations": limitations,
     }
-    paths = write_access_report(payload, args.out_dir, title=args.title)
+    paths = write_access_report(
+        payload, args.out_dir, title=args.title, stem=args.stem
+    )
     print(f"\nWrote {paths['report']}")
     print(f"Wrote {paths['summary']}")
 

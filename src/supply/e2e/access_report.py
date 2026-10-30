@@ -48,6 +48,9 @@ def summarize_access(frame: pd.DataFrame) -> pd.DataFrame:
                 "avg_delivery_day": _mean(group, "avg_delivery_day"),
                 "moved_units_mean": _mean(group, "moved_units"),
                 "coverage_mean": _mean(group, "coverage"),
+                "peak_pick_minutes_mean": _mean(group, "peak_pick_minutes"),
+                "pick_capacity": _mean(group, "pick_capacity"),
+                "overload_minutes_mean": _mean(group, "overload_minutes"),
                 "milp_status": first.get("milp_status", "—"),
             }
         )
@@ -67,12 +70,13 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
     settings = payload.get("settings", {})
     summary: Sequence[Mapping[str, Any]] = payload.get("summary", [])
     rows = {str(row["policy"]): row for row in summary}
+    load_keys = [key for key in rows if key.endswith("_load")]
     baseline = rows.get("baseline")
     oracle = rows.get("access_oracle")
     history = rows.get("access_history")
 
     lines = [
-        "# Week 41: demand-weighted stock placement",
+        f"# Week {settings.get('week', 41)}: demand-weighted stock placement",
         "",
         f"- Orders: **{dataset.get('orders', '—')}** | "
         f"units: **{_num(dataset.get('units', 0))}** | "
@@ -86,10 +90,11 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
         "",
         "## Design",
         "",
-        "Week 40 compared four hand-picked DC stock splits and found only a "
-        "directional, non-robust difference. Week 41 keeps the same fixed total "
-        "stock, 400 invoices, 30 seeds, 2x DC capacity and transit -1, but "
-        "replaces the hand-picked shares with a small integer program:",
+        f"Week {int(settings.get('week', 41)) - 1} compared hand-picked DC stock "
+        "splits and found only a directional, non-robust difference. This run "
+        "keeps the same fixed total stock, 400 invoices, 30 seeds, 2x DC "
+        "capacity and transit -1, but replaces the hand-picked shares with a "
+        "small integer program:",
         "",
         "```",
         "max  sum_{d,s} z[d,s]",
@@ -105,16 +110,42 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
         "`access_history` uses the prior six weeks' country x SKU quantities and "
         "the current week's destination/transit matrix. The 10%/60% share bounds "
         "stop the coverage objective from parking almost all stock in one DC.",
+    ]
+    if load_keys:
+        lines += [
+            "",
+            "The `_load` arms add a stock-implied pick-minute cap. With "
+            f"`c={float(settings.get('pick_load_coeff', 0)):.3f}` minutes per "
+            "unit and per-DC capacity "
+            f"`{float(settings.get('load_capacity', 0)):.0f}` minutes:",
+            "",
+            "```",
+            "L[d] = sum_s y[d,s] * c",
+            "L[d] <= capacity[d] + overload[d]",
+            "max coverage - penalty * sum_d overload[d] - moves",
+            "```",
+            "",
+            "This is a placement proxy, not a queue simulation: it penalises "
+            "parking stock where the pick layer would have to work it, but it "
+            "does not know arrival order or wave release.",
+        ]
+    lines += [
         "",
         "## Results",
         "",
         "| policy | target OTIF | rest OTIF | all OTIF | backlog | fill | "
-        "avg day | coverage | moved units | MILP |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---|",
+        "avg day | coverage | peak pick | moved units | MILP |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for row in summary:
         coverage = (
             "—" if row["policy"] == "baseline" else _pct(row.get("coverage_mean", 0))
+        )
+        peak_pick = (
+            "—"
+            if row["policy"] == "baseline"
+            or float(row.get("pick_capacity", 0)) <= 0
+            else f"{_num(row.get('peak_pick_minutes_mean', 0))} min"
         )
         lines.append(
             f"| {row['policy']} | {_pct(row.get('target_accepted_otif_mean', 0))} | "
@@ -123,7 +154,7 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
             f"{_num(row.get('accepted_backlog_units', 0))} | "
             f"{_pct(row.get('accepted_fill_rate', 0))} | "
             f"{float(row.get('avg_delivery_day', 0)):.2f} | "
-            f"{coverage} | "
+            f"{coverage} | {peak_pick} | "
             f"{_num(row.get('moved_units_mean', 0))} | "
             f"{row.get('milp_status', '—')} |"
         )
@@ -146,7 +177,9 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
                 verdict = "directional, inside the 5pp solver-noise band"
             else:
                 verdict = "not material on this run"
-            direction = "higher" if delta_pp > 0 else "lower"
+            direction = (
+                "flat" if abs(delta_pp) < 0.05 else ("higher" if delta_pp > 0 else "lower")
+            )
             lines.append(
                 f"- **{label}**: target {_pct(base_target)} -> "
                 f"{_pct(row.get('target_accepted_otif_mean', 0))} "
@@ -169,12 +202,54 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
                 + ". Treat differences smaller than this range as solver/"
                 "arrival noise, not a treatment effect."
             )
-        if oracle and history:
-            lines.append(
-                "- **No arm is a Pareto improvement.** The history arm loses "
-                "target OTIF; the oracle arm gains target but loses rest and "
-                "all-order OTIF. Neither dominates the hand-picked baseline."
+        pareto_like = []
+        for key, row in rows.items():
+            if key == "baseline":
+                continue
+            target_ok = float(row.get("target_accepted_otif_mean", 0)) >= base_target
+            rest_ok = float(row.get("rest_accepted_otif_mean", 0)) >= float(
+                baseline.get("rest_accepted_otif_mean", 0)
             )
+            all_ok = float(row.get("accepted_otif_mean", 0)) >= float(
+                baseline.get("accepted_otif_mean", 0)
+            )
+            strict = (
+                float(row.get("target_accepted_otif_mean", 0)) > base_target
+                or float(row.get("rest_accepted_otif_mean", 0))
+                > float(baseline.get("rest_accepted_otif_mean", 0))
+                or float(row.get("accepted_otif_mean", 0))
+                > float(baseline.get("accepted_otif_mean", 0))
+            )
+            if target_ok and rest_ok and all_ok and strict:
+                pareto_like.append(key)
+        if pareto_like:
+            backlog_note = []
+            for key in pareto_like:
+                row = rows[key]
+                backlog_note.append(
+                    f"`{key}` backlog {_num(row.get('accepted_backlog_units', 0))} "
+                    f"vs baseline {_num(baseline.get('accepted_backlog_units', 0))}"
+                )
+            scope = (
+                "mean across repeats"
+                if int(settings.get("repeats", 1)) > 1
+                else "single run"
+            )
+            lines.append(
+                "- **Pareto-looking on this run**: "
+                + ", ".join(f"`{key}`" for key in pareto_like)
+                + " is at least as good as baseline on target, rest and "
+                "all-order OTIF, with a strict gain somewhere. "
+                + "; ".join(backlog_note)
+                + f". This is a {scope}; check the ranges and backlog before "
+                "calling it robust."
+            )
+        else:
+            lines.append(
+                "- **No arm is a Pareto improvement.** Each non-baseline arm "
+                "loses at least one of target, rest or all-order OTIF."
+            )
+        if oracle and history:
             gap_pp = 100.0 * (
                 float(oracle.get("target_accepted_otif_mean", 0))
                 - float(history.get("target_accepted_otif_mean", 0))
@@ -193,28 +268,53 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
                 float(oracle.get("accepted_otif_mean", 0))
                 - float(baseline.get("accepted_otif_mean", 0))
             )
+            target_pp_oracle = 100.0 * (
+                float(oracle.get("target_accepted_otif_mean", 0)) - base_target
+            )
             if rest_pp < -1.0:
                 lines.append(
-                    f"- **The oracle trades rest for target.** Its target is "
-                    f"{_pct(oracle.get('target_accepted_otif_mean', 0))}, but "
-                    f"rest moves {rest_pp:+.1f}pp and all-order OTIF "
-                    f"{all_pp:+.1f}pp versus baseline: this is reallocation, "
-                    "not a Pareto service gain."
+                    f"- **The oracle does not buy target service.** Its target "
+                    f"moves {target_pp_oracle:+.1f}pp while rest moves "
+                    f"{rest_pp:+.1f}pp and all-order OTIF {all_pp:+.1f}pp "
+                    "versus baseline: this is reallocation, not a Pareto gain."
                 )
-        if oracle and history:
-            best = max(
-                float(oracle.get("target_accepted_otif_mean", 0)),
-                float(history.get("target_accepted_otif_mean", 0)),
+        if not pareto_like:
+            lines.append(
+                "- **No arm dominates the hand-picked baseline.** The coverage "
+                "MILP improves its own proxy (`coverage`) but not all three "
+                "end-to-end metrics. A likely reason is that the objective "
+                "ignores pick load/queue and arrival timing; concentrating "
+                "stock in the demand-accessible DC can create a pick bottleneck "
+                "that the static proxy never sees."
             )
-            if best <= base_target:
-                lines.append(
-                    "- **No arm beats the hand-picked baseline.** The coverage "
-                    "MILP improves its own proxy (`coverage`) but not end-to-end "
-                    "OTIF. A likely reason is that the objective ignores pick "
-                    "load/queue and arrival timing; concentrating stock in the "
-                    "demand-accessible DC can create a pick bottleneck that the "
-                    "static proxy never sees."
-                )
+        for load_key, base_key in (
+            ("access_history_load", "access_history"),
+            ("access_oracle_load", "access_oracle"),
+        ):
+            load_row = rows.get(load_key)
+            base_row = rows.get(base_key)
+            if not load_row or not base_row:
+                continue
+            load_pp = 100.0 * (
+                float(load_row.get("target_accepted_otif_mean", 0))
+                - float(base_row.get("target_accepted_otif_mean", 0))
+            )
+            lines.append(
+                f"- **{load_key} vs {base_key}**: target "
+                f"{_pct(base_row.get('target_accepted_otif_mean', 0))} -> "
+                f"{_pct(load_row.get('target_accepted_otif_mean', 0))} "
+                f"({load_pp:+.1f}pp); all-order "
+                f"{_pct(base_row.get('accepted_otif_mean', 0))} -> "
+                f"{_pct(load_row.get('accepted_otif_mean', 0))}; backlog "
+                f"{_num(base_row.get('accepted_backlog_units', 0))} -> "
+                f"{_num(load_row.get('accepted_backlog_units', 0))}; peak "
+                f"stock-implied pick "
+                f"{_num(load_row.get('peak_pick_minutes_mean', 0))} min/DC, "
+                f"overload {_num(load_row.get('overload_minutes_mean', 0))} min. "
+                "The load cap is a placement proxy, so this tests whether "
+                "avoiding concentration helps, not whether the real queue is "
+                "optimised."
+            )
         lines.append(
             "- **This is not a production policy.** `access_oracle` sees the "
             "week's orders; `access_history` still uses the current week's "
@@ -235,15 +335,17 @@ def write_access_report(
     payload: Mapping[str, Any],
     directory: str | Path,
     title: str | None = None,
+    stem: str = "ACCESS",
 ) -> Dict[str, Path]:
-    """Write ``ACCESS_REPORT.md`` and ``access_summary.json``."""
+    """Write ``<STEM>_REPORT.md`` and ``<stem>_summary.json``."""
     out = Path(directory)
     out.mkdir(parents=True, exist_ok=True)
     data = dict(payload)
     if title:
         data["title"] = title
-    report = out / "ACCESS_REPORT.md"
-    summary = out / "access_summary.json"
+    prefix = str(stem).strip().upper() or "ACCESS"
+    report = out / f"{prefix}_REPORT.md"
+    summary = out / f"{prefix.lower()}_summary.json"
     report.write_text(build_access_report(data), encoding="utf-8")
     summary.write_text(
         json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"

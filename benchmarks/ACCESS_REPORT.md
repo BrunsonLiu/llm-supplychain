@@ -5,7 +5,7 @@
 
 ## Design
 
-Week 40 compared four hand-picked DC stock splits and found only a directional, non-robust difference. Week 41 keeps the same fixed total stock, 400 invoices, 30 seeds, 2x DC capacity and transit -1, but replaces the hand-picked shares with a small integer program:
+Week 40 compared hand-picked DC stock splits and found only a directional, non-robust difference. This run keeps the same fixed total stock, 400 invoices, 30 seeds, 2x DC capacity and transit -1, but replaces the hand-picked shares with a small integer program:
 
 ```
 max  sum_{d,s} z[d,s]
@@ -20,20 +20,21 @@ s.t. sum_d y[d,s] = stock_total[s]
 
 ## Results
 
-| policy | target OTIF | rest OTIF | all OTIF | backlog | fill | avg day | coverage | moved units | MILP |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| baseline | 95.8% | 99.1% | 98.7% | 141 | 99.6% | 3.53 | — | 0 | — |
-| access_history | 94.2% | 98.8% | 98.3% | 214 | 99.4% | 4.04 | 47.1% | 8,619 | OPTIMAL |
-| access_oracle | 97.5% | 97.4% | 97.4% | 174 | 99.5% | 3.44 | 63.1% | 8,222 | OPTIMAL |
+| policy | target OTIF | rest OTIF | all OTIF | backlog | fill | avg day | coverage | peak pick | moved units | MILP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| baseline | 97.5% | 99.3% | 99.1% | 142 | 99.6% | 3.54 | — | — | 0 | — |
+| access_history | 96.7% | 99.5% | 99.2% | 392 | 98.8% | 3.46 | 44.9% | — | 9,212 | OPTIMAL |
+| access_oracle | 97.5% | 97.7% | 97.7% | 196 | 99.4% | 3.45 | 63.1% | — | 8,222 | OPTIMAL |
 
 ## Findings
 
-- **oracle**: target 95.8% -> 97.5% (+1.7pp, higher), moved 8,222 units; not material on this run.
-- **history**: target 95.8% -> 94.2% (-1.7pp, lower), moved 8,619 units; not material on this run.
-- **Repeated runs**: target OTIF ranges baseline 95.0%–97.5%; access_history 92.5%–95.0%; access_oracle 97.5%–97.5%. Treat differences smaller than this range as solver/arrival noise, not a treatment effect.
-- **No arm is a Pareto improvement.** The history arm loses target OTIF; the oracle arm gains target but loses rest and all-order OTIF. Neither dominates the hand-picked baseline.
-- **oracle - history gap**: +3.3pp. A gap of this size suggests forecast quality matters, but even the oracle does not turn better demand information into a Pareto gain at this fixed total.
-- **The oracle trades rest for target.** Its target is 97.5%, but rest moves -1.7pp and all-order OTIF -1.3pp versus baseline: this is reallocation, not a Pareto service gain.
+- **oracle**: target 97.5% -> 97.5% (+0.0pp, flat), moved 8,222 units; not material on this run.
+- **history**: target 97.5% -> 96.7% (-0.8pp, lower), moved 9,212 units; not material on this run.
+- **Repeated runs**: target OTIF ranges baseline 97.5%–97.5%; access_history 95.0%–97.5%; access_oracle 97.5%–97.5%. Treat differences smaller than this range as solver/arrival noise, not a treatment effect.
+- **No arm is a Pareto improvement.** Each non-baseline arm loses at least one of target, rest or all-order OTIF.
+- **oracle - history gap**: +0.8pp. A gap of this size suggests forecast quality matters, but even the oracle does not turn better demand information into a Pareto gain at this fixed total.
+- **The oracle does not buy target service.** Its target moves +0.0pp while rest moves -1.6pp and all-order OTIF -1.4pp versus baseline: this is reallocation, not a Pareto gain.
+- **No arm dominates the hand-picked baseline.** The coverage MILP improves its own proxy (`coverage`) but not all three end-to-end metrics. A likely reason is that the objective ignores pick load/queue and arrival timing; concentrating stock in the demand-accessible DC can create a pick bottleneck that the static proxy never sees.
 - **This is not a production policy.** `access_oracle` sees the week's orders; `access_history` still uses the current week's destination/transit matrix and assumes the transfer is available before the week starts. Both are declared experiment arms.
 
 ## Limitations

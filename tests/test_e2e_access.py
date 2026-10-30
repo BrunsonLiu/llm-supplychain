@@ -121,6 +121,22 @@ def test_placement_milp_respects_share_bounds() -> None:
     print("[OK] 布点 MILP 遵守 DC 份额上下界")
 
 
+def test_load_aware_placement_caps_stock_implied_pick_minutes() -> None:
+    instance = _instance()
+    target = placement_milp(
+        instance,
+        oracle_access(instance),
+        pick_minutes_per_unit=0.1,
+        pick_capacity=0.6,
+        pick_load_penalty=10_000_000,
+    )
+    assert target.stock.sum() == 10
+    assert target.peak_pick_minutes <= 0.61
+    assert target.overload_minutes <= 1e-9
+    assert target.pick_capacity == 0.6
+    print("[OK] 负荷感知布点把 stock-implied 拣选分钟压在容量内")
+
+
 def test_apply_target_keeps_sku_totals() -> None:
     instance = _instance()
     target = placement_milp(instance, oracle_access(instance))
@@ -223,6 +239,9 @@ def test_report_and_writer(tmp_path: Path) -> None:
     assert paths["report"].exists()
     assert paths["summary"].exists()
     assert "Week 41" in paths["report"].read_text(encoding="utf-8")
+    load_paths = write_access_report(payload, tmp_path, stem="ACCESS_LOAD")
+    assert load_paths["report"].name == "ACCESS_LOAD_REPORT.md"
+    assert load_paths["summary"].name == "access_load_summary.json"
     print("[OK] access 报告与 JSON 落盘")
 
 
@@ -237,4 +256,4 @@ if __name__ == "__main__":
             else:
                 func()
             print(f"[OK] {name}")
-    print("9 access placement tests passed")
+    print("10 access placement tests passed")

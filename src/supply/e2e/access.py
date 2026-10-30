@@ -44,6 +44,7 @@ from .instances import E2EInstance
 DEFAULT_LOOKBACK_WEEKS = 6
 DEFAULT_TIME_LIMIT = 10.0
 DEFAULT_MOVE_PENALTY = 1_000_000
+PICK_LOAD_SCALE = 1_000  # 0.001 pick-minute resolution in the MILP
 
 
 @dataclass(frozen=True)
@@ -76,6 +77,9 @@ class PlacementTarget:
     status: str
     objective: float
     source: str
+    peak_pick_minutes: float = 0.0
+    pick_capacity: float = 0.0
+    overload_minutes: float = 0.0
 
     @property
     def optimal(self) -> bool:
@@ -208,6 +212,9 @@ def placement_milp(
     move_penalty: int = DEFAULT_MOVE_PENALTY,
     min_share: float = 0.0,
     max_share: float = 1.0,
+    pick_minutes_per_unit: Optional[float] = None,
+    pick_capacity: Optional[float] = None,
+    pick_load_penalty: int = 10_000_000,
 ) -> PlacementTarget:
     """Solve the fixed-total coverage model and return integer target stock.
 
@@ -215,11 +222,23 @@ def placement_milp(
     Without them the coverage objective can put almost all stock into one DC and
     produce an operationally meaningless target; the Week-41 script uses
     10%/60% to keep the target inside the region the pick layer can actually run.
+
+    If ``pick_minutes_per_unit`` and ``pick_capacity`` are given, add a
+    stock-implied pick load ``L[d] = sum_s y[d,s] * coeff`` with a soft cap:
+    overload above ``pick_capacity`` is penalised by ``pick_load_penalty``.
+    This is a placement proxy, not a queue simulation.
     """
     if time_limit <= 0:
         raise ValueError("time_limit 必须为正")
     if not 0.0 <= min_share <= max_share <= 1.0:
         raise ValueError("需要 0 <= min_share <= max_share <= 1")
+    if (pick_minutes_per_unit is None) != (pick_capacity is None):
+        raise ValueError("pick_minutes_per_unit 与 pick_capacity 必须同时给出")
+    if pick_minutes_per_unit is not None:
+        if pick_minutes_per_unit <= 0 or pick_capacity is None or pick_capacity <= 0:
+            raise ValueError("拣选分钟系数与容量必须为正")
+        if pick_load_penalty < 0:
+            raise ValueError("pick_load_penalty 不能为负")
     f = instance.fulfillment
     if demand.units.shape != (f.n_dcs, f.n_skus):
         raise ValueError("demand 形状与实例不一致")
@@ -254,8 +273,29 @@ def placement_milp(
     for dc, row in stock_by_dc.items():
         model.Add(sum(row) >= int(np.ceil(min_share * total_stock)))
         model.Add(sum(row) <= int(np.floor(max_share * total_stock)))
+
+    overloads = []
+    load_vars: Dict[int, cp_model.IntVar] = {}
+    load_coef = 0
+    cap_scaled = 0
+    if pick_minutes_per_unit is not None:
+        load_coef = int(round(float(pick_minutes_per_unit) * PICK_LOAD_SCALE))
+        cap_scaled = int(round(float(pick_capacity) * PICK_LOAD_SCALE))
+        if load_coef <= 0 or cap_scaled <= 0:
+            raise ValueError("缩放后的拣选负荷系数/容量必须为正")
+        max_load = int(total_stock * load_coef)
+        for dc, row in stock_by_dc.items():
+            load = model.NewIntVar(0, max_load, f"load_{dc}")
+            model.Add(load == sum(var * load_coef for var in row))
+            load_vars[dc] = load
+            over = model.NewIntVar(0, max_load, f"over_{dc}")
+            model.Add(over >= load - cap_scaled)
+            overloads.append(over)
+
     model.Maximize(
-        sum(covered.values()) * int(move_penalty) - sum(moves)
+        sum(covered.values()) * int(move_penalty)
+        - sum(moves)
+        - int(pick_load_penalty) * sum(overloads)
     )
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = float(time_limit)
@@ -270,6 +310,15 @@ def placement_milp(
         stock[dc, sku] = int(solver.Value(var))
     # CP-SAT's secondary objective already minimises moves; recompute for audit.
     moved = int(np.maximum(stock - f.stock, 0).sum())
+    peak_pick = 0.0
+    overload = 0.0
+    if load_vars:
+        peak_pick = max(
+            float(solver.Value(var)) / PICK_LOAD_SCALE for var in load_vars.values()
+        )
+        overload = sum(
+            float(solver.Value(var)) / PICK_LOAD_SCALE for var in overloads
+        )
     return PlacementTarget(
         stock=stock,
         moved_units=moved,
@@ -278,6 +327,9 @@ def placement_milp(
         status=name,
         objective=float(solver.ObjectiveValue()),
         source=demand.source,
+        peak_pick_minutes=peak_pick,
+        pick_capacity=float(pick_capacity or 0.0),
+        overload_minutes=overload,
     )
 
 
@@ -310,4 +362,7 @@ def access_metadata(target: PlacementTarget) -> Dict[str, Any]:
         "objective": target.objective,
         "coverage": target.coverage,
         "moved_units": target.moved_units,
+        "peak_pick_minutes": target.peak_pick_minutes,
+        "pick_capacity": target.pick_capacity,
+        "overload_minutes": target.overload_minutes,
     }
