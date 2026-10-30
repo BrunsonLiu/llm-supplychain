@@ -19,6 +19,7 @@ from .llm_planner import (
     ToolCall,
     plan_tool_schema,
 )
+from .react import ReActAgent, react_tools
 from .registry import ToolRegistry
 from .runtime import AgentRuntime, default_answer
 from .tools import EXPERIMENTS, build_registry
@@ -35,6 +36,7 @@ __all__ = [
     "PlanStep",
     "PlannerError",
     "PlannerResponse",
+    "ReActAgent",
     "ToolCall",
     "ToolContract",
     "ToolRegistry",
@@ -45,6 +47,7 @@ __all__ = [
     "build_registry",
     "default_answer",
     "plan_tool_schema",
+    "react_tools",
     "require_facts",
     "validate_args",
 ]

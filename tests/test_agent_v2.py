@@ -21,11 +21,13 @@ from supply.agent_v2 import (  # noqa: E402
     PlannerError,
     PlannerResponse,
     PlanStep,
+    ReActAgent,
     ToolCall,
     ToolResult,
     Verifier,
     build_registry,
     plan_tool_schema,
+    react_tools,
 )
 
 
@@ -329,6 +331,76 @@ def test_model_replanner_error_falls_back_explicitly():
     print("[OK] 模型重规划抛错时显式回退到脚本 fallback")
 
 
+def test_react_agent_observes_before_finishing():
+    registry = build_registry()
+    client = _ScriptedClient(
+        [
+            PlannerResponse(tool_calls=(ToolCall("list_experiments", {}),)),
+            PlannerResponse(
+                tool_calls=(
+                    ToolCall(
+                        "diagnose_service_gap",
+                        {"constraint": "stock"},
+                    ),
+                )
+            ),
+            PlannerResponse(
+                tool_calls=(ToolCall("finish", {"answer": "库存是瓶颈"}),)
+            ),
+        ]
+    )
+    checker = Verifier(required_steps=("s1",), expected_facts={"target_delta_pp": 10.0})
+    run = ReActAgent(registry, client, checker).run("库存是不是瓶颈？")
+    assert run.status == "success", run.summary()
+    assert run.answer == "库存是瓶颈"
+    assert [event.tool for event in run.trace] == [
+        "list_experiments",
+        "diagnose_service_gap",
+        "finish",
+    ]
+    assert "观察结果" in client.calls[1][0][-1]["content"]
+    assert react_tools(registry)[-1]["function"]["name"] == "finish"
+    print("[OK] ReAct 单步观察后才 finish")
+
+
+def test_react_agent_recovers_from_blocked_tool():
+    registry = build_registry()
+    client = _ScriptedClient(
+        [
+            PlannerResponse(tool_calls=(ToolCall("drop_database", {}),)),
+            PlannerResponse(
+                tool_calls=(
+                    ToolCall("diagnose_service_gap", {"constraint": "stock"}),
+                )
+            ),
+            PlannerResponse(
+                tool_calls=(ToolCall("finish", {"answer": "库存是瓶颈"}),)
+            ),
+        ]
+    )
+    run = ReActAgent(
+        registry, client, Verifier(required_steps=("s1",))
+    ).run("诊断")
+    assert run.status == "success", run.summary()
+    assert run.trace[0].status == "blocked"
+    assert run.trace[1].status == "success"
+    print("[OK] ReAct 从非法工具观察中恢复")
+
+
+def test_react_agent_budget_is_explicit():
+    registry = build_registry()
+    client = _ScriptedClient(
+        [
+            PlannerResponse(tool_calls=(ToolCall("list_experiments", {}),)),
+            PlannerResponse(tool_calls=(ToolCall("list_experiments", {}),)),
+        ]
+    )
+    run = ReActAgent(registry, client, max_steps=2).run("列出实验")
+    assert run.status == "blocked"
+    assert any(event.tool == "__budget__" for event in run.trace)
+    print("[OK] ReAct 步数预算显式阻断")
+
+
 def test_openai_adapter_normalizes_tool_call_without_network():
     class _Function:
         name = "submit_plan"
@@ -369,7 +441,13 @@ def test_openai_adapter_normalizes_tool_call_without_network():
     assert response.tool_calls[0].arguments["steps"][0]["id"] == "l"
     assert sdk.chat.completions.kwargs["model"] == "test-model"
     assert sdk.chat.completions.kwargs["tool_choice"]["function"]["name"] == "submit_plan"
-    print("[OK] OpenAI 兼容 adapter 只解析 submit_plan，不执行工具")
+
+    sdk2 = _SDK()
+    OpenAIPlannerClient(
+        model="test-model", client=sdk2, forced_tool=None
+    ).complete([], [])
+    assert sdk2.chat.completions.kwargs["tool_choice"] == "auto"
+    print("[OK] OpenAI 兼容 adapter 支持强制 submit_plan 或 ReAct auto")
 
 
 if __name__ == "__main__":
@@ -386,5 +464,8 @@ if __name__ == "__main__":
     test_llm_planner_rejects_missing_submit_plan()
     test_model_replanner_repairs_verifier_failure()
     test_model_replanner_error_falls_back_explicitly()
+    test_react_agent_observes_before_finishing()
+    test_react_agent_recovers_from_blocked_tool()
+    test_react_agent_budget_is_explicit()
     test_openai_adapter_normalizes_tool_call_without_network()
     print("\nAgent v2 tests passed")

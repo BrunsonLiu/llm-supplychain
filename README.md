@@ -76,6 +76,8 @@ run = AgentRuntime(registry, checker).run(plan)
 
 **模型驱动 Replan**：`AgentRuntime(..., replanner=planner.replan)` 在 verifier 失败时把原计划、compact trace、已得事实和失败原因交给模型，要求重新提交 `submit_plan`；模型抛错或超次数时退回脚本 `fallback_plan`。`run.summary()` 的 `replanned_by` 记录 `model` 或 `fallback`，`replan_error` 保留模型修复失败原因，不会把“兜底成功”伪装成“模型修好了”。
 
+**两种执行形态**：静态 `Plan` DAG（30 任务基准，一次规划后执行）和可选的 `ReActAgent`（每轮只调一个工具，看到 observation 再决定下一步，`finish` 结束）。两者共用同一个 `ToolRegistry`、`TraceEvent` 和 `Verifier`；ReAct 的非法工具/参数会作为 observation 回传，步数预算显式阻断。ReAct 未进入 30 任务基准，测试同样使用 fake client。
+
 ```bash
 # Agent v2 30 任务基准（离线、确定性）
 PYTHONPATH=src;. python scripts/run_agent_v2_benchmark.py
@@ -161,7 +163,7 @@ flowchart LR
 
 | 模块 | 能力 |
 |---|---|
-| Agent v2 | Plan DAG + 工具契约 + Verifier + 显式 Replan；5 个决策工具（真实 benchmark 诊断/对比/汇总 + OR-Tools SCIP 分配 MILP）；`submit_plan` function-calling planner（`llm_planner.py`，fake-client 测试，未跑真实模型）；verifier 失败可交给模型 replan，失败再退回脚本 fallback；30 任务 `raw`/`verified`/`adaptive` 消融；结构化 trace 与假成功/恢复指标 |
+| Agent v2 | Plan DAG + 工具契约 + Verifier + 显式 Replan；5 个决策工具（真实 benchmark 诊断/对比/汇总 + OR-Tools SCIP 分配 MILP）；`submit_plan` function-calling planner（`llm_planner.py`，fake-client 测试，未跑真实模型）；verifier 失败可交给模型 replan，失败再退回脚本 fallback；可选 `ReActAgent` 单步 observation 循环；30 任务 `raw`/`verified`/`adaptive` 消融；结构化 trace 与假成功/恢复指标 |
 | 数据 | 模拟数据生成 / CSV·JSON 导入 / SQLite 持久化；Online Retail II 下载、清洗、ABC Top-N 周度面板 |
 | 预测 | 滚动回测（WMAPE/Bias/RMSE/RMSSE）+ 6 个经典基线 + 全局 LightGBM 直接多步预测；SKU 级与仓库总量双口径 |
 | 库存 | 显式假设层 + SKU 经济参数（EOQ/MOQ/安全库存）；（s,Q）/（R,S）/（s,S）三种策略的周度仿真、replay 与 300 路径 Monte Carlo（缺货率/周转/成本） |
@@ -2493,6 +2495,7 @@ PYTHONPATH=src;. python scripts/run_e2e_placement.py
 │       ├── agent_v2/         # Agent v2：Plan DAG / 工具契约 / Verifier / Replan
 │       │   ├── contracts.py  # Plan/Step/Trace/Verification + schema 校验
 │       │   ├── llm_planner.py # submit_plan function calling + 校验/重试
+│       │   ├── react.py      # 单步 observation 循环 + finish + 预算
 │       │   ├── registry.py   # allowlist + 参数校验 + 计时执行
 │       │   ├── verifier.py   # 步骤/事实/引用/预算后置条件
 │       │   ├── runtime.py    # Plan-Act-Verify-Replan 运行时

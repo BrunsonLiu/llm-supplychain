@@ -296,6 +296,7 @@ class OpenAIPlannerClient:
         model: str = "gpt-4o-mini",
         client: Optional[Any] = None,
         temperature: float = 0.0,
+        forced_tool: Optional[str] = SUBMIT_PLAN,
     ):
         if client is None:
             try:
@@ -308,17 +309,25 @@ class OpenAIPlannerClient:
         self.client = client
         self.model = model
         self.temperature = temperature
+        self.forced_tool = forced_tool
 
     def complete(
         self,
         messages: Sequence[Mapping[str, Any]],
         tools: Sequence[Mapping[str, Any]],
     ) -> PlannerResponse:
+        if self.forced_tool:
+            tool_choice: Any = {
+                "type": "function",
+                "function": {"name": self.forced_tool},
+            }
+        else:
+            tool_choice = "auto"
         response = self.client.chat.completions.create(
             model=self.model,
             messages=list(messages),
             tools=list(tools),
-            tool_choice={"type": "function", "function": {"name": SUBMIT_PLAN}},
+            tool_choice=tool_choice,
             temperature=self.temperature,
         )
         message = response.choices[0].message

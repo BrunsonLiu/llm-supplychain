@@ -91,7 +91,27 @@ OpenAI function calling 默认可以一次返回多个业务工具调用，但�
 
 没有这些数字，就不能把 Agent v2 的 30 任务结果说成“LLM 规划能力”。
 
-## 6. 复现
+## 6. 可选的 ReAct 单步循环
+
+静态 `Plan` DAG 适合“步骤在规划时已经知道”的问题；如果下一步取决于上一步返回的事实（例如先看诊断结果、再决定比较哪个 arm），可以用 `ReActAgent`：
+
+```
+用户问题 → 模型选一个工具 → Registry 校验/执行 → observation 回填
+        → 模型再选一个工具 ... → finish → Verifier
+```
+
+与静态 DAG 共用 `ToolRegistry`、`TraceEvent`、`Verifier`，区别只是每次只执行一个工具并观察结果。非法工具/参数不会中断循环，而是作为 blocked observation 回填；`max_steps` 用尽会追加 `__budget__` 事件并判 `blocked`。`finish.answer` 只是回答文本，是否通过仍由 verifier 的事实检查决定。
+
+ReAct 使用 OpenAI adapter 时要设 `forced_tool=None`（`tool_choice="auto"`），否则 adapter 会强制模型调用 `submit_plan`：
+
+```python
+client = OpenAIPlannerClient(model="gpt-4o-mini", forced_tool=None)
+run = ReActAgent(registry, client, Verifier(...)).run("库存还是产能是瓶颈？")
+```
+
+ReAct 没有进入 30 任务基准，也没有跑真实模型；测试覆盖“先观察再 finish / 非法工具恢复 / 步数预算”，全部 fake client。`finish.answer` 是模型 prose，verifier 只检查 trace/事实，不做语义蕴含检查；因此 ReAct 的失败不会被 fallback 自动修复，需要上层显式处理。
+
+## 7. 复现
 
 ```bash
 # 离线：fake client 测试，不访问网络
