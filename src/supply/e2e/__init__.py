@@ -261,6 +261,24 @@ from .placement_report import (
     summarize_placement,
     write_placement_report,
 )
+from .access import (
+    DEFAULT_LOOKBACK_WEEKS as ACCESS_LOOKBACK_WEEKS,
+    DEFAULT_MOVE_PENALTY as ACCESS_MOVE_PENALTY,
+    DEFAULT_TIME_LIMIT as ACCESS_TIME_LIMIT,
+    AccessDemand,
+    PlacementTarget,
+    access_metadata,
+    apply_target,
+    history_access,
+    moved_units,
+    oracle_access,
+    placement_milp,
+)
+from .access_report import (
+    build_access_report,
+    summarize_access,
+    write_access_report,
+)
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -475,6 +493,20 @@ __all__ = [
     "build_placement_report",
     "summarize_placement",
     "write_placement_report",
+    "ACCESS_LOOKBACK_WEEKS",
+    "ACCESS_MOVE_PENALTY",
+    "ACCESS_TIME_LIMIT",
+    "AccessDemand",
+    "PlacementTarget",
+    "access_metadata",
+    "apply_target",
+    "history_access",
+    "moved_units",
+    "oracle_access",
+    "placement_milp",
+    "build_access_report",
+    "summarize_access",
+    "write_access_report",
     "run_flow_e2e",
     "run_single_week_e2e",
     "summarize_flow",
