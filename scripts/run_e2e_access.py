@@ -87,6 +87,7 @@ def _build(clean, skus, args, last_week):
         week=last_week,
         stock_basis=args.stock_basis,
         stock_lookback_weeks=args.lookback_weeks,
+        safety_z=args.safety_z,
         pickers_per_dc=args.pickers,
         shift_minutes=args.shift_minutes,
         arrival_seed=1,
@@ -110,9 +111,15 @@ def main() -> None:
     parser.add_argument("--stock-factor", type=float, default=1.0)
     parser.add_argument(
         "--stock-basis",
-        choices=("actual", "history"),
+        choices=("actual", "history", "safety"),
         default="actual",
-        help="actual=目标周需求；history=前 N 周 SKU 均值（周前可部署）",
+        help="actual=目标周需求；history=前 N 周均值；safety=均值+z×标准差",
+    )
+    parser.add_argument(
+        "--safety-z",
+        type=float,
+        default=1.645,
+        help="safety 库存基准的安全系数（1.645≈95%%，2.326≈99%%）",
     )
     parser.add_argument(
         "--target-week",
@@ -354,11 +361,14 @@ def main() -> None:
     frame = pd.concat(frames, ignore_index=True)
     summary = summarize_access(frame)
     full_scale = args.orders >= 400 and args.seeds >= 30
-    stock_basis_text = (
-        "目标周实际需求"
-        if args.stock_basis == "actual"
-        else f"前 {args.lookback_weeks} 周 SKU 均值"
-    )
+    if args.stock_basis == "actual":
+        stock_basis_text = "目标周实际需求"
+    elif args.stock_basis == "history":
+        stock_basis_text = f"前 {args.lookback_weeks} 周 SKU 均值"
+    else:
+        stock_basis_text = (
+            f"前 {args.lookback_weeks} 周 SKU 均值 + {args.safety_z:.3f}×标准差"
+        )
     limitations = [
         f"固定总量：每个 SKU 的总库存 = {args.stock_factor:.0%} × {stock_basis_text}，"
         "只允许 DC→DC 重摆位；增加总库存的臂是情景外推，不建模采购、在途、仓储成本、COGS、持有成本、过期/跌价。",
@@ -373,6 +383,12 @@ def main() -> None:
         limitations.append(
             "history 库存基准只用目标周之前的 SKU 周需求均值，不使用目标周实际需求；"
             "它仍是周前可部署近似，不是需求预测模型，且只回看固定周数。"
+        )
+    if args.stock_basis == "safety":
+        limitations.append(
+            f"safety 库存基准用前 {args.lookback_weeks} 周均值 + "
+            f"{args.safety_z:.3f}×标准差，不使目标周需求；正态近似在 6 周样本上"
+            "很粗糙，且未建模前置期/补货/替代。"
         )
     if args.load_aware:
         basis_text = (
@@ -429,6 +445,7 @@ def main() -> None:
             "policies": list(policies),
             "stock_factor": args.stock_factor,
             "stock_basis": args.stock_basis,
+            "safety_z": args.safety_z if args.stock_basis == "safety" else None,
             "target_week": str(pd.Timestamp(last_week).date()),
             "stock_units": stock_total,
             "dc_capacity_factor": 2.0,

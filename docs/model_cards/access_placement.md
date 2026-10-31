@@ -245,12 +245,33 @@ Week45–48 的每 SKU 库存 = `stock_factor × 目标周实际需求`，是 **
 
 完整报告：[`benchmarks/ACCESS_STOCK_BASIS_REPORT.md`](../../benchmarks/ACCESS_STOCK_BASIS_REPORT.md)。
 
+## 5j. 安全库存政策（Week 50）
+
+在前 6 周均值上再加 `z × 标准差`，其中 z=1.645（≈95%）/2.326（≈99%）：
+
+| 政策 | 库存 | 覆盖 | target | all | 积压 |
+|---|---:|---:|---:|---:|---:|
+| oracle 140% | 46,281 | 140.0% | 100.0% | 99.9% | 0.7 |
+| 历史 140% | 44,824 | 135.6% | 70.0% | 93.9% | 2,123 |
+| 历史 200% | 64,039 | 193.7% | 82.5% | 97.2% | 1,281 |
+| mean+zσ，z=1.645 | 61,537 | 186.1% | 77.5% | 96.6% | 1,082 |
+| mean+zσ，z=2.326 | 73,748 | 223.1% | 79.2% | 97.1% | 880 |
+
+结论：
+
+- **99% 安全库存仍只有 target 79.2%**：73,748 单位（223% 覆盖）远高于 oracle 140% 的 46,281 单位，但 target 低 20.8pp。
+- **安全库存按波动分配，不按目标周高需求 SKU 分配**：z=1.645 的 61,537 单位只到 77.5%，比库存更多的历史 200%（64,039）低 5pp。
+- z=2.326 相对历史 200% 主要买积压下降（1,281→880），target/all 反而略降；它改善尾部缺货，不保证命中目标周 SKU。
+- 可部署政策仍缺目标周 SKU/DC 结构预测；这是对“加安全库存就能补 oracle”的反例，不是“所有安全库存都无用”。
+
+完整报告：[`benchmarks/ACCESS_STOCK_SAFETY_REPORT.md`](../../benchmarks/ACCESS_STOCK_SAFETY_REPORT.md)。
+
 ## 6. 效度威胁
 
 - oracle 使用本周实际订单；history 使用前 6 周数量但仍用本周 destination/transit 矩阵，二者都不是完整因果策略。
 - 调拨假设周前完成、无前置期/费用/批次；真实 DC 调拨需要运输时间、装载与成本。
 - 库存按 SKU 总量 + 确定性 jitter 分配；target 只替换 stock 矩阵，jitter 已经包含在 current 中。
-- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互；Week45 的 125%/135%/140%/150% 是库存情景，Week46 的 `h=€0.10` 与缺货惩罚比是示例，Week47 只验证一个 holdout 周且没有 135%/150%，Week48 的 90 格只变到达/拣选噪声、不是 90 个独立需求周；Week49 证明 Week45–48 的库存是目标周需求 oracle，历史均值 140% 只有 target 70%；五者都不是成本最优补货决策。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
+- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互；Week45 的 125%/135%/140%/150% 是库存情景，Week46 的 `h=€0.10` 与缺货惩罚比是示例，Week47 只验证一个 holdout 周且没有 135%/150%，Week48 的 90 格只变到达/拣选噪声、不是 90 个独立需求周；Week49 证明 Week45–48 的库存是目标周需求 oracle，历史均值 140% 只有 target 70%；Week50 的 z=2.326 安全库存用 223% 覆盖也只到 target 79.2%；六者都不是成本最优补货决策。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
 - 目标客群是样本内收入 Top10；没有 COGS/退货/履约成本，OTIF 不是利润。
 
 ## 7. 复现
@@ -266,6 +287,7 @@ PYTHONPATH=src;. python scripts/run_e2e_access.py --repeats 3
 # 跨周验证：--target-week 2011-11-21（100/125/140）+ build_access_stock_frontier.py --week 47 --stem ACCESS_STOCK_OOS
 # 种子级：python scripts/build_access_seed_cost.py
 # 库存基准：--stock-basis history（1.4/1.8/2.0）+ build_access_stock_basis.py
+# 安全库存：--stock-basis safety --safety-z 1.645/2.326 + build_access_stock_policy.py
 
 # 负荷 cap 扩展（Week 42）
 PYTHONPATH=src;. python scripts/run_e2e_access.py --load-aware --repeats 3 \
