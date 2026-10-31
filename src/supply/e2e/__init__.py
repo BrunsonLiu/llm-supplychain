@@ -281,11 +281,14 @@ from .access_report import (
     write_access_report,
 )
 from .access_cost import (
+    aggregate_rows,
+    build_seed_cost_report,
     build_stock_cost_report,
     choose_stock,
     cost_table,
     critical_ratios,
     efficient_frontier,
+    seed_cost_choices,
 )
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
@@ -512,12 +515,15 @@ __all__ = [
     "moved_units",
     "oracle_access",
     "placement_milp",
+    "aggregate_rows",
     "build_access_report",
+    "build_seed_cost_report",
     "build_stock_cost_report",
     "choose_stock",
     "cost_table",
     "critical_ratios",
     "efficient_frontier",
+    "seed_cost_choices",
     "paired_differences",
     "summarize_access",
     "write_access_report",

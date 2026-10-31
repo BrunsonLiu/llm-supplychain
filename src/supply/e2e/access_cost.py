@@ -8,6 +8,7 @@ change?
 """
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any, Dict, Iterable, List, Mapping, Sequence
 
 DEFAULT_RATIOS: Sequence[float] = (0.0, 50.0, 75.0, 100.0, 200.0, 1_000.0, 2_000.0)
@@ -117,12 +118,198 @@ def cost_table(
     ]
 
 
+def seed_cost_choices(
+    payloads: Sequence[tuple[float, Mapping[str, Any]]],
+    ratios: Sequence[float] = DEFAULT_RATIOS,
+    holding_cost: float = 0.10,
+) -> List[Dict[str, Any]]:
+    """Cheapest factor for each repeat/seed, using each factor's raw rows."""
+    factors = sorted(float(factor) for factor, _ in payloads)
+    by_key: Dict[tuple[int, int], Dict[float, Mapping[str, Any]]] = {}
+    for factor, payload in payloads:
+        factor = float(factor)
+        for row in payload.get("rows", []):
+            if str(row.get("policy")) != "baseline":
+                continue
+            key = (int(row["repeat"]), int(row["seed"]))
+            by_key.setdefault(key, {})[factor] = row
+    complete = {
+        key: rows
+        for key, rows in by_key.items()
+        if all(factor in rows for factor in factors)
+    }
+    result: List[Dict[str, Any]] = []
+    for ratio in ratios:
+        choices: List[float] = []
+        for rows in complete.values():
+            scored = []
+            for factor in factors:
+                row = rows[factor]
+                cost = holding_cost * (
+                    float(row["stock_units"]) + ratio * float(row["accepted_backlog_units"])
+                )
+                scored.append((cost, factor))
+            choices.append(min(scored)[1])
+        counts = Counter(choices)
+        n = len(choices)
+        modal = max(counts, key=lambda factor: (counts[factor], -factor))
+        result.append(
+            {
+                "ratio": float(ratio),
+                "n": n,
+                "counts": {f"{factor:.2f}": count for factor, count in sorted(counts.items())},
+                "shares": {
+                    f"{factor:.2f}": count / n for factor, count in sorted(counts.items())
+                },
+                "modal": modal,
+                "mean_factor": sum(choices) / n if n else 0.0,
+                "unanimous": n > 0 and len(counts) == 1,
+            }
+        )
+    return result
+
+
+def aggregate_rows(
+    payloads: Sequence[tuple[float, Mapping[str, Any]]],
+) -> List[Dict[str, float]]:
+    """One baseline mean row per factor, for a mean-based cost comparison."""
+    rows: List[Dict[str, float]] = []
+    for factor, payload in sorted(payloads, key=lambda item: float(item[0])):
+        baseline = next(
+            (row for row in payload.get("summary", []) if row.get("policy") == "baseline"),
+            None,
+        )
+        if baseline is None:
+            continue
+        rows.append(
+            {
+                "policy": "baseline",
+                "stock_factor": float(factor),
+                "stock_units": float(payload["settings"]["stock_units"]),
+                "target": float(baseline["target_accepted_otif_mean"]),
+                "all": float(baseline["accepted_otif_mean"]),
+                "backlog": float(baseline["accepted_backlog_units"]),
+            }
+        )
+    return rows
+
+
 def _pct(value: float) -> str:
     return f"{100.0 * float(value):.1f}%"
 
 
 def _num(value: float, digits: int = 0) -> str:
     return f"{float(value):,.{digits}f}"
+
+
+def _distribution_text(item: Mapping[str, Any], factors: Sequence[float]) -> str:
+    parts = []
+    for factor in factors:
+        share = item["shares"].get(f"{factor:.2f}", 0.0)
+        if share > 0:
+            parts.append(f"{factor:.0%}:{share:.0%}")
+    return " / ".join(parts) if parts else "—"
+
+
+def build_seed_cost_report(
+    insample_payloads: Sequence[tuple[float, Mapping[str, Any]]],
+    oos_payloads: Sequence[tuple[float, Mapping[str, Any]]],
+    holding_cost: float = 0.10,
+    ratios: Sequence[float] = DEFAULT_RATIOS,
+    week: int = 48,
+) -> str:
+    in_factors = sorted(float(factor) for factor, _ in insample_payloads)
+    oos_factors = sorted(float(factor) for factor, _ in oos_payloads)
+    in_choices = seed_cost_choices(
+        insample_payloads, ratios=ratios, holding_cost=holding_cost
+    )
+    oos_choices = seed_cost_choices(
+        oos_payloads, ratios=ratios, holding_cost=holding_cost
+    )
+    in_mean = {
+        ratio: choose_stock(
+            aggregate_rows(insample_payloads),
+            holding_cost=holding_cost,
+            penalty_ratio=float(ratio),
+        )["stock_factor"]
+        for ratio in ratios
+    }
+    oos_mean = {
+        ratio: choose_stock(
+            aggregate_rows(oos_payloads),
+            holding_cost=holding_cost,
+            penalty_ratio=float(ratio),
+        )["stock_factor"]
+        for ratio in ratios
+    }
+    lines = [
+        f"# Week {week}: seed-level stock-cost stability",
+        "",
+        "The cost decision in Weeks 46-47 uses one mean frontier. This layer "
+        "recomputes the cheapest tested stock level for every `(repeat, seed)` "
+        "cell, so the decision is reported as a distribution rather than a "
+        "single point. It reuses the existing runs; no new simulation.",
+        "",
+        f"Weekly holding cost: **€{holding_cost:.2f}/unit-week**; stockout "
+        "penalty = `ratio × holding cost`; 90 repeat/seed cells per dataset.",
+        "",
+        "## In-sample Week45 (100%/125%/135%/140%/150%)",
+        "",
+        f"| penalty/holding | n | seed choices | modal | mean factor | mean-data choice |",
+        "|---:|---:|---|---:|---:|---:|",
+    ]
+    for item in in_choices:
+        ratio = item["ratio"]
+        lines.append(
+            f"| {ratio:.0f} | {item['n']} | "
+            f"{_distribution_text(item, in_factors)} | "
+            f"{item['modal']:.0%} | {item['mean_factor']:.2%} | "
+            f"{in_mean[ratio]:.0%} |"
+        )
+    lines += [
+        "",
+        "## Out-of-sample Week47 (100%/125%/140%)",
+        "",
+        f"| penalty/holding | n | seed choices | modal | mean factor | mean-data choice |",
+        "|---:|---:|---|---:|---:|---:|",
+    ]
+    for item in oos_choices:
+        ratio = item["ratio"]
+        lines.append(
+            f"| {ratio:.0f} | {item['n']} | "
+            f"{_distribution_text(item, oos_factors)} | "
+            f"{item['modal']:.0%} | {item['mean_factor']:.2%} | "
+            f"{oos_mean[ratio]:.0%} |"
+        )
+    lines += [
+        "",
+        "## Findings",
+        "",
+    ]
+    for label, choices, factors in (
+        ("in-sample", in_choices, in_factors),
+        ("out-of-sample", oos_choices, oos_factors),
+    ):
+        item = next((row for row in choices if row["ratio"] == 100.0), None)
+        if item is not None:
+            dist = _distribution_text(item, factors)
+            lines.append(
+                f"- **{label} at p/h=100**: modal {item['modal']:.0%} "
+                f"(mean factor {item['mean_factor']:.2%}); distribution "
+                f"{dist}; unanimous={item['unanimous']}."
+            )
+    lines += [
+        "- The mean-data decision is the Week46/47 table; the seed distribution "
+        "shows whether that decision is a sharp boundary or a near-tie. "
+        "Disagreement means the threshold should be read as a region, not a "
+        "single percentage.",
+        "- The 90 cells vary arrival/pick noise, not demand: demand, stock "
+        "shares, layout and promises are fixed. This is decision uncertainty, "
+        "not out-of-sample demand evidence.",
+        "- Holding cost is illustrative and backlog is a shortage proxy; no "
+        "lost-sales, goodwill, markdown, working-capital or lead-time cost.",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def build_stock_cost_report(

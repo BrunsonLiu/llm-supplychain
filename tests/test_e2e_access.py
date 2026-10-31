@@ -18,6 +18,7 @@ from supply.e2e import (  # noqa: E402
     critical_ratios,
     efficient_frontier,
     history_access,
+    seed_cost_choices,
     moved_units,
     oracle_access,
     paired_differences,
@@ -263,6 +264,44 @@ def test_stock_cost_break_even_and_dominance() -> None:
     print("[OK] 库存成本 break-even 与支配点")
 
 
+def test_seed_cost_choices_use_each_repeat_seed() -> None:
+    def row(stock: float, backlog: float, repeat: int, seed: int) -> dict:
+        return {
+            "policy": "baseline",
+            "stock_units": stock,
+            "accepted_backlog_units": backlog,
+            "repeat": repeat,
+            "seed": seed,
+        }
+
+    payloads = [
+        (
+            1.0,
+            {
+                "rows": [
+                    row(100.0, 10.0, 0, 1),
+                    row(100.0, 10.0, 0, 2),
+                ]
+            },
+        ),
+        (
+            1.25,
+            {
+                "rows": [
+                    row(120.0, 2.0, 0, 1),
+                    row(120.0, 2.0, 0, 2),
+                ]
+            },
+        ),
+    ]
+    low = seed_cost_choices(payloads, ratios=[0.0], holding_cost=0.1)[0]
+    high = seed_cost_choices(payloads, ratios=[10.0], holding_cost=0.1)[0]
+    assert low["counts"] == {"1.00": 2}
+    assert high["counts"] == {"1.25": 2}
+    assert low["n"] == 2 and low["unanimous"]
+    print("[OK] 种子级成本选择按 repeat/seed 逐格")
+
+
 def test_paired_differences_use_repeat_seed_pairs() -> None:
     frame = pd.DataFrame(
         [
@@ -364,4 +403,4 @@ if __name__ == "__main__":
             else:
                 func()
             print(f"[OK] {name}")
-    print("13 access placement tests passed")
+    print("14 access placement tests passed")

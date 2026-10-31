@@ -1,0 +1,208 @@
+{
+  "holding_cost": 0.1,
+  "ratios": [
+    0.0,
+    50.0,
+    75.0,
+    100.0,
+    200.0,
+    1000.0,
+    2000.0
+  ],
+  "insample": [
+    {
+      "ratio": 0.0,
+      "n": 90,
+      "counts": {
+        "1.00": 90
+      },
+      "shares": {
+        "1.00": 1.0
+      },
+      "modal": 1.0,
+      "mean_factor": 1.0,
+      "unanimous": true
+    },
+    {
+      "ratio": 50.0,
+      "n": 90,
+      "counts": {
+        "1.00": 90
+      },
+      "shares": {
+        "1.00": 1.0
+      },
+      "modal": 1.0,
+      "mean_factor": 1.0,
+      "unanimous": true
+    },
+    {
+      "ratio": 75.0,
+      "n": 90,
+      "counts": {
+        "1.00": 30,
+        "1.25": 60
+      },
+      "shares": {
+        "1.00": 0.3333333333333333,
+        "1.25": 0.6666666666666666
+      },
+      "modal": 1.25,
+      "mean_factor": 1.1666666666666667,
+      "unanimous": false
+    },
+    {
+      "ratio": 100.0,
+      "n": 90,
+      "counts": {
+        "1.25": 60,
+        "1.35": 30
+      },
+      "shares": {
+        "1.25": 0.6666666666666666,
+        "1.35": 0.3333333333333333
+      },
+      "modal": 1.25,
+      "mean_factor": 1.2833333333333334,
+      "unanimous": false
+    },
+    {
+      "ratio": 200.0,
+      "n": 90,
+      "counts": {
+        "1.35": 90
+      },
+      "shares": {
+        "1.35": 1.0
+      },
+      "modal": 1.35,
+      "mean_factor": 1.35,
+      "unanimous": true
+    },
+    {
+      "ratio": 1000.0,
+      "n": 90,
+      "counts": {
+        "1.35": 60,
+        "1.40": 30
+      },
+      "shares": {
+        "1.35": 0.6666666666666666,
+        "1.40": 0.3333333333333333
+      },
+      "modal": 1.35,
+      "mean_factor": 1.3666666666666667,
+      "unanimous": false
+    },
+    {
+      "ratio": 2000.0,
+      "n": 90,
+      "counts": {
+        "1.35": 60,
+        "1.40": 30
+      },
+      "shares": {
+        "1.35": 0.6666666666666666,
+        "1.40": 0.3333333333333333
+      },
+      "modal": 1.35,
+      "mean_factor": 1.3666666666666667,
+      "unanimous": false
+    }
+  ],
+  "oos": [
+    {
+      "ratio": 0.0,
+      "n": 90,
+      "counts": {
+        "1.00": 90
+      },
+      "shares": {
+        "1.00": 1.0
+      },
+      "modal": 1.0,
+      "mean_factor": 1.0,
+      "unanimous": true
+    },
+    {
+      "ratio": 50.0,
+      "n": 90,
+      "counts": {
+        "1.00": 60,
+        "1.25": 30
+      },
+      "shares": {
+        "1.00": 0.6666666666666666,
+        "1.25": 0.3333333333333333
+      },
+      "modal": 1.0,
+      "mean_factor": 1.0833333333333333,
+      "unanimous": false
+    },
+    {
+      "ratio": 75.0,
+      "n": 90,
+      "counts": {
+        "1.25": 90
+      },
+      "shares": {
+        "1.25": 1.0
+      },
+      "modal": 1.25,
+      "mean_factor": 1.25,
+      "unanimous": true
+    },
+    {
+      "ratio": 100.0,
+      "n": 90,
+      "counts": {
+        "1.25": 90
+      },
+      "shares": {
+        "1.25": 1.0
+      },
+      "modal": 1.25,
+      "mean_factor": 1.25,
+      "unanimous": true
+    },
+    {
+      "ratio": 200.0,
+      "n": 90,
+      "counts": {
+        "1.40": 90
+      },
+      "shares": {
+        "1.40": 1.0
+      },
+      "modal": 1.4,
+      "mean_factor": 1.4,
+      "unanimous": true
+    },
+    {
+      "ratio": 1000.0,
+      "n": 90,
+      "counts": {
+        "1.40": 90
+      },
+      "shares": {
+        "1.40": 1.0
+      },
+      "modal": 1.4,
+      "mean_factor": 1.4,
+      "unanimous": true
+    },
+    {
+      "ratio": 2000.0,
+      "n": 90,
+      "counts": {
+        "1.40": 90
+      },
+      "shares": {
+        "1.40": 1.0
+      },
+      "modal": 1.4,
+      "mean_factor": 1.4,
+      "unanimous": true
+    }
+  ]
+}
