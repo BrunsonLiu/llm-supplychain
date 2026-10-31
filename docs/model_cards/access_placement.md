@@ -5,7 +5,7 @@ Week 41 的模型卡片。它回答 Week 40 留下的问题：固定总量下，
 ## 1. 问题设定
 
 - 实例：`2011-11-28` 周 400 张真实发票、2,477 行、33,060 units、189 SKU、3 个 DC。
-- 固定：每个 SKU 的总库存 = 100% 需求；DC 2× 周产能；transit −1 天；ATP accept-all；1 拣货员/DC；30 个到达种子。
+- 固定：每个 SKU 的总库存 = 100% 需求；DC 2× 周产能；transit −1 天；ATP accept-all；Week41–43 为 1 拣货员/DC，Week44 交互臂为 2 人；30 个到达种子。
 - 决策：每个 SKU 在每个 DC 放多少库存 `y[d,s]`；等价于周前 DC→DC 调拨。
 - 不建模：采购、在途、调拨前置期/费用、仓储/持有成本、COGS、退货、过期。
 
@@ -115,12 +115,33 @@ L[d] = Σ_s z[d,s] · c
 
 完整报告：[`benchmarks/ACCESS_LOAD_COVERED_REPORT.md`](../../benchmarks/ACCESS_LOAD_COVERED_REPORT.md)。
 
+## 5d. 两拣货员容量交互（Week 44）
+
+Week43 的 covered 效应只有 +0.08pp，一个可能是“拣货产能不足，布点效应被排队吃掉”。Week44 保持同一 covered 布点，把每 DC 拣货员从 1 人加到 2 人（其余 400 单 × 30 种子 × 3 重复不变）。
+
+| 策略（2 拣货员/DC） | 目标 OTIF | 非目标 | 全量 | 积压 | 覆盖率 | 峰值拣选 |
+|---|---:|---:|---:|---:|---:|---:|
+| baseline | 97.5% | 99.2% | 99.0% | 313 | — | — |
+| history | 95.8% | 98.4% | 98.2% | 474 | 44.9% | — |
+| history + covered | 97.5% | 99.1% | 98.9% | 138 | 26.1% | 600 min |
+| oracle | 97.5% | 97.5% | 97.5% | 242 | 63.1% | — |
+| oracle + covered | 96.7% | 99.1% | 98.8% | 154 | 37.7% | 600 min |
+
+结论：
+
+- **加第二个拣货员没有制造 covered 优势。** covered history target 与 baseline 持平 97.5%，但 all 98.9% vs 99.0%、rest 99.1% vs 99.2%；积压 138 vs 313 主要来自 baseline 第 3 次重复的 688 单位尾部，不是稳定收益。
+- **配对检验不支持容量交互。** 90 对 `(repeat, seed)`：covered history Δtarget **0.00pp**、Δall **−0.08pp ±0.06**、Δbacklog **−175 ±58**；target 没升、全量略降。
+- **1→2 人对 baseline 也只是噪声级变化**：target 96.7%→97.5%、all 98.8%→99.0%、backlog 153→313，方向不一致；不能把加人写成稳健杠杆。
+- 线性拣选分钟代理仍不是真实波次/到达队列；结论是“这个代理下容量不是缺失机制”，不是“真实仓库加人无效”。
+
+完整报告：[`benchmarks/ACCESS_LOAD_COVERED_P2_REPORT.md`](../../benchmarks/ACCESS_LOAD_COVERED_P2_REPORT.md)。
+
 ## 6. 效度威胁
 
 - oracle 使用本周实际订单；history 使用前 6 周数量但仍用本周 destination/transit 矩阵，二者都不是完整因果策略。
 - 调拨假设周前完成、无前置期/费用/批次；真实 DC 调拨需要运输时间、装载与成本。
 - 库存按 SKU 总量 + 确定性 jitter 分配；target 只替换 stock 矩阵，jitter 已经包含在 current 中。
-- 单周、单布局、单班次、单拣货员；布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
+- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
 - 目标客群是样本内收入 Top10；没有 COGS/退货/履约成本，OTIF 不是利润。
 
 ## 7. 复现
@@ -129,6 +150,8 @@ L[d] = Σ_s z[d,s] · c
 PYTHONPATH=src;. python scripts/run_e2e_access.py --repeats 3
 # 输出：benchmarks/ACCESS_REPORT.md + access_summary.json
 # 快速试跑：--orders 80 --seeds 3 --milp-time 2 --service-time 1 --solver-time 2 --repeats 1
+# covered + 2 拣货员：python scripts/run_e2e_access.py --pickers 2 --load-aware \
+#   --load-basis covered --repeats 3 --stem ACCESS_LOAD_COVERED_P2 --week 44
 
 # 负荷 cap 扩展（Week 42）
 PYTHONPATH=src;. python scripts/run_e2e_access.py --load-aware --repeats 3 \

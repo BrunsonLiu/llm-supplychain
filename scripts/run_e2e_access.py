@@ -349,7 +349,8 @@ def main() -> None:
         )
         limitations += [
             f"负荷臂是 {basis_text} 代理，不是波次/到达仿真的真实队列；"
-            "cap 是 1 名拣货员 × 600 分钟，软超载惩罚，"
+            f"cap 是 {args.load_capacity:.0f} 分钟/DC 的布点约束，"
+            f"与运行时 {args.pickers} 名拣货员独立，软超载惩罚，"
             "所以它约束的是“库存/覆盖需求停在哪”，不是“实际先拣谁”。",
             "负荷臂用同一份 demand，但目标里 coverage 与 overload 的权重是声明值；"
             "cap、basis 与惩罚变化会改变 target，不能把单点结果当全局最优。",

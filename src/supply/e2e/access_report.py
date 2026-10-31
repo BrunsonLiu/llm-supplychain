@@ -142,6 +142,7 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
         f"repeats: **{settings.get('repeats', 1)}** | "
         f"MILP time: **{settings.get('solver_time', '—')} s** | "
         f"history lookback: **{settings.get('lookback_weeks', '—')} weeks** | "
+        f"pickers/DC: **{settings.get('pickers', 1)}** | "
         f"DC share bounds: **{settings.get('min_share', 0):.0%}–"
         f"{settings.get('max_share', 1):.0%}**",
         "",
