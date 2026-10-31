@@ -280,6 +280,13 @@ from .access_report import (
     summarize_access,
     write_access_report,
 )
+from .access_cost import (
+    build_stock_cost_report,
+    choose_stock,
+    cost_table,
+    critical_ratios,
+    efficient_frontier,
+)
 from .report import build_e2e_report, write_e2e_report
 from .recovery import (
     DEFAULT_MIN_GAIN,
@@ -506,6 +513,11 @@ __all__ = [
     "oracle_access",
     "placement_milp",
     "build_access_report",
+    "build_stock_cost_report",
+    "choose_stock",
+    "cost_table",
+    "critical_ratios",
+    "efficient_frontier",
     "paired_differences",
     "summarize_access",
     "write_access_report",

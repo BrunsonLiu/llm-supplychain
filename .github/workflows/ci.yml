@@ -467,6 +467,11 @@ jobs:
           PYTHONPATH: src:.
         run: python scripts/run_e2e_access.py --orders 80 --seeds 2 --milp-time 2 --service-time 1 --solver-time 2 --repeats 1 --workers 2 --stock-factor 1.5 --load-aware --load-basis covered --stem ACCESS_STOCK15 --week 45 --out-dir /tmp/access-stock15-bench
 
+      - name: Build stock-cost decision report (small)
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/build_access_stock_cost.py --out-dir /tmp/access-stock-cost-bench
+
       - name: Run Agent v2 benchmark
         env:
           PYTHONPATH: src:.

@@ -14,6 +14,9 @@ from supply.e2e import (  # noqa: E402
     E2EInstance,
     apply_target,
     build_access_report,
+    choose_stock,
+    critical_ratios,
+    efficient_frontier,
     history_access,
     moved_units,
     oracle_access,
@@ -213,6 +216,53 @@ def test_moved_units_rejects_non_conserved_stock() -> None:
     print("[OK] 非守恒库存被 moved_units 拒绝")
 
 
+def test_stock_cost_break_even_and_dominance() -> None:
+    rows = [
+        {
+            "policy": "baseline",
+            "stock_factor": 1.0,
+            "stock_units": 100.0,
+            "target": 0.90,
+            "all": 0.90,
+            "backlog": 10.0,
+        },
+        {
+            "policy": "baseline",
+            "stock_factor": 1.2,
+            "stock_units": 120.0,
+            "target": 0.95,
+            "all": 0.95,
+            "backlog": 2.0,
+        },
+        {
+            "policy": "baseline",
+            "stock_factor": 1.5,
+            "stock_units": 150.0,
+            "target": 0.95,
+            "all": 0.95,
+            "backlog": 2.0,
+        },
+        {
+            "policy": "access_history",
+            "stock_factor": 1.0,
+            "stock_units": 1.0,
+            "target": 0.0,
+            "all": 0.0,
+            "backlog": 999.0,
+        },
+    ]
+    points = efficient_frontier(rows)
+    assert [point["stock_factor"] for point in points] == [1.0, 1.2]
+    critical = critical_ratios(rows)
+    assert len(critical) == 1
+    assert abs(critical[0]["break_even_ratio"] - 2.5) < 1e-9
+    cheap = choose_stock(rows, holding_cost=0.1, penalty_ratio=0.0)
+    assert cheap["stock_factor"] == 1.0
+    high = choose_stock(rows, holding_cost=0.1, penalty_ratio=10.0)
+    assert high["stock_factor"] == 1.2
+    print("[OK] 库存成本 break-even 与支配点")
+
+
 def test_paired_differences_use_repeat_seed_pairs() -> None:
     frame = pd.DataFrame(
         [
@@ -314,4 +364,4 @@ if __name__ == "__main__":
             else:
                 func()
             print(f"[OK] {name}")
-    print("12 access placement tests passed")
+    print("13 access placement tests passed")

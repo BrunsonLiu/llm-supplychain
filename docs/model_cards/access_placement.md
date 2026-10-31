@@ -160,12 +160,35 @@ Week41–44 的布点/负荷/加人效应都在 0.1–0.2pp 量级。Week45 固�
 
 完整报告：[`benchmarks/ACCESS_STOCK_FRONTIER_REPORT.md`](../../benchmarks/ACCESS_STOCK_FRONTIER_REPORT.md)。
 
+## 5f. 库存-成本决策（Week 46）
+
+Week45 只给服务量纲。Week46 把前沿转成 `total cost = h × stock + p × backlog`，其中 `h=€0.10/unit-week` 是示例持有成本，`p = ratio × h` 是每单位积压的缺货惩罚。**不新增仿真，只做成本决策层。**
+
+| 相邻档位 | 新增库存 | 积压减少 | break-even `p/h` |
+|---|---:|---:|---:|
+| 100% → 125% | +8,263 | 115.0 | **71.9** |
+| 125% → 135% | +3,312 | 36.7 | **90.3** |
+| 135% → 140% | +1,646 | 1.0 | **1,646.0** |
+| 140% → 150% | +3,314 | 0.0 | 被 140% 支配 |
+
+在本网格内：
+
+- `p/h < 71.9` → 100%
+- `71.9–90.3` → 125%
+- `90.3–1,646` → 135%
+- `> 1,646` → 140%
+- 150% 永远不会最优（服务与 140% 相同、库存更多）
+
+这把“多备货”变成可审计的缺货/持有成本条件，而不是固定百分比；但 `h` 是示例值，持有成本按整周库存计、积压只是缺货代理，未计 lost sales、商誉、跌价、资金占用和前置期，成本金额不是会计数字。
+
+完整报告：[`benchmarks/ACCESS_STOCK_COST_REPORT.md`](../../benchmarks/ACCESS_STOCK_COST_REPORT.md)。
+
 ## 6. 效度威胁
 
 - oracle 使用本周实际订单；history 使用前 6 周数量但仍用本周 destination/transit 矩阵，二者都不是完整因果策略。
 - 调拨假设周前完成、无前置期/费用/批次；真实 DC 调拨需要运输时间、装载与成本。
 - 库存按 SKU 总量 + 确定性 jitter 分配；target 只替换 stock 矩阵，jitter 已经包含在 current 中。
-- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互；Week45 的 125%/135%/140%/150% 是库存情景，不是成本最优补货决策。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
+- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互；Week45 的 125%/135%/140%/150% 是库存情景，Week46 的 `h=€0.10` 与缺货惩罚比是示例，不是成本最优补货决策。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
 - 目标客群是样本内收入 Top10；没有 COGS/退货/履约成本，OTIF 不是利润。
 
 ## 7. 复现
@@ -177,6 +200,7 @@ PYTHONPATH=src;. python scripts/run_e2e_access.py --repeats 3
 # covered + 2 拣货员：python scripts/run_e2e_access.py --pickers 2 --load-aware \
 #   --load-basis covered --repeats 3 --stem ACCESS_LOAD_COVERED_P2 --week 44
 # 库存前沿：--stock-factor 1.25 / 1.35 / 1.4 / 1.5 + build_access_stock_frontier.py
+# 成本决策：python scripts/build_access_stock_cost.py
 
 # 负荷 cap 扩展（Week 42）
 PYTHONPATH=src;. python scripts/run_e2e_access.py --load-aware --repeats 3 \

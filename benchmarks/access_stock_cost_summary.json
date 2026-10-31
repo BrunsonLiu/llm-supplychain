@@ -1,0 +1,130 @@
+{
+  "holding_cost": 0.1,
+  "ratios": [
+    0.0,
+    50.0,
+    75.0,
+    100.0,
+    200.0,
+    1000.0,
+    2000.0
+  ],
+  "efficient_frontier": [
+    {
+      "stock_factor": 1.0,
+      "stock_units": 33060.0,
+      "target": 0.9666666666666663,
+      "all": 0.9883333333333335,
+      "backlog": 153.33333333333334
+    },
+    {
+      "stock_factor": 1.25,
+      "stock_units": 41323.0,
+      "target": 0.9666666666666666,
+      "all": 0.9908333333333333,
+      "backlog": 38.333333333333336
+    },
+    {
+      "stock_factor": 1.35,
+      "stock_units": 44635.0,
+      "target": 0.9916666666666665,
+      "all": 0.9983333333333336,
+      "backlog": 1.6666666666666667
+    },
+    {
+      "stock_factor": 1.4,
+      "stock_units": 46281.0,
+      "target": 1.0,
+      "all": 0.9991666666666668,
+      "backlog": 0.6666666666666666
+    }
+  ],
+  "critical_ratios": [
+    {
+      "from_stock": 1.0,
+      "to_stock": 1.25,
+      "added_units": 8263.0,
+      "backlog_cut": 115.0,
+      "break_even_ratio": 71.85217391304347
+    },
+    {
+      "from_stock": 1.25,
+      "to_stock": 1.35,
+      "added_units": 3312.0,
+      "backlog_cut": 36.66666666666667,
+      "break_even_ratio": 90.32727272727271
+    },
+    {
+      "from_stock": 1.35,
+      "to_stock": 1.4,
+      "added_units": 1646.0,
+      "backlog_cut": 1.0,
+      "break_even_ratio": 1646.0
+    }
+  ],
+  "cost_table": [
+    {
+      "stock_factor": 1.0,
+      "stock_units": 33060.0,
+      "target": 0.9666666666666663,
+      "all": 0.9883333333333335,
+      "backlog": 153.33333333333334,
+      "cost": 3306.0,
+      "penalty_ratio": 0.0
+    },
+    {
+      "stock_factor": 1.0,
+      "stock_units": 33060.0,
+      "target": 0.9666666666666663,
+      "all": 0.9883333333333335,
+      "backlog": 153.33333333333334,
+      "cost": 4072.6666666666665,
+      "penalty_ratio": 50.0
+    },
+    {
+      "stock_factor": 1.25,
+      "stock_units": 41323.0,
+      "target": 0.9666666666666666,
+      "all": 0.9908333333333333,
+      "backlog": 38.333333333333336,
+      "cost": 4419.8,
+      "penalty_ratio": 75.0
+    },
+    {
+      "stock_factor": 1.35,
+      "stock_units": 44635.0,
+      "target": 0.9916666666666665,
+      "all": 0.9983333333333336,
+      "backlog": 1.6666666666666667,
+      "cost": 4480.166666666667,
+      "penalty_ratio": 100.0
+    },
+    {
+      "stock_factor": 1.35,
+      "stock_units": 44635.0,
+      "target": 0.9916666666666665,
+      "all": 0.9983333333333336,
+      "backlog": 1.6666666666666667,
+      "cost": 4496.833333333334,
+      "penalty_ratio": 200.0
+    },
+    {
+      "stock_factor": 1.35,
+      "stock_units": 44635.0,
+      "target": 0.9916666666666665,
+      "all": 0.9983333333333336,
+      "backlog": 1.6666666666666667,
+      "cost": 4630.166666666667,
+      "penalty_ratio": 1000.0
+    },
+    {
+      "stock_factor": 1.4,
+      "stock_units": 46281.0,
+      "target": 1.0,
+      "all": 0.9991666666666668,
+      "backlog": 0.6666666666666666,
+      "cost": 4761.433333333333,
+      "penalty_ratio": 2000.0
+    }
+  ]
+}
