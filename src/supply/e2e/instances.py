@@ -290,6 +290,8 @@ def build_e2e_instance(
     arrival_profile: Optional[Mapping[str, float]] = None,
     arrival_curve: Optional[ArrivalCurve | Mapping[str, Any]] = None,
     layout: Optional[WarehouseLayout] = None,
+    stock_basis: str = "actual",
+    stock_lookback_weeks: int = 6,
 ) -> E2EInstance:
     """Build one week where allocation, picking and arrivals share a promise."""
     if pickers_per_dc < 1:
@@ -306,6 +308,8 @@ def build_e2e_instance(
         stock_shares=tuple(stock_shares) if stock_shares is not None else DEFAULT_STOCK_SHARES,
         seed=seed,
         week=week,
+        stock_basis=stock_basis,
+        lookback_weeks=stock_lookback_weeks,
     )
     velocity = _velocity(clean, skus, sample_orders, max_lines, seed, week)
     layout = layout or WarehouseLayout(n_aisles=8, n_bays=16)

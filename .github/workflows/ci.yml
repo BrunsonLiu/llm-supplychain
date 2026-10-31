@@ -482,6 +482,11 @@ jobs:
           PYTHONPATH: src:.
         run: python scripts/build_access_seed_cost.py --out-dir /tmp/access-seed-cost-bench
 
+      - name: Run history-stock smoke
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats 1 --workers 2 --stock-basis history --stock-factor 1.4 --load-aware --load-basis covered --stem ACCESS_HIST_CI --week 49 --out-dir /tmp/access-hist-ci
+
       - name: Run Agent v2 benchmark
         env:
           PYTHONPATH: src:.

@@ -157,6 +157,7 @@ Week41–44 的布点/负荷/加人效应都在 0.1–0.2pp 量级。Week45 固�
 - **边际收益迅速递减**：100→125% 约 72 单位库存/积压单位，125→135% 约 90，135→140% 约 1,646，140→150% 为 0。库存总量是主杠杆，但不是线性杠杆。
 - **布点在 125%–140% 下仍无稳定贡献**：125% 时 covered history target 96.7%/all 99.25%、baseline 96.7%/99.08%；135% 时 covered target 100% 但 all 99.6% 低于 baseline 99.8%，积压 5.0 vs 1.7；140% 时 covered 与 baseline 持平。
 - **不是“多备货就对了”**：未建模采购/持有/跌价/资金成本；150% 只是服务上界情景，不是成本最优库存策略。
+- **库存是 oracle 上界**：库存量乘的是目标周实际需求；Week49 历史均值 140% 只有 target 70%，加到 200% 也只到 82.5%。本节的绝对服务应读作“SKU 结构已正确”的上界。
 
 完整报告：[`benchmarks/ACCESS_STOCK_FRONTIER_REPORT.md`](../../benchmarks/ACCESS_STOCK_FRONTIER_REPORT.md)。
 
@@ -224,12 +225,32 @@ Week45 只给服务量纲。Week46 把前沿转成 `total cost = h × stock + p 
 
 完整报告：[`benchmarks/ACCESS_SEED_COST_REPORT.md`](../../benchmarks/ACCESS_SEED_COST_REPORT.md)。
 
+## 5i. 库存基准：oracle vs 历史均值（Week 49）
+
+Week45–48 的每 SKU 库存 = `stock_factor × 目标周实际需求`，是 **oracle 库存上界**。Week49 用同 400 单，将库存改为前 6 周 SKU 均值 × 采样订单/历史发票缩放，不使用目标周需求：
+
+| 基准 | 倍数 | 单位 | 覆盖 | target | all | 积压 |
+|---|---:|---:|---:|---:|---:|---:|
+| 目标周实际需求 | 140% | 46,281 | 140.0% | 100.0% | 99.9% | 0.7 |
+| 前 6 周均值 | 140% | 44,824 | 135.6% | 70.0% | 93.9% | 2,123 |
+| 前 6 周均值 | 180% | 57,626 | 174.3% | 79.2% | 96.7% | 1,448 |
+| 前 6 周均值 | 200% | 64,039 | 193.7% | 82.5% | 97.2% | 1,281 |
+
+结论：
+
+- **总量接近，服务差 30pp**：同样 140%，46,281 vs 44,824 单位，target 100% vs 70%；差的是 per-SKU 结构，不是总库存。
+- **多备总量补不回来**：历史 200% 为 64,039 单位（目标需求 194%），仍只有 target 82.5%/all 97.2%；aggregate overstock 不能修复 SKU mix。
+- **Week45–48 是 oracle 上界**：成本决策、跨周、种子稳定性都继承；不要把绝对服务水平当可部署承诺。
+- 历史均值是朴素下界，无预测/前置期/补货；真实预测应介于两者之间。
+
+完整报告：[`benchmarks/ACCESS_STOCK_BASIS_REPORT.md`](../../benchmarks/ACCESS_STOCK_BASIS_REPORT.md)。
+
 ## 6. 效度威胁
 
 - oracle 使用本周实际订单；history 使用前 6 周数量但仍用本周 destination/transit 矩阵，二者都不是完整因果策略。
 - 调拨假设周前完成、无前置期/费用/批次；真实 DC 调拨需要运输时间、装载与成本。
 - 库存按 SKU 总量 + 确定性 jitter 分配；target 只替换 stock 矩阵，jitter 已经包含在 current 中。
-- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互；Week45 的 125%/135%/140%/150% 是库存情景，Week46 的 `h=€0.10` 与缺货惩罚比是示例，Week47 只验证一个 holdout 周且没有 135%/150%，Week48 的 90 格只变到达/拣选噪声、不是 90 个独立需求周；四者都不是成本最优补货决策。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
+- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互；Week45 的 125%/135%/140%/150% 是库存情景，Week46 的 `h=€0.10` 与缺货惩罚比是示例，Week47 只验证一个 holdout 周且没有 135%/150%，Week48 的 90 格只变到达/拣选噪声、不是 90 个独立需求周；Week49 证明 Week45–48 的库存是目标周需求 oracle，历史均值 140% 只有 target 70%；五者都不是成本最优补货决策。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
 - 目标客群是样本内收入 Top10；没有 COGS/退货/履约成本，OTIF 不是利润。
 
 ## 7. 复现
@@ -244,6 +265,7 @@ PYTHONPATH=src;. python scripts/run_e2e_access.py --repeats 3
 # 成本决策：python scripts/build_access_stock_cost.py
 # 跨周验证：--target-week 2011-11-21（100/125/140）+ build_access_stock_frontier.py --week 47 --stem ACCESS_STOCK_OOS
 # 种子级：python scripts/build_access_seed_cost.py
+# 库存基准：--stock-basis history（1.4/1.8/2.0）+ build_access_stock_basis.py
 
 # 负荷 cap 扩展（Week 42）
 PYTHONPATH=src;. python scripts/run_e2e_access.py --load-aware --repeats 3 \

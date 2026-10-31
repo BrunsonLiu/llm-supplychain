@@ -152,18 +152,27 @@ def build_fulfillment_instance(
     seed: int = 42,
     week: Optional[pd.Timestamp] = None,
     dcs: Sequence[Dict[str, Any]] = FULFILLMENT_DCS,
+    stock_basis: str = "actual",
+    lookback_weeks: int = 6,
 ) -> FulfillmentInstance:
     """Sample one week of real invoices and attach a declared fulfillment network.
 
-    Stock covers ``stock_factor`` of sampled demand and is split across DCs by
-    ``stock_shares`` plus a deterministic per-SKU jitter, so some SKUs sit in a
-    DC far from where they are ordered. ``capacity_shares`` sets each DC's
-    weekly unit throughput. Both are assumptions, not observations.
+    Stock covers ``stock_factor`` of sampled demand when ``stock_basis`` is
+    ``"actual"`` (the benchmark convention) or ``stock_factor`` times the mean
+    demand of the previous ``lookback_weeks`` when it is ``"history"`` (the
+    deployable convention). It is split across DCs by ``stock_shares`` plus a
+    deterministic per-SKU jitter, so some SKUs sit in a DC far from where they
+    are ordered. ``capacity_shares`` sets each DC's weekly unit throughput.
+    Both are assumptions, not observations.
     """
     if sample_orders <= 0:
         raise ValueError("sample_orders 必须为正")
     if not 0.0 < stock_factor <= 2.0:
         raise ValueError("stock_factor 必须在 (0, 2] 内")
+    if stock_basis not in {"actual", "history"}:
+        raise ValueError("stock_basis 必须是 actual 或 history")
+    if lookback_weeks <= 0:
+        raise ValueError("lookback_weeks 必须为正")
     shares = np.asarray(stock_shares, dtype=float)
     capacities = np.asarray(capacity_shares, dtype=float)
     if shares.shape != (len(dcs),) or capacities.shape != (len(dcs),):
@@ -215,7 +224,32 @@ def build_fulfillment_instance(
 
     rng = np.random.default_rng(seed)
     demand = np.bincount(line_sku, weights=line_qty, minlength=n_skus)
-    stock_total = np.rint(demand * stock_factor).astype(np.int64)
+    order_scale = 1.0
+    if stock_basis == "history":
+        target_week = pd.Timestamp(week) if week is not None else pd.to_datetime(
+            clean["week"]
+        ).max()
+        history = clean[clean["country"].isin(COUNTRY_COORDS)].copy()
+        history["week"] = pd.to_datetime(history["week"])
+        past_weeks = sorted(
+            history.loc[history["week"] < target_week, "week"].unique()
+        )[-lookback_weeks:]
+        if not past_weeks:
+            raise ValueError("history 库存基准没有目标周之前的历史")
+        past = history[history["week"].isin(past_weeks)]
+        quantities = past.groupby("sku")["quantity"].sum()
+        mean_demand = quantities.reindex(sku_names, fill_value=0.0) / len(past_weeks)
+        # The benchmark instance holds stock for a sampled number of orders,
+        # not the whole week. Scale the historical weekly demand by the ratio
+        # of sampled orders to the historical average weekly invoice count.
+        weekly_invoices = past.groupby("week")["invoice"].nunique()
+        mean_weekly_invoices = float(weekly_invoices.mean())
+        order_scale = float(n_orders) / mean_weekly_invoices if mean_weekly_invoices else 1.0
+        stock_total = np.rint(
+            mean_demand.to_numpy(dtype=float) * stock_factor * order_scale
+        ).astype(np.int64)
+    else:
+        stock_total = np.rint(demand * stock_factor).astype(np.int64)
     weights = shares[None, :] * rng.uniform(0.75, 1.25, size=(n_skus, len(dcs)))
     stock = _split_integer(
         stock_total, weights / weights.sum(axis=1, keepdims=True)
@@ -282,6 +316,9 @@ def build_fulfillment_instance(
             "sampled_invoices": picking_meta["sampled_invoices"],
             "median_lines_per_order": picking_meta["median_lines_per_order"],
             "stock_factor": float(stock_factor),
+            "stock_basis": stock_basis,
+            "stock_lookback_weeks": int(lookback_weeks),
+            "stock_history_order_scale": float(order_scale),
             "stock_units": int(stock.sum()),
             "stock_coverage": float(stock.sum() / total_units) if total_units else 0.0,
             "stock_shares": [float(x) for x in shares],
@@ -301,7 +338,7 @@ def build_fulfillment_instance(
             "assumptions": [
                 "订单/行/数量/目的国来自 Online Retail II 真实发票",
                 "DC 库存、产能、转运天数、SLA 承诺与费率是显式假设",
-                "库存按 SKU 需求 stock_factor 分配并加入确定性偏斜",
+                "库存按 stock_basis（actual=目标周需求，history=前 N 周均值）× stock_factor 分配并加入确定性偏斜",
             ],
         },
     )

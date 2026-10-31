@@ -85,6 +85,8 @@ def _build(clean, skus, args, last_week):
         stock_shares=BASE_SHARES,
         seed=args.seed,
         week=last_week,
+        stock_basis=args.stock_basis,
+        stock_lookback_weeks=args.lookback_weeks,
         pickers_per_dc=args.pickers,
         shift_minutes=args.shift_minutes,
         arrival_seed=1,
@@ -106,6 +108,12 @@ def main() -> None:
     parser.add_argument("--out-dir", default=str(ROOT / "benchmarks"))
     parser.add_argument("--orders", type=int, default=400)
     parser.add_argument("--stock-factor", type=float, default=1.0)
+    parser.add_argument(
+        "--stock-basis",
+        choices=("actual", "history"),
+        default="actual",
+        help="actual=目标周需求；history=前 N 周 SKU 均值（周前可部署）",
+    )
     parser.add_argument(
         "--target-week",
         default=None,
@@ -346,9 +354,14 @@ def main() -> None:
     frame = pd.concat(frames, ignore_index=True)
     summary = summarize_access(frame)
     full_scale = args.orders >= 400 and args.seeds >= 30
+    stock_basis_text = (
+        "目标周实际需求"
+        if args.stock_basis == "actual"
+        else f"前 {args.lookback_weeks} 周 SKU 均值"
+    )
     limitations = [
-        f"固定总量：每个 SKU 的总库存 = {args.stock_factor:.0%} 需求，只允许 DC→DC 重摆位；"
-        "增加总库存的臂是情景外推，不建模采购、在途、仓储成本、COGS、持有成本、过期/跌价。",
+        f"固定总量：每个 SKU 的总库存 = {args.stock_factor:.0%} × {stock_basis_text}，"
+        "只允许 DC→DC 重摆位；增加总库存的臂是情景外推，不建模采购、在途、仓储成本、COGS、持有成本、过期/跌价。",
         "access_oracle 使用本周实际订单，是可达需求上界，不是可在周前执行的生产策略。",
         "access_history 使用前 6 周 country×SKU 数量，但仍使用本周 destination/transit 矩阵来判定可达性；它是半可部署估计，不是完整因果策略。",
         "库存按 SKU 总量加确定性 jitter 分配；不同 target 的总量相同，但 SKU×DC 分布受 jitter 影响。",
@@ -356,6 +369,11 @@ def main() -> None:
         "调拨假设在周前完成且无运输时间/费用；真实 DC 调拨需要提前期、批次和成本。",
         "布点 MILP 是单线程固定 seed；端到端分单 MILP 仍是 2 workers/时间受限，跨臂重解会带来 1–3pp 差异。",
     ]
+    if args.stock_basis == "history":
+        limitations.append(
+            "history 库存基准只用目标周之前的 SKU 周需求均值，不使用目标周实际需求；"
+            "它仍是周前可部署近似，不是需求预测模型，且只回看固定周数。"
+        )
     if args.load_aware:
         basis_text = (
             "stock-implied（按 DC 库存乘单位分钟）"
@@ -410,6 +428,7 @@ def main() -> None:
             "noise": args.noise,
             "policies": list(policies),
             "stock_factor": args.stock_factor,
+            "stock_basis": args.stock_basis,
             "target_week": str(pd.Timestamp(last_week).date()),
             "stock_units": stock_total,
             "dc_capacity_factor": 2.0,
