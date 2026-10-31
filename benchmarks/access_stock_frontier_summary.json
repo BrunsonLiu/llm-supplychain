@@ -1,0 +1,199 @@
+{
+  "baseline": {
+    "stock_factor": 1.0,
+    "stock_units": 33060,
+    "target": 0.9666666666666663,
+    "all": 0.9883333333333335,
+    "backlog": 153.33333333333334
+  },
+  "rows": [
+    {
+      "stock_factor": 1.0,
+      "stock_units": 33060,
+      "policy": "baseline",
+      "target": 0.9666666666666663,
+      "rest": 0.9907407407407406,
+      "all": 0.9883333333333335,
+      "backlog": 153.33333333333334,
+      "coverage": 0.0,
+      "moved": 0.0
+    },
+    {
+      "stock_factor": 1.0,
+      "stock_units": 33060,
+      "policy": "access_history",
+      "target": 0.9749999999999996,
+      "rest": 0.9898148148148149,
+      "all": 0.9883333333333332,
+      "backlog": 307.0,
+      "coverage": 0.4485347322720695,
+      "moved": 9212.0
+    },
+    {
+      "stock_factor": 1.0,
+      "stock_units": 33060,
+      "policy": "access_history_load_covered",
+      "target": 0.9666666666666663,
+      "rest": 0.9916666666666668,
+      "all": 0.9891666666666667,
+      "backlog": 148.0,
+      "coverage": 0.2608990593342982,
+      "moved": 383.0
+    },
+    {
+      "stock_factor": 1.0,
+      "stock_units": 33060,
+      "policy": "access_oracle",
+      "target": 0.9666666666666666,
+      "rest": 0.974074074074074,
+      "all": 0.9733333333333333,
+      "backlog": 180.33333333333334,
+      "coverage": 0.6310632043116121,
+      "moved": 8222.0
+    },
+    {
+      "stock_factor": 1.0,
+      "stock_units": 33060,
+      "policy": "access_oracle_load_covered",
+      "target": 0.9749999999999996,
+      "rest": 0.9888888888888889,
+      "all": 0.9874999999999998,
+      "backlog": 130.66666666666666,
+      "coverage": 0.37695982361587455,
+      "moved": 0.0
+    },
+    {
+      "stock_factor": 1.25,
+      "stock_units": 41323,
+      "policy": "baseline",
+      "target": 0.9666666666666666,
+      "rest": 0.9935185185185181,
+      "all": 0.9908333333333333,
+      "backlog": 38.333333333333336,
+      "coverage": 0.0,
+      "moved": 0.0
+    },
+    {
+      "stock_factor": 1.25,
+      "stock_units": 41323,
+      "policy": "access_history",
+      "target": 0.9749999999999996,
+      "rest": 0.9953703703703701,
+      "all": 0.9933333333333334,
+      "backlog": 62.333333333333336,
+      "coverage": 0.5606231910274965,
+      "moved": 11853.0
+    },
+    {
+      "stock_factor": 1.25,
+      "stock_units": 41323,
+      "policy": "access_history_load_covered",
+      "target": 0.9666666666666663,
+      "rest": 0.9953703703703701,
+      "all": 0.9925,
+      "backlog": 41.666666666666664,
+      "coverage": 0.2608990593342982,
+      "moved": 0.0
+    },
+    {
+      "stock_factor": 1.25,
+      "stock_units": 41323,
+      "policy": "access_oracle",
+      "target": 0.9916666666666665,
+      "rest": 0.999074074074074,
+      "all": 0.9983333333333336,
+      "backlog": 2.6666666666666665,
+      "coverage": 0.7828576678098971,
+      "moved": 10293.0
+    },
+    {
+      "stock_factor": 1.25,
+      "stock_units": 41323,
+      "policy": "access_oracle_load_covered",
+      "target": 0.9749999999999996,
+      "rest": 0.9935185185185185,
+      "all": 0.9916666666666667,
+      "backlog": 79.0,
+      "coverage": 0.37695982361587455,
+      "moved": 0.0
+    },
+    {
+      "stock_factor": 1.5,
+      "stock_units": 49595,
+      "policy": "baseline",
+      "target": 1.0,
+      "rest": 0.999074074074074,
+      "all": 0.9991666666666668,
+      "backlog": 0.6666666666666666,
+      "coverage": 0.0,
+      "moved": 0.0
+    },
+    {
+      "stock_factor": 1.5,
+      "stock_units": 49595,
+      "policy": "access_history",
+      "target": 1.0,
+      "rest": 0.9972222222222219,
+      "all": 0.9975000000000004,
+      "backlog": 4.333333333333333,
+      "coverage": 0.6728699348769898,
+      "moved": 14836.0
+    },
+    {
+      "stock_factor": 1.5,
+      "stock_units": 49595,
+      "policy": "access_history_load_covered",
+      "target": 1.0,
+      "rest": 0.999074074074074,
+      "all": 0.9991666666666668,
+      "backlog": 0.6666666666666666,
+      "coverage": 0.2608990593342982,
+      "moved": 0.0
+    },
+    {
+      "stock_factor": 1.5,
+      "stock_units": 49595,
+      "policy": "access_oracle",
+      "target": 0.9916666666666665,
+      "rest": 0.9981481481481482,
+      "all": 0.9974999999999999,
+      "backlog": 3.6666666666666665,
+      "coverage": 0.9348664870161686,
+      "moved": 12372.0
+    },
+    {
+      "stock_factor": 1.5,
+      "stock_units": 49595,
+      "policy": "access_oracle_load_covered",
+      "target": 1.0,
+      "rest": 1.0,
+      "all": 1.0,
+      "backlog": 0.0,
+      "coverage": 0.37695982361587455,
+      "moved": 0.0
+    }
+  ],
+  "settings": [
+    {
+      "factor": 1.0,
+      "stock_units": 33060,
+      "orders": 400,
+      "seeds": 30,
+      "repeats": 3
+    },
+    {
+      "factor": 1.25,
+      "stock_units": 41323,
+      "orders": 400,
+      "seeds": 30,
+      "repeats": 3
+    },
+    {
+      "factor": 1.5,
+      "stock_units": 49595,
+      "orders": 400,
+      "seeds": 30,
+      "repeats": 3
+    }
+  ]
+}

@@ -81,7 +81,7 @@ def _build(clean, skus, args, last_week):
         skus,
         sample_orders=args.orders,
         max_lines=args.max_lines,
-        stock_factor=1.0,
+        stock_factor=args.stock_factor,
         stock_shares=BASE_SHARES,
         seed=args.seed,
         week=last_week,
@@ -105,6 +105,7 @@ def main() -> None:
     )
     parser.add_argument("--out-dir", default=str(ROOT / "benchmarks"))
     parser.add_argument("--orders", type=int, default=400)
+    parser.add_argument("--stock-factor", type=float, default=1.0)
     parser.add_argument("--max-lines", type=int, default=20)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--pickers", type=int, default=1)
@@ -291,7 +292,7 @@ def main() -> None:
             frame["label"] = label
             frame["shares"] = "/".join(f"{value:.0%}" for value in shares)
             frame["stock_units"] = int(instance.fulfillment.stock.sum())
-            frame["stock_factor"] = 1.0
+            frame["stock_factor"] = args.stock_factor
             frame["dc_capacity_factor"] = 2.0
             frame["transit_cut_days"] = 1
             frame["moved_units"] = int(moved)
@@ -333,7 +334,8 @@ def main() -> None:
     summary = summarize_access(frame)
     full_scale = args.orders >= 400 and args.seeds >= 30
     limitations = [
-        "固定总量：每个 SKU 的总库存 = 100% 需求，只允许 DC→DC 重摆位；不建模采购、在途、仓储成本、COGS、持有成本、过期/跌价。",
+        f"固定总量：每个 SKU 的总库存 = {args.stock_factor:.0%} 需求，只允许 DC→DC 重摆位；"
+        "增加总库存的臂是情景外推，不建模采购、在途、仓储成本、COGS、持有成本、过期/跌价。",
         "access_oracle 使用本周实际订单，是可达需求上界，不是可在周前执行的生产策略。",
         "access_history 使用前 6 周 country×SKU 数量，但仍使用本周 destination/transit 矩阵来判定可达性；它是半可部署估计，不是完整因果策略。",
         "库存按 SKU 总量加确定性 jitter 分配；不同 target 的总量相同，但 SKU×DC 分布受 jitter 影响。",
@@ -394,7 +396,7 @@ def main() -> None:
             "pickers": args.pickers,
             "noise": args.noise,
             "policies": list(policies),
-            "stock_factor": 1.0,
+            "stock_factor": args.stock_factor,
             "stock_units": stock_total,
             "dc_capacity_factor": 2.0,
             "transit_cut_days": 1,

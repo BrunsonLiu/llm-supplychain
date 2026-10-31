@@ -1,7 +1,7 @@
 # Week 42: demand-weighted stock placement
 
-- Orders: **400** | units: **33,060** | week: **2011-11-28**
-- Seeds: **30** | repeats: **3** | MILP time: **10.0 s** | history lookback: **6 weeks** | DC share bounds: **10%–60%**
+- Orders: **400** | units: **33,060** | week: **2011-11-28** | stock factor: **100%**
+- Seeds: **30** | repeats: **3** | MILP time: **10.0 s** | history lookback: **6 weeks** | pickers/DC: **1** | DC share bounds: **10%–60%**
 
 ## Design
 
@@ -18,7 +18,7 @@ s.t. sum_d y[d,s] = stock_total[s]
 
 `demand[d,s]` is a partition of demand: each line is assigned to one best on-time DC. `access_oracle` uses the current week's realised lines; `access_history` uses the prior six weeks' country x SKU quantities and the current week's destination/transit matrix. The 10%/60% share bounds stop the coverage objective from parking almost all stock in one DC.
 
-The `_load` arms add a stock-implied pick-minute cap. With `c=0.052` minutes per unit and per-DC capacity `600` minutes:
+The `_load` arms use a **stock-implied (parked units)** pick-minute cap. With `c=0.052` minutes per unit and per-DC capacity `600` minutes:
 
 ```
 L[d] = sum_s y[d,s] * c
@@ -26,7 +26,7 @@ L[d] <= capacity[d] + overload[d]
 max coverage - penalty * sum_d overload[d] - moves
 ```
 
-This is a placement proxy, not a queue simulation: it penalises parking stock where the pick layer would have to work it, but it does not know arrival order or wave release.
+This is a placement proxy, not a queue simulation: it penalises load where the pick layer would have to work it, but it does not know arrival order or wave release.
 
 ## Results
 

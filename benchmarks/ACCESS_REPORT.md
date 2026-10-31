@@ -1,7 +1,7 @@
 # Week 41: demand-weighted stock placement
 
-- Orders: **400** | units: **33,060** | week: **2011-11-28**
-- Seeds: **30** | repeats: **3** | MILP time: **10.0 s** | history lookback: **6 weeks** | DC share bounds: **10%–60%**
+- Orders: **400** | units: **33,060** | week: **2011-11-28** | stock factor: **100%**
+- Seeds: **30** | repeats: **3** | MILP time: **10.0 s** | history lookback: **6 weeks** | pickers/DC: **1** | DC share bounds: **10%–60%**
 
 ## Design
 

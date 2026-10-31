@@ -137,7 +137,8 @@ def build_access_report(payload: Mapping[str, Any]) -> str:
         "",
         f"- Orders: **{dataset.get('orders', '—')}** | "
         f"units: **{_num(dataset.get('units', 0))}** | "
-        f"week: **{dataset.get('week', '—')}**",
+        f"week: **{dataset.get('week', '—')}** | "
+        f"stock factor: **{float(settings.get('stock_factor', 1.0)):.0%}**",
         f"- Seeds: **{settings.get('seeds', '—')}** | "
         f"repeats: **{settings.get('repeats', 1)}** | "
         f"MILP time: **{settings.get('solver_time', '—')} s** | "
