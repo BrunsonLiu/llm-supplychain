@@ -183,12 +183,32 @@ Week45 只给服务量纲。Week46 把前沿转成 `total cost = h × stock + p 
 
 完整报告：[`benchmarks/ACCESS_STOCK_COST_REPORT.md`](../../benchmarks/ACCESS_STOCK_COST_REPORT.md)。
 
+## 5g. 跨周验证（Week 47）
+
+目标周从 `2011-11-28` 换到更早的 `2011-11-21`，同样 400 单 / 30 种子 / 3 重复 / 同布点臂，只跑 100%/125%/140% 三档：
+
+| 总库存 | 库存单位 | 目标 OTIF | 全量 OTIF | 积压 |
+|---:|---:|---:|---:|---:|
+| 100% | 32,609 | 96.7% | 98.8% | 172.0 |
+| 125% | 40,757 | 97.5% | 99.5% | 28.3 |
+| 140% | 45,652 | 100.0% | 99.9% | 0.7 |
+
+结论：
+
+- **140% 的服务阈值复现**：125% 仍只到 target 97.5%，140% 才到 100%/all 99.9%；“125% 不够、140% 到 ceiling”不是单周偶然。
+- **成本 break-even 不稳定**：OOS `100→125` = **56.7**、`125→140` = **176.9**；in-sample 为 71.9 / 90.3 / 1,646（多一个 135% 点）。`p/h=100` 时 in-sample 选 135%，OOS 只能选 125%；`p/h=200` 时 OOS 已选 140%，in-sample 仍选 135%。成本档位对周和网格敏感，不能把 Week46 阈值当常数。
+- **布点仍只有小效应**：100% covered history all 99.1% vs baseline 98.8%；125% 99.7% vs 99.5%；140% 100.0% vs 99.9%，均 0.1–0.3pp。
+- **库存单位随周需求变化**：100% 为 32,609（in-sample 33,060），140% 为 45,652（in-sample 46,281）；百分比是需求倍数，不是固定预算。
+- 只验证一个 holdout 周，OOS 无 135%/150%，不是多周补货/持有成本策略。
+
+完整报告：[`benchmarks/ACCESS_STOCK_OOS_REPORT.md`](../../benchmarks/ACCESS_STOCK_OOS_REPORT.md) 与 [`benchmarks/ACCESS_STOCK_OOS_COST_REPORT.md`](../../benchmarks/ACCESS_STOCK_OOS_COST_REPORT.md)。
+
 ## 6. 效度威胁
 
 - oracle 使用本周实际订单；history 使用前 6 周数量但仍用本周 destination/transit 矩阵，二者都不是完整因果策略。
 - 调拨假设周前完成、无前置期/费用/批次；真实 DC 调拨需要运输时间、装载与成本。
 - 库存按 SKU 总量 + 确定性 jitter 分配；target 只替换 stock 矩阵，jitter 已经包含在 current 中。
-- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互；Week45 的 125%/135%/140%/150% 是库存情景，Week46 的 `h=€0.10` 与缺货惩罚比是示例，不是成本最优补货决策。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
+- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互；Week45 的 125%/135%/140%/150% 是库存情景，Week46 的 `h=€0.10` 与缺货惩罚比是示例，Week47 只验证一个 holdout 周且没有 135%/150%，三者都不是成本最优补货决策。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
 - 目标客群是样本内收入 Top10；没有 COGS/退货/履约成本，OTIF 不是利润。
 
 ## 7. 复现
@@ -201,6 +221,7 @@ PYTHONPATH=src;. python scripts/run_e2e_access.py --repeats 3
 #   --load-basis covered --repeats 3 --stem ACCESS_LOAD_COVERED_P2 --week 44
 # 库存前沿：--stock-factor 1.25 / 1.35 / 1.4 / 1.5 + build_access_stock_frontier.py
 # 成本决策：python scripts/build_access_stock_cost.py
+# 跨周验证：--target-week 2011-11-21（100/125/140）+ build_access_stock_frontier.py --week 47 --stem ACCESS_STOCK_OOS
 
 # 负荷 cap 扩展（Week 42）
 PYTHONPATH=src;. python scripts/run_e2e_access.py --load-aware --repeats 3 \

@@ -1,13 +1,12 @@
-"""Build the Week-46 cost decision from the Week-45 stock frontier."""
+"""Turn a measured stock-service frontier into a cost-ratio decision."""
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-import sys
-
 sys.path.insert(0, str(ROOT / "src"))
 
 from supply.e2e.access_cost import (  # noqa: E402
@@ -31,16 +30,23 @@ def main() -> None:
         help="comma-separated stockout/holding ratios",
     )
     parser.add_argument("--out-dir", default=str(ROOT / "benchmarks"))
+    parser.add_argument("--week", type=int, default=46)
+    parser.add_argument("--stem", default="ACCESS_STOCK_COST")
     args = parser.parse_args()
     payload = json.loads(Path(args.frontier).read_text(encoding="utf-8"))
     rows = payload["rows"]
     ratios = [float(item) for item in args.ratios.split(",") if item.strip()]
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    report = out / "ACCESS_STOCK_COST_REPORT.md"
-    summary = out / "access_stock_cost_summary.json"
+    report = out / f"{args.stem}_REPORT.md"
+    summary = out / f"{args.stem.lower()}_summary.json"
     report.write_text(
-        build_stock_cost_report(rows, holding_cost=args.holding_cost, ratios=ratios),
+        build_stock_cost_report(
+            rows,
+            holding_cost=args.holding_cost,
+            ratios=ratios,
+            week=args.week,
+        ),
         encoding="utf-8",
     )
     summary.write_text(

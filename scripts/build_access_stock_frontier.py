@@ -72,12 +72,21 @@ def build_report(data: Mapping[str, Any], week: int = 45) -> str:
     base = data["baseline"]
     baseline_rows = [row for row in rows if row["policy"] == "baseline"]
     base_map = {row["stock_factor"]: row for row in baseline_rows}
+    target_weeks = {
+        str(payload.get("settings", {}).get("target_week"))
+        for payload in data.get("payloads", [])
+        if payload.get("settings", {}).get("target_week")
+    }
+    target_text = ""
+    if len(target_weeks) == 1:
+        target_text = f" Target week: **{next(iter(target_weeks))}**."
     lines = [
         f"# Week {week}: stock-total service frontier",
         "",
         "Same 400 invoices, 30 seeds, 3 repeats, fixed placement arms and "
-        "end-to-end configuration; only the per-SKU stock total changes. "
-        "The extra stock is a scenario, not a costed replenishment plan.",
+        "end-to-end configuration; only the per-SKU stock total changes."
+        + target_text
+        + " The extra stock is a scenario, not a costed replenishment plan.",
         "",
         "## Baseline frontier",
         "",
@@ -173,10 +182,11 @@ def build_report(data: Mapping[str, Any], week: int = 45) -> str:
             f"{_pct(baseline['all'])}); it moves {_num(best['moved'])} units."
         )
     lines += [
-        "- **The stock total dominates the placement effect.** The 100% -> 125% "
-        "step cuts backlog far more than any 100%-stock placement arm; the "
-        "150% step reaches the OTIF ceiling. Non-oracle placement differences "
-        "at fixed stock are about 0.1-0.3pp and were not robust in Weeks 41-44.",
+        "- **The stock total dominates the placement effect.** The first "
+        "stock step cuts backlog far more than any 100%-stock placement arm; "
+        f"the highest tested step ({factors[-1]:.0%}) is at or near the OTIF "
+        "ceiling. Non-oracle placement differences at fixed stock are about "
+        "0.1-0.3pp and were not robust in Weeks 41-44.",
         "- **Extra stock is not free.** This report does not model purchase "
         "cost, holding cost, obsolescence, markdown, or working capital; the "
         "frontier is a service diagnostic, not an optimal inventory policy.",
@@ -226,6 +236,7 @@ def main() -> None:
                         "orders": payload["dataset"].get("orders"),
                         "seeds": payload["settings"].get("seeds"),
                         "repeats": payload["settings"].get("repeats"),
+                        "target_week": payload["settings"].get("target_week"),
                     }
                     for payload in data["payloads"]
                 ],

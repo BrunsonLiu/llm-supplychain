@@ -180,7 +180,8 @@
         "moved_units": 0,
         "objective": 12310000000.0
       }
-    }
+    },
+    "target_week": "2011-11-28"
   },
   "order_days": {
     "0": 66,

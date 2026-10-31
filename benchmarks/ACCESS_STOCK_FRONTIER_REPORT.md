@@ -1,6 +1,6 @@
 # Week 45: stock-total service frontier
 
-Same 400 invoices, 30 seeds, 3 repeats, fixed placement arms and end-to-end configuration; only the per-SKU stock total changes. The extra stock is a scenario, not a costed replenishment plan.
+Same 400 invoices, 30 seeds, 3 repeats, fixed placement arms and end-to-end configuration; only the per-SKU stock total changes. Target week: **2011-11-28**. The extra stock is a scenario, not a costed replenishment plan.
 
 ## Baseline frontier
 
@@ -58,7 +58,7 @@ Same 400 invoices, 30 seeds, 3 repeats, fixed placement arms and end-to-end conf
 - At **135% stock**, best all-order arm is `baseline` (99.8% vs baseline 99.8%); it moves 0 units.
 - At **140% stock**, best all-order arm is `access_oracle_load_covered` (100.0% vs baseline 99.9%); it moves 0 units.
 - At **150% stock**, best all-order arm is `access_oracle_load_covered` (100.0% vs baseline 99.9%); it moves 0 units.
-- **The stock total dominates the placement effect.** The 100% -> 125% step cuts backlog far more than any 100%-stock placement arm; the 150% step reaches the OTIF ceiling. Non-oracle placement differences at fixed stock are about 0.1-0.3pp and were not robust in Weeks 41-44.
+- **The stock total dominates the placement effect.** The first stock step cuts backlog far more than any 100%-stock placement arm; the highest tested step (150%) is at or near the OTIF ceiling. Non-oracle placement differences at fixed stock are about 0.1-0.3pp and were not robust in Weeks 41-44.
 - **Extra stock is not free.** This report does not model purchase cost, holding cost, obsolescence, markdown, or working capital; the frontier is a service diagnostic, not an optimal inventory policy.
 - `access_oracle` is an upper-bound arm: it sees the current week's orders and its transfer matrix, so it is not deployable.
 - One target week, one layout/shift, one picker per DC; only the stock total changes, and the fixed-total placement still assumes a pre-week transfer with no lead time or cost.

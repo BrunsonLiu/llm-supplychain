@@ -472,6 +472,11 @@ jobs:
           PYTHONPATH: src:.
         run: python scripts/build_access_stock_cost.py --out-dir /tmp/access-stock-cost-bench
 
+      - name: Run out-of-sample target-week smoke
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats 1 --workers 2 --target-week 2011-11-21 --stock-factor 1.0 --load-aware --load-basis covered --stem ACCESS_OOS_CI --week 47 --out-dir /tmp/access-oos-ci
+
       - name: Run Agent v2 benchmark
         env:
           PYTHONPATH: src:.

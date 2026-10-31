@@ -289,35 +289,40 @@
       "stock_units": 33060,
       "orders": 400,
       "seeds": 30,
-      "repeats": 3
+      "repeats": 3,
+      "target_week": "2011-11-28"
     },
     {
       "factor": 1.25,
       "stock_units": 41323,
       "orders": 400,
       "seeds": 30,
-      "repeats": 3
+      "repeats": 3,
+      "target_week": "2011-11-28"
     },
     {
       "factor": 1.35,
       "stock_units": 44635,
       "orders": 400,
       "seeds": 30,
-      "repeats": 3
+      "repeats": 3,
+      "target_week": "2011-11-28"
     },
     {
       "factor": 1.4,
       "stock_units": 46281,
       "orders": 400,
       "seeds": 30,
-      "repeats": 3
+      "repeats": 3,
+      "target_week": "2011-11-28"
     },
     {
       "factor": 1.5,
       "stock_units": 49595,
       "orders": 400,
       "seeds": 30,
-      "repeats": 3
+      "repeats": 3,
+      "target_week": "2011-11-28"
     }
   ]
 }

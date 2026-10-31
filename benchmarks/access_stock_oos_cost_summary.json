@@ -1,0 +1,116 @@
+{
+  "holding_cost": 0.1,
+  "ratios": [
+    0.0,
+    50.0,
+    75.0,
+    100.0,
+    200.0,
+    1000.0,
+    2000.0
+  ],
+  "efficient_frontier": [
+    {
+      "stock_factor": 1.0,
+      "stock_units": 32609.0,
+      "target": 0.9666666666666663,
+      "all": 0.9883333333333332,
+      "backlog": 172.0
+    },
+    {
+      "stock_factor": 1.25,
+      "stock_units": 40757.0,
+      "target": 0.9749999999999996,
+      "all": 0.995,
+      "backlog": 28.333333333333332
+    },
+    {
+      "stock_factor": 1.4,
+      "stock_units": 45652.0,
+      "target": 1.0,
+      "all": 0.9991666666666668,
+      "backlog": 0.6666666666666666
+    }
+  ],
+  "critical_ratios": [
+    {
+      "from_stock": 1.0,
+      "to_stock": 1.25,
+      "added_units": 8148.0,
+      "backlog_cut": 143.66666666666666,
+      "break_even_ratio": 56.714617169373554
+    },
+    {
+      "from_stock": 1.25,
+      "to_stock": 1.4,
+      "added_units": 4895.0,
+      "backlog_cut": 27.666666666666664,
+      "break_even_ratio": 176.92771084337352
+    }
+  ],
+  "cost_table": [
+    {
+      "stock_factor": 1.0,
+      "stock_units": 32609.0,
+      "target": 0.9666666666666663,
+      "all": 0.9883333333333332,
+      "backlog": 172.0,
+      "cost": 3260.9,
+      "penalty_ratio": 0.0
+    },
+    {
+      "stock_factor": 1.0,
+      "stock_units": 32609.0,
+      "target": 0.9666666666666663,
+      "all": 0.9883333333333332,
+      "backlog": 172.0,
+      "cost": 4120.900000000001,
+      "penalty_ratio": 50.0
+    },
+    {
+      "stock_factor": 1.25,
+      "stock_units": 40757.0,
+      "target": 0.9749999999999996,
+      "all": 0.995,
+      "backlog": 28.333333333333332,
+      "cost": 4288.2,
+      "penalty_ratio": 75.0
+    },
+    {
+      "stock_factor": 1.25,
+      "stock_units": 40757.0,
+      "target": 0.9749999999999996,
+      "all": 0.995,
+      "backlog": 28.333333333333332,
+      "cost": 4359.033333333334,
+      "penalty_ratio": 100.0
+    },
+    {
+      "stock_factor": 1.4,
+      "stock_units": 45652.0,
+      "target": 1.0,
+      "all": 0.9991666666666668,
+      "backlog": 0.6666666666666666,
+      "cost": 4578.533333333334,
+      "penalty_ratio": 200.0
+    },
+    {
+      "stock_factor": 1.4,
+      "stock_units": 45652.0,
+      "target": 1.0,
+      "all": 0.9991666666666668,
+      "backlog": 0.6666666666666666,
+      "cost": 4631.866666666667,
+      "penalty_ratio": 1000.0
+    },
+    {
+      "stock_factor": 1.4,
+      "stock_units": 45652.0,
+      "target": 1.0,
+      "all": 0.9991666666666668,
+      "backlog": 0.6666666666666666,
+      "cost": 4698.533333333334,
+      "penalty_ratio": 2000.0
+    }
+  ]
+}

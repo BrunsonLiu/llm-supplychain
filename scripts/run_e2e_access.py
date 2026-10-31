@@ -106,6 +106,11 @@ def main() -> None:
     parser.add_argument("--out-dir", default=str(ROOT / "benchmarks"))
     parser.add_argument("--orders", type=int, default=400)
     parser.add_argument("--stock-factor", type=float, default=1.0)
+    parser.add_argument(
+        "--target-week",
+        default=None,
+        help="ISO date of the target week; default is the latest panel week",
+    )
     parser.add_argument("--max-lines", type=int, default=20)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--pickers", type=int, default=1)
@@ -133,7 +138,15 @@ def main() -> None:
 
     panel, _ = load_panel(args.panel)
     skus = sorted(panel["sku"].astype(str).unique())
-    last_week = pd.to_datetime(panel["week"]).max()
+    panel_weeks = pd.to_datetime(panel["week"])
+    last_week = panel_weeks.max()
+    if args.target_week:
+        target_week = pd.Timestamp(args.target_week)
+        if target_week not in set(panel_weeks):
+            raise ValueError(
+                f"target week {target_week.date()} 不在面板周列表中"
+            )
+        last_week = target_week
     raw = load_online_retail_raw(args.xlsx, cache_path=args.raw_cache)
     clean, clean_stats = clean_transactions(raw)
     clean["sku"] = clean["sku"].astype(str)
@@ -397,6 +410,7 @@ def main() -> None:
             "noise": args.noise,
             "policies": list(policies),
             "stock_factor": args.stock_factor,
+            "target_week": str(pd.Timestamp(last_week).date()),
             "stock_units": stock_total,
             "dc_capacity_factor": 2.0,
             "transit_cut_days": 1,

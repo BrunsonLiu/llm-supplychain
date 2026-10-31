@@ -37,7 +37,7 @@ A step is worth taking when the stockout penalty per backlog unit is above `adde
 
 ## Reading
 
-- The answer is **not a universal stock level**. With a low stockout penalty, 100% is cheapest; around the first break-even ratio 125% wins; above the second break-even ratio 135% wins; only an extremely high penalty justifies 140%. 150% is dominated by 140% on this grid.
+- The answer is **not a universal stock level**. The cheapest tested point moves right as the stockout penalty rises, and the break-even ratios below are the decision boundaries. A tested point is dropped when another point has no more stock and no worse service; on the full Week45 grid this removed 150% in favour of 140%.
 - The break-even numbers are the useful output: they translate the service frontier into a cost-penalty condition instead of an arbitrary `hold more` recommendation.
 - Holding cost is applied to the whole week's stock and backlog is a proxy for shortage; there is no lost-sales, goodwill, markdown, working-capital or lead-time cost. Cost levels are illustrative, not accounting numbers.
-- One target week, one layout/shift, 30 seeds × 3 repeats, fixed demand; the frontier itself is from Week 45.
+- One target week, one layout/shift, 30 seeds × 3 repeats, fixed demand; this is a post-hoc read of the stock frontier in the same report, not a multi-week inventory policy.

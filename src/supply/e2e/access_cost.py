@@ -129,17 +129,20 @@ def build_stock_cost_report(
     rows: Sequence[Mapping[str, Any]],
     holding_cost: float = 0.10,
     ratios: Sequence[float] = DEFAULT_RATIOS,
+    week: int = 46,
 ) -> str:
     points = efficient_frontier(rows)
     critical = critical_ratios(rows)
     table = cost_table(rows, ratios=ratios, holding_cost=holding_cost)
+    tested = baseline_frontier(rows)
+    stock_list = "/".join(f"{point['stock_factor']:.0%}" for point in tested)
     lines = [
-        "# Week 46: stock-service cost decision",
+        f"# Week {week}: stock-service cost decision",
         "",
-        "The measured 100%/125%/135%/140%/150% stock frontier is turned into "
-        "a decision with one declared weekly holding cost and a stockout "
-        "penalty expressed as a multiple of that holding cost. This is a "
-        "post-hoc decision layer, not a new demand or inventory model.",
+        f"The measured {stock_list} stock frontier is turned into a decision "
+        "with one declared weekly holding cost and a stockout penalty "
+        "expressed as a multiple of that holding cost. This is a post-hoc "
+        "decision layer, not a new demand or inventory model.",
         "",
         f"Weekly holding cost: **€{holding_cost:.2f}/unit-week**. "
         "Total cost = holding cost × stock units + stockout penalty × backlog "
@@ -192,10 +195,11 @@ def build_stock_cost_report(
         "",
         "## Reading",
         "",
-        "- The answer is **not a universal stock level**. With a low stockout "
-        "penalty, 100% is cheapest; around the first break-even ratio 125% "
-        "wins; above the second break-even ratio 135% wins; only an extremely "
-        "high penalty justifies 140%. 150% is dominated by 140% on this grid.",
+        "- The answer is **not a universal stock level**. The cheapest tested "
+        "point moves right as the stockout penalty rises, and the break-even "
+        "ratios below are the decision boundaries. A tested point is dropped "
+        "when another point has no more stock and no worse service; on the "
+        "full Week45 grid this removed 150% in favour of 140%.",
         "- The break-even numbers are the useful output: they translate the "
         "service frontier into a cost-penalty condition instead of an "
         "arbitrary `hold more` recommendation.",
@@ -204,6 +208,7 @@ def build_stock_cost_report(
         "working-capital or lead-time cost. Cost levels are illustrative, "
         "not accounting numbers.",
         "- One target week, one layout/shift, 30 seeds × 3 repeats, fixed "
-        "demand; the frontier itself is from Week 45.",
+        "demand; this is a post-hoc read of the stock frontier in the same "
+        "report, not a multi-week inventory policy.",
     ]
     return "\n".join(lines) + "\n"

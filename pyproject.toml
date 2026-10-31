@@ -1,7 +1,7 @@
 [project]
 name = "supply-chain-agent"
-version = "3.7.0"
-description = "供应链智能体：Agent v2（Plan DAG + Verifier + Replan + submit_plan function calling + ReAct）+ RAG 检索 + Function Calling + 需求预测 + 库存优化 + 仓网/路径/仓储/波次拣选/截单排程/在线释放/端到端履约联动 + Monte Carlo 稳健性 + 库存布点 + 班中回写恢复 + 分单-布点联合优化 + 随机/CVaR 布点 + 经验日内到达 + 承运商发车截止与月台合并 + 月台门位与装车资源 + 承诺报价与 ATP + 多日滚动与补货 + 多日滚动端到端 + 日滚动门位 + 日滚动重报价 + 承诺-服务前沿 + 订单接受 + 承诺×门位交互 + 同日集批 + 收入口径接单 + 价值分层接单 + 价值阈值前沿 + 高价值承诺升级 + 高价值分单优先级 + 高价值发车插队 + 高价值优先拣选 + 第二拣货员 + 到达加急 + 库存上界 + DC 产能上界 + 承运商时效 + 局部库存缓冲 + 固定总量布点 MILP、stock/covered 负荷感知布点、两拣货员容量交互、库存总量服务前沿、库存成本决策（学习/演示项目）"
+version = "3.8.0"
+description = "供应链智能体：Agent v2（Plan DAG + Verifier + Replan + submit_plan function calling + ReAct）+ RAG 检索 + Function Calling + 需求预测 + 库存优化 + 仓网/路径/仓储/波次拣选/截单排程/在线释放/端到端履约联动 + Monte Carlo 稳健性 + 库存布点 + 班中回写恢复 + 分单-布点联合优化 + 随机/CVaR 布点 + 经验日内到达 + 承运商发车截止与月台合并 + 月台门位与装车资源 + 承诺报价与 ATP + 多日滚动与补货 + 多日滚动端到端 + 日滚动门位 + 日滚动重报价 + 承诺-服务前沿 + 订单接受 + 承诺×门位交互 + 同日集批 + 收入口径接单 + 价值分层接单 + 价值阈值前沿 + 高价值承诺升级 + 高价值分单优先级 + 高价值发车插队 + 高价值优先拣选 + 第二拣货员 + 到达加急 + 库存上界 + DC 产能上界 + 承运商时效 + 局部库存缓冲 + 固定总量布点 MILP、stock/covered 负荷感知布点、两拣货员容量交互、库存总量服务前沿、库存成本决策、跨周验证（学习/演示项目）"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
