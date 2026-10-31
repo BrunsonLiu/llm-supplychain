@@ -5,7 +5,7 @@ Week 41 的模型卡片。它回答 Week 40 留下的问题：固定总量下，
 ## 1. 问题设定
 
 - 实例：`2011-11-28` 周 400 张真实发票、2,477 行、33,060 units、189 SKU、3 个 DC。
-- 固定：每个 SKU 的总库存 = 100% 需求（Week45 另跑 125%/150% 情景）；DC 2× 周产能；transit −1 天；ATP accept-all；Week41–43 为 1 拣货员/DC，Week44 交互臂为 2 人；30 个到达种子。
+- 固定：每个 SKU 的总库存 = 100% 需求（Week45 另跑 125%/135%/140%/150% 情景）；DC 2× 周产能；transit −1 天；ATP accept-all；Week41–43 为 1 拣货员/DC，Week44 交互臂为 2 人；30 个到达种子。
 - 决策：每个 SKU 在每个 DC 放多少库存 `y[d,s]`；等价于周前 DC→DC 调拨。
 - 不建模：采购、在途、调拨前置期/费用、仓储/持有成本、COGS、退货、过期。
 
@@ -138,7 +138,7 @@ Week43 的 covered 效应只有 +0.08pp，一个可能是“拣货产能不足�
 
 ## 5e. 库存总量服务前沿（Week 45）
 
-Week41–44 的布点/负荷/加人效应都在 0.1–0.2pp 量级。Week45 固定同一批订单与布点臂，只把每 SKU 总库存从 100% 需求提到 125%/150%，检验服务是被布点还是被总量约束。
+Week41–44 的布点/负荷/加人效应都在 0.1–0.2pp 量级。Week45 固定同一批订单与布点臂，只把每 SKU 总库存从 100% 需求提到 125%/135%/140%/150%，检验服务是被布点还是被总量约束。
 
 **baseline 布点（34/28/38）的前沿：**
 
@@ -146,13 +146,16 @@ Week41–44 的布点/负荷/加人效应都在 0.1–0.2pp 量级。Week45 固�
 |---:|---:|---:|---:|---:|
 | 100% | 33,060 | 96.7% | 98.8% | 153 |
 | 125% | 41,323 | 96.7% | 99.1% | 38 |
+| 135% | 44,635 | 99.2% | 99.8% | 1.7 |
+| 140% | 46,281 | 100.0% | 99.9% | 0.7 |
 | 150% | 49,595 | 100.0% | 99.9% | 0.7 |
 
 结论：
 
 - **+25% 库存主要买积压，不买目标服务**：全量 +0.25pp、积压 153→38，但 target 仍 96.7%，说明 Top10 目标的迟到不是总量不够，而是尾段/到达/拣选时机。
-- **+50% 才把目标服务推到 100%**：全量 99.9%、积压 0.7；库存总量的边际效应远大于固定总量布点的 0.1–0.2pp。
-- **布点在 125%/150% 下进一步失效**：125% 时 covered history target 96.7%/all 99.25%、baseline 96.7%/99.08%，积压反而 41.7 vs 38.3；150% 时各臂都在 99.8–100% 的 ceiling 附近。
+- **140% 是首个达到 ~100% target 的网格点**：135% 时 target 99.2%/all 99.8%，140% 时 100%/99.9%，150% 不再增加；这是网格边界，不是插值最小值。
+- **边际收益迅速递减**：100→125% 约 72 单位库存/积压单位，125→135% 约 90，135→140% 约 1,646，140→150% 为 0。库存总量是主杠杆，但不是线性杠杆。
+- **布点在 125%–140% 下仍无稳定贡献**：125% 时 covered history target 96.7%/all 99.25%、baseline 96.7%/99.08%；135% 时 covered target 100% 但 all 99.6% 低于 baseline 99.8%，积压 5.0 vs 1.7；140% 时 covered 与 baseline 持平。
 - **不是“多备货就对了”**：未建模采购/持有/跌价/资金成本；150% 只是服务上界情景，不是成本最优库存策略。
 
 完整报告：[`benchmarks/ACCESS_STOCK_FRONTIER_REPORT.md`](../../benchmarks/ACCESS_STOCK_FRONTIER_REPORT.md)。
@@ -162,7 +165,7 @@ Week41–44 的布点/负荷/加人效应都在 0.1–0.2pp 量级。Week45 固�
 - oracle 使用本周实际订单；history 使用前 6 周数量但仍用本周 destination/transit 矩阵，二者都不是完整因果策略。
 - 调拨假设周前完成、无前置期/费用/批次；真实 DC 调拨需要运输时间、装载与成本。
 - 库存按 SKU 总量 + 确定性 jitter 分配；target 只替换 stock 矩阵，jitter 已经包含在 current 中。
-- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互；Week45 的 125%/150% 是库存情景，不是成本最优补货决策。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
+- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互；Week45 的 125%/135%/140%/150% 是库存情景，不是成本最优补货决策。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
 - 目标客群是样本内收入 Top10；没有 COGS/退货/履约成本，OTIF 不是利润。
 
 ## 7. 复现
@@ -173,7 +176,7 @@ PYTHONPATH=src;. python scripts/run_e2e_access.py --repeats 3
 # 快速试跑：--orders 80 --seeds 3 --milp-time 2 --service-time 1 --solver-time 2 --repeats 1
 # covered + 2 拣货员：python scripts/run_e2e_access.py --pickers 2 --load-aware \
 #   --load-basis covered --repeats 3 --stem ACCESS_LOAD_COVERED_P2 --week 44
-# 库存前沿：--stock-factor 1.25 / 1.5 + build_access_stock_frontier.py
+# 库存前沿：--stock-factor 1.25 / 1.35 / 1.4 / 1.5 + build_access_stock_frontier.py
 
 # 负荷 cap 扩展（Week 42）
 PYTHONPATH=src;. python scripts/run_e2e_access.py --load-aware --repeats 3 \

@@ -67,13 +67,13 @@ def build_stock_frontier(payloads: Sequence[Mapping[str, Any]]) -> Dict[str, Any
     }
 
 
-def build_report(data: Mapping[str, Any]) -> str:
+def build_report(data: Mapping[str, Any], week: int = 45) -> str:
     rows = data["rows"]
     base = data["baseline"]
     baseline_rows = [row for row in rows if row["policy"] == "baseline"]
     base_map = {row["stock_factor"]: row for row in baseline_rows}
     lines = [
-        "# Week 45: stock-total service frontier",
+        f"# Week {week}: stock-total service frontier",
         "",
         "Same 400 invoices, 30 seeds, 3 repeats, fixed placement arms and "
         "end-to-end configuration; only the per-SKU stock total changes. "
@@ -122,7 +122,48 @@ def build_report(data: Mapping[str, Any]) -> str:
                 f"{_pct(base['target'])} -> {_pct(row['target'])}, backlog "
                 f"{_num(base['backlog'], 1)} -> {_num(row['backlog'], 1)}."
             )
-    for factor in sorted(base_map):
+    factors = sorted(base_map)
+    for previous, current in zip(factors, factors[1:]):
+        before = base_map[previous]
+        after = base_map[current]
+        added = after["stock_units"] - before["stock_units"]
+        cut = before["backlog"] - after["backlog"]
+        efficiency = added / cut if cut > 0 else float("inf")
+        if cut <= 0:
+            lines.append(
+                f"- **{previous:.0%} -> {current:.0%} stock**: +{_num(added)} units "
+                f"buys no further backlog reduction; all-order "
+                f"{_pct(before['all'])} -> {_pct(after['all'])}, target "
+                f"{_pct(before['target'])} -> {_pct(after['target'])}."
+            )
+        else:
+            lines.append(
+                f"- **{previous:.0%} -> {current:.0%} stock**: +{_num(added)} units "
+                f"cuts backlog {_num(before['backlog'], 1)} -> "
+                f"{_num(after['backlog'], 1)} ({_num(efficiency)} units of stock "
+                f"per backlog unit); all-order {_pct(before['all'])} -> "
+                f"{_pct(after['all'])}, target {_pct(before['target'])} -> "
+                f"{_pct(after['target'])}."
+            )
+    for factor in factors:
+        row = base_map[factor]
+        if row["target"] >= 0.999:
+            prior = [key for key in factors if key < factor]
+            previous = base_map[prior[-1]] if prior else None
+            if previous is None or previous["target"] < 0.999:
+                previous_text = (
+                    f"{previous['stock_factor']:.0%} = {_pct(previous['target'])}"
+                    if previous is not None
+                    else "—"
+                )
+                lines.append(
+                    f"- **First tested point reaching ~100% target on baseline is "
+                    f"{factor:.0%} stock** (previous tested point "
+                    f"{previous_text}); this is a grid boundary, not an "
+                    "interpolated minimum."
+                )
+            break
+    for factor in factors:
         factor_rows = [row for row in rows if row["stock_factor"] == factor]
         best = max(factor_rows, key=lambda item: (item["all"], item["target"]))
         baseline = base_map[factor]
@@ -159,6 +200,8 @@ def main() -> None:
     parser.add_argument(
         "--out-dir", default=str(ROOT / "benchmarks")
     )
+    parser.add_argument("--week", type=int, default=45)
+    parser.add_argument("--stem", default="ACCESS_STOCK_FRONTIER")
     args = parser.parse_args()
     payloads = []
     for item in args.input:
@@ -168,9 +211,9 @@ def main() -> None:
     data = build_stock_frontier(payloads)
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    report = out / "ACCESS_STOCK_FRONTIER_REPORT.md"
-    summary = out / "access_stock_frontier_summary.json"
-    report.write_text(build_report(data), encoding="utf-8")
+    report = out / f"{args.stem}_REPORT.md"
+    summary = out / f"{args.stem.lower()}_summary.json"
+    report.write_text(build_report(data, week=args.week), encoding="utf-8")
     summary.write_text(
         json.dumps(
             {
