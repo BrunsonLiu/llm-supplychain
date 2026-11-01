@@ -61,6 +61,7 @@ flowchart LR
 ## 入口
 
 - 完整说明：[`README.md`](README.md)
+- 最终审计与面试要点：[`docs/FINAL_AUDIT.md`](docs/FINAL_AUDIT.md)
 - 库存布点模型卡：[`docs/model_cards/access_placement.md`](docs/model_cards/access_placement.md)
 - 库存基准（oracle 问题）：[`benchmarks/ACCESS_STOCK_BASIS_REPORT.md`](benchmarks/ACCESS_STOCK_BASIS_REPORT.md)
 - 安全库存：[`benchmarks/ACCESS_STOCK_SAFETY_REPORT.md`](benchmarks/ACCESS_STOCK_SAFETY_REPORT.md)
@@ -83,4 +84,4 @@ python scripts/build_access_stock_forecast.py
 python tests/test_e2e_access.py
 ```
 
-当前材料：**55 层评测、6 份 model card、47 个测试文件**；CI 覆盖核心 smoke。最近提交见 `git log`，尚未 push。
+当前材料：**55 层评测、6 份 model card、47 个测试文件；本地 `pytest` 342 passed**（8 个依赖弃用 warning）；CI 覆盖核心 smoke。最近提交见 `git log`，尚未 push。
