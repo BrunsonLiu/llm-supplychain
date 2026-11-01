@@ -43,7 +43,8 @@ python scripts/run_agent_v2_benchmark.py
 pytest -q
 ```
 
-完整说明：[`README.md`](README.md)  
+完整说明：[`README.md`](README.md)
+
 基准摘要：[`benchmarks/FINAL_SUMMARY.md`](benchmarks/FINAL_SUMMARY.md)
 
 ## 边界
