@@ -254,5 +254,40 @@ class TestRetrievalDataset(unittest.TestCase):
                 )
 
 
+class TestConfigValidation(unittest.TestCase):
+    """Pydantic v2 field validators keep the old config contract."""
+
+    def test_openai_requires_key(self):
+        import os
+        from unittest.mock import patch
+        from rag.utils.config import LLMConfig
+        from rag.utils.exceptions import ConfigurationError
+
+        with patch.dict(
+            os.environ, {"OPENAI_API_KEY": "", "DEEPSEEK_API_KEY": ""}, clear=False
+        ):
+            with self.assertRaises(ConfigurationError):
+                LLMConfig(provider="openai", api_key="")
+
+    def test_openai_accepts_env_key(self):
+        import os
+        from unittest.mock import patch
+        from rag.utils.config import LLMConfig
+
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}, clear=False):
+            config = LLMConfig(provider="openai", api_key="")
+        self.assertEqual(config.provider, "openai")
+
+    def test_chunk_overlap_must_be_smaller(self):
+        from rag.utils.config import TextSplitterConfig
+        from rag.utils.exceptions import ConfigurationError
+
+        with self.assertRaises(ConfigurationError):
+            TextSplitterConfig(chunk_size=100, chunk_overlap=200)
+        self.assertEqual(
+            TextSplitterConfig(chunk_size=100, chunk_overlap=99).chunk_overlap, 99
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

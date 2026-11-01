@@ -86,4 +86,4 @@ python scripts/build_access_stock_forecast.py
 python tests/test_e2e_access.py
 ```
 
-当前材料：**56 层评测、6 份 model card、47 个测试文件；本地 `pytest` 342 passed**（6 个依赖弃用 warning）；CI 覆盖核心 smoke。最近提交见 `git log`，尚未 push。
+当前材料：**56 层评测、6 份 model card、47 个测试文件；本地 `pytest` 345 passed**（6 个依赖弃用 warning）；CI 覆盖核心 smoke。最近提交见 `git log`，尚未 push。

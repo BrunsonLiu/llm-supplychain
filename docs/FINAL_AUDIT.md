@@ -2,7 +2,7 @@
 
 > 目的：把“哪些结论能说、哪些不能说”写清楚，避免作品集在面试中被追问时过度承诺。
 >
-> 当前：56 层评测、6 份 model card、47 个测试文件；本地 `pytest` **342 passed**（6 个依赖弃用 warning）。
+> 当前：56 层评测、6 份 model card、47 个测试文件；本地 `pytest` **345 passed**（6 个依赖弃用 warning）。
 
 ## 1. 证据等级
 
@@ -44,7 +44,7 @@
 
 ```bash
 export PYTHONPATH=src:.
-python -m pytest -q                      # 342 passed
+python -m pytest -q                      # 345 passed
 python tests/test_e2e_access.py          # 14 passed
 python scripts/run_e2e_access.py --stock-basis last_week_share --stock-factor 1.4 \
   --load-aware --load-basis covered --repeats 3 --stem ACCESS_LAST_WEEK14 --week 54
