@@ -88,6 +88,10 @@ def _build(clean, skus, args, last_week):
         stock_basis=args.stock_basis,
         stock_lookback_weeks=args.lookback_weeks,
         safety_z=args.safety_z,
+        forecast_path=args.forecast_path,
+        forecast_model=args.forecast_model,
+        forecast_calibrate=args.forecast_calibrate,
+        forecast_fill=args.forecast_fill,
         pickers_per_dc=args.pickers,
         shift_minutes=args.shift_minutes,
         arrival_seed=1,
@@ -111,15 +115,37 @@ def main() -> None:
     parser.add_argument("--stock-factor", type=float, default=1.0)
     parser.add_argument(
         "--stock-basis",
-        choices=("actual", "history", "safety"),
+        choices=("actual", "history", "safety", "forecast"),
         default="actual",
-        help="actual=目标周需求；history=前 N 周均值；safety=均值+z×标准差",
+        help="actual=目标周需求；history=前 N 周均值；safety=均值+z×标准差；forecast=滚动预测",
     )
     parser.add_argument(
         "--safety-z",
         type=float,
         default=1.645,
         help="safety 库存基准的安全系数（1.645≈95%%，2.326≈99%%）",
+    )
+    parser.add_argument(
+        "--forecast-path",
+        default="benchmarks/backtest_predictions.csv",
+        help="forecast 库存基准使用的滚动回测预测 CSV",
+    )
+    parser.add_argument(
+        "--forecast-model",
+        default="lightgbm",
+        help="forecast 库存基准使用的模型名（如 lightgbm/seasonal_naive）",
+    )
+    parser.add_argument(
+        "--forecast-calibrate",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="用目标周之前的预测/实际总量比校准预测（默认开）",
+    )
+    parser.add_argument(
+        "--forecast-fill",
+        choices=("none", "history"),
+        default="none",
+        help="预测缺失 SKU 的补法：none=零库存，history=前 6 周均值",
     )
     parser.add_argument(
         "--target-week",
@@ -365,10 +391,12 @@ def main() -> None:
         stock_basis_text = "目标周实际需求"
     elif args.stock_basis == "history":
         stock_basis_text = f"前 {args.lookback_weeks} 周 SKU 均值"
-    else:
+    elif args.stock_basis == "safety":
         stock_basis_text = (
             f"前 {args.lookback_weeks} 周 SKU 均值 + {args.safety_z:.3f}×标准差"
         )
+    else:
+        stock_basis_text = f"{args.forecast_model} 目标周滚动预测"
     limitations = [
         f"固定总量：每个 SKU 的总库存 = {args.stock_factor:.0%} × {stock_basis_text}，"
         "只允许 DC→DC 重摆位；增加总库存的臂是情景外推，不建模采购、在途、仓储成本、COGS、持有成本、过期/跌价。",
@@ -389,6 +417,14 @@ def main() -> None:
             f"safety 库存基准用前 {args.lookback_weeks} 周均值 + "
             f"{args.safety_z:.3f}×标准差，不使目标周需求；正态近似在 6 周样本上"
             "很粗糙，且未建模前置期/补货/替代。"
+        )
+    if args.stock_basis == "forecast":
+        limitations.append(
+            f"forecast 库存基准用 {args.forecast_model} 的滚动起点预测"
+            f"（{args.forecast_path}），不使用目标周需求；预测只覆盖 200 个主 SKU，"
+            f"校准={args.forecast_calibrate}（仅用目标周之前的实际/预测总量），"
+            f"缺失 SKU 补法={args.forecast_fill}，按历史采样订单比例缩放，"
+            "未重训模型/未调参，未建模前置期/补货。"
         )
     if args.load_aware:
         basis_text = (
@@ -446,6 +482,14 @@ def main() -> None:
             "stock_factor": args.stock_factor,
             "stock_basis": args.stock_basis,
             "safety_z": args.safety_z if args.stock_basis == "safety" else None,
+            "forecast_path": args.forecast_path if args.stock_basis == "forecast" else None,
+            "forecast_model": args.forecast_model if args.stock_basis == "forecast" else None,
+            "forecast_calibrate": args.forecast_calibrate
+            if args.stock_basis == "forecast"
+            else None,
+            "forecast_fill": args.forecast_fill
+            if args.stock_basis == "forecast"
+            else None,
             "target_week": str(pd.Timestamp(last_week).date()),
             "stock_units": stock_total,
             "dc_capacity_factor": 2.0,

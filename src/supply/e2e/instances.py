@@ -293,6 +293,10 @@ def build_e2e_instance(
     stock_basis: str = "actual",
     stock_lookback_weeks: int = 6,
     safety_z: float = 1.645,
+    forecast_path: str = "benchmarks/backtest_predictions.csv",
+    forecast_model: str = "lightgbm",
+    forecast_calibrate: bool = True,
+    forecast_fill: str = "none",
 ) -> E2EInstance:
     """Build one week where allocation, picking and arrivals share a promise."""
     if pickers_per_dc < 1:
@@ -312,6 +316,10 @@ def build_e2e_instance(
         stock_basis=stock_basis,
         lookback_weeks=stock_lookback_weeks,
         safety_z=safety_z,
+        forecast_path=forecast_path,
+        forecast_model=forecast_model,
+        forecast_calibrate=forecast_calibrate,
+        forecast_fill=forecast_fill,
     )
     velocity = _velocity(clean, skus, sample_orders, max_lines, seed, week)
     layout = layout or WarehouseLayout(n_aisles=8, n_bays=16)

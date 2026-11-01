@@ -266,12 +266,35 @@ Week45–48 的每 SKU 库存 = `stock_factor × 目标周实际需求`，是 **
 
 完整报告：[`benchmarks/ACCESS_STOCK_SAFETY_REPORT.md`](../../benchmarks/ACCESS_STOCK_SAFETY_REPORT.md)。
 
+## 5k. LightGBM 预测库存（Week 51）
+
+用现有 rolling-origin LightGBM 的目标周预测定库存，只用目标周之前的实际/预测总量校准，不使用目标周需求：
+
+| 政策 | 库存 | 覆盖 | target | all | 积压 |
+|---|---:|---:|---:|---:|---:|
+| oracle 140% | 46,281 | 140.0% | 100.0% | 99.9% | 0.7 |
+| 历史 140% | 44,824 | 135.6% | 70.0% | 93.9% | 2,123 |
+| 历史 200% | 64,039 | 193.7% | 82.5% | 97.2% | 1,281 |
+| 安全 z=2.326 | 73,748 | 223.1% | 79.2% | 97.1% | 880 |
+| forecast-140 | 48,806 | 147.6% | 75.0% | 88.3% | 1,407 |
+| forecast-160 | 55,776 | 168.7% | 85.0% | 91.6% | 945 |
+
+结论：
+
+- **target 略好、tail 更差**：forecast-160 比历史 200% 少 8,263 单位，target +2.5pp，但 all −5.7pp。
+- **target 优势不稳健**：同库存 55,776 单位重跑，target 85.0%→81.7%（3.3pp）；+2.5pp 落在噪声内，−5.7pp all 损失更大。
+- **forecast-140 也不是免费**：48,806 单位 target 75.0%，比历史 140% 高 5pp，但 all 88.3% vs 93.9%，且多 3,982 单位。
+- **仍远低于 oracle**：forecast-160 85.0% vs oracle 140% 100%；瓶颈仍是 SKU/DC 需求位置。
+- 预测只覆盖 200 个主 SKU；预测分配误差本身已拉低 all-service。未重训/调参，只有 1 个目标周。
+
+完整报告：[`benchmarks/ACCESS_STOCK_FORECAST_REPORT.md`](../../benchmarks/ACCESS_STOCK_FORECAST_REPORT.md)。
+
 ## 6. 效度威胁
 
 - oracle 使用本周实际订单；history 使用前 6 周数量但仍用本周 destination/transit 矩阵，二者都不是完整因果策略。
 - 调拨假设周前完成、无前置期/费用/批次；真实 DC 调拨需要运输时间、装载与成本。
 - 库存按 SKU 总量 + 确定性 jitter 分配；target 只替换 stock 矩阵，jitter 已经包含在 current 中。
-- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互；Week45 的 125%/135%/140%/150% 是库存情景，Week46 的 `h=€0.10` 与缺货惩罚比是示例，Week47 只验证一个 holdout 周且没有 135%/150%，Week48 的 90 格只变到达/拣选噪声、不是 90 个独立需求周；Week49 证明 Week45–48 的库存是目标周需求 oracle，历史均值 140% 只有 target 70%；Week50 的 z=2.326 安全库存用 223% 覆盖也只到 target 79.2%；六者都不是成本最优补货决策。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
+- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互；Week45 的 125%/135%/140%/150% 是库存情景，Week46 的 `h=€0.10` 与缺货惩罚比是示例，Week47 只验证一个 holdout 周且没有 135%/150%，Week48 的 90 格只变到达/拣选噪声、不是 90 个独立需求周；Week49 证明 Week45–48 的库存是目标周需求 oracle，历史均值 140% 只有 target 70%；Week50 的 z=2.326 安全库存用 223% 覆盖也只到 target 79.2%；Week51 的 LightGBM 预测 160% 用 55,776 单位到 target 85.0%，all 仍只有 91.6%；七者都不是成本最优补货决策。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
 - 目标客群是样本内收入 Top10；没有 COGS/退货/履约成本，OTIF 不是利润。
 
 ## 7. 复现
@@ -288,6 +311,7 @@ PYTHONPATH=src;. python scripts/run_e2e_access.py --repeats 3
 # 种子级：python scripts/build_access_seed_cost.py
 # 库存基准：--stock-basis history（1.4/1.8/2.0）+ build_access_stock_basis.py
 # 安全库存：--stock-basis safety --safety-z 1.645/2.326 + build_access_stock_policy.py
+# 预测库存：--stock-basis forecast --forecast-model lightgbm + build_access_stock_forecast.py
 
 # 负荷 cap 扩展（Week 42）
 PYTHONPATH=src;. python scripts/run_e2e_access.py --load-aware --repeats 3 \

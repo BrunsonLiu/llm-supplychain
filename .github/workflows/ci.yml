@@ -492,6 +492,11 @@ jobs:
           PYTHONPATH: src:.
         run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats 1 --workers 2 --stock-basis safety --safety-z 1.645 --load-aware --load-basis covered --stem ACCESS_SAFETY_CI --week 50 --out-dir /tmp/access-safety-ci
 
+      - name: Run forecast-stock smoke
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats 1 --workers 2 --stock-basis forecast --forecast-model lightgbm --forecast-calibrate --stock-factor 1.4 --load-aware --load-basis covered --stem ACCESS_FORECAST_CI --week 51 --out-dir /tmp/access-forecast-ci
+
       - name: Run Agent v2 benchmark
         env:
           PYTHONPATH: src:.
