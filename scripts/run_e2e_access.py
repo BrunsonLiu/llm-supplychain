@@ -122,9 +122,10 @@ def main() -> None:
             "forecast",
             "forecast_share",
             "last_week_share",
+            "dc_mix",
         ),
         default="actual",
-        help="actual=目标周需求；history=前 N 周均值；safety=均值+z×标准差；forecast=滚动预测；forecast_share=预测结构+历史总量；last_week_share=前一周结构+历史总量",
+        help="actual=目标周需求；history=前 N 周均值；safety=均值+z×标准差；forecast=滚动预测；forecast_share=预测结构+历史总量；last_week_share=前一周结构+历史总量；dc_mix=目的国历史 SKU 结构 → DC",
     )
     parser.add_argument(
         "--safety-z",
@@ -408,8 +409,10 @@ def main() -> None:
         stock_basis_text = (
             f"{args.forecast_model} 目标周预测结构 × 历史总量"
         )
-    else:
+    elif args.stock_basis == "last_week_share":
         stock_basis_text = "前一周 SKU 结构 × 历史总量"
+    else:
+        stock_basis_text = "目的国历史 SKU 结构 → DC"
     limitations = [
         f"固定总量：每个 SKU 的总库存 = {args.stock_factor:.0%} × {stock_basis_text}，"
         "只允许 DC→DC 重摆位；增加总库存的臂是情景外推，不建模采购、在途、仓储成本、COGS、持有成本、过期/跌价。",
@@ -450,6 +453,12 @@ def main() -> None:
             "last_week_share 只用目标周前一周的实际 SKU 结构，总量取前 N 周"
             "历史均值；不使用目标周需求，但前一周结构是确定性 replay，"
             "未建模促销/新品/缺货导致的结构突变。"
+        )
+    if args.stock_basis == "dc_mix":
+        limitations.append(
+            "dc_mix 用前 N 周目的国×SKU 需求，把国家映射到最近 DC，"
+            "作为 DC 库存结构的代理；不使用目标周需求，但订单的实际 DC 需求"
+            "由分单 MILP 内生决定，目的国≠DC 需求，仍不是观测到的 SKU×DC 标签。"
         )
     if args.load_aware:
         basis_text = (

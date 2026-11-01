@@ -1,0 +1,53 @@
+{
+  "week": 55,
+  "rows": [
+    {
+      "label": "actual mix @44,824",
+      "stock_units": 44824,
+      "coverage": 1.355837870538415,
+      "target": 1.0,
+      "all": 0.9991666666666668,
+      "backlog": 1.3333333333333333
+    },
+    {
+      "label": "history mean mix @44,824",
+      "stock_units": 44824,
+      "coverage": 1.355837870538415,
+      "target": 0.7,
+      "all": 0.9391666666666664,
+      "backlog": 2123.0
+    },
+    {
+      "label": "forecast mix @44,826",
+      "stock_units": 44826,
+      "coverage": 1.3558983666061706,
+      "target": 0.7,
+      "all": 0.8733333333333333,
+      "backlog": 1740.0
+    },
+    {
+      "label": "last-week mix @44,833",
+      "stock_units": 44833,
+      "coverage": 1.3561101028433151,
+      "target": 0.49166666666666664,
+      "all": 0.8458333333333333,
+      "backlog": 4787.333333333333
+    },
+    {
+      "label": "country-DC mix @44,824",
+      "stock_units": 44824,
+      "coverage": 1.355837870538415,
+      "target": 0.7166666666666667,
+      "all": 0.9200000000000002,
+      "backlog": 2151.6666666666665
+    },
+    {
+      "label": "forecast point @55,776",
+      "stock_units": 55776,
+      "coverage": 1.6871143375680582,
+      "target": 0.8499999999999996,
+      "all": 0.9158333333333335,
+      "backlog": 944.6666666666666
+    }
+  ]
+}

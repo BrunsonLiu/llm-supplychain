@@ -185,10 +185,11 @@ def build_fulfillment_instance(
         "forecast",
         "forecast_share",
         "last_week_share",
+        "dc_mix",
     }:
         raise ValueError(
             "stock_basis 必须是 actual / history / safety / forecast / "
-            "forecast_share / last_week_share"
+            "forecast_share / last_week_share / dc_mix"
         )
     if lookback_weeks <= 0:
         raise ValueError("lookback_weeks 必须为正")
@@ -255,6 +256,7 @@ def build_fulfillment_instance(
         "forecast",
         "forecast_share",
         "last_week_share",
+        "dc_mix",
     }:
         target_week = pd.Timestamp(week) if week is not None else pd.to_datetime(
             clean["week"]
@@ -358,7 +360,28 @@ def build_fulfillment_instance(
         ).astype(np.int64)
     else:
         stock_total = np.rint(demand * stock_factor).astype(np.int64)
-    weights = shares[None, :] * rng.uniform(0.75, 1.25, size=(n_skus, len(dcs)))
+    if stock_basis == "dc_mix":
+        candidate = {row["name"]: row for row in DEFAULT_CANDIDATES}
+        dc_coords = [
+            (float(candidate[str(dc["name"])]["lat"]), float(candidate[str(dc["name"])]["lon"]))
+            for dc in dcs
+        ]
+        country_to_dc = {}
+        for name, coord in COUNTRY_COORDS.items():
+            distance = distance_matrix_km([tuple(coord)], dc_coords)[0]
+            country_to_dc[name] = int(np.argmin(distance))
+        mix = np.zeros((n_skus, len(dcs)), dtype=float)
+        for (sku, country), units in (
+            past.groupby(["sku", "country"])["quantity"].sum().items()
+        ):
+            if sku in sku_index and country in country_to_dc:
+                mix[sku_index[sku], country_to_dc[country]] += float(units)
+        empty = mix.sum(axis=1) <= 0
+        mix[empty] = shares
+        mix = mix / mix.sum(axis=1, keepdims=True)
+    else:
+        mix = np.broadcast_to(shares, (n_skus, len(dcs)))
+    weights = mix * rng.uniform(0.75, 1.25, size=(n_skus, len(dcs)))
     stock = _split_integer(
         stock_total, weights / weights.sum(axis=1, keepdims=True)
     ).T
