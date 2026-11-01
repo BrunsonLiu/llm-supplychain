@@ -166,9 +166,10 @@ def build_fulfillment_instance(
     ``"actual"`` (the benchmark convention), ``stock_factor`` times the mean
     demand of the previous ``lookback_weeks`` when it is ``"history"``,
     ``stock_factor`` times ``mean + safety_z × std`` when it is ``"safety"``
-    (order-up-to safety stock), or ``stock_factor`` times the rolling-origin
-    forecast in ``forecast_path`` when it is ``"forecast"``. Stock is split
-    across DCs by ``stock_shares`` plus a
+    (order-up-to safety stock), ``stock_factor`` times the rolling-origin
+    forecast in ``forecast_path`` when it is ``"forecast"``, or the forecast's
+    per-SKU shares applied to the historical total when it is
+    ``"forecast_share"``. Stock is split across DCs by ``stock_shares`` plus a
     deterministic per-SKU jitter, so some SKUs sit in a DC far from where they
     are ordered. ``capacity_shares`` sets each DC's weekly unit throughput.
     Both are assumptions, not observations.
@@ -177,8 +178,10 @@ def build_fulfillment_instance(
         raise ValueError("sample_orders 必须为正")
     if not 0.0 < stock_factor <= 2.0:
         raise ValueError("stock_factor 必须在 (0, 2] 内")
-    if stock_basis not in {"actual", "history", "safety", "forecast"}:
-        raise ValueError("stock_basis 必须是 actual / history / safety / forecast")
+    if stock_basis not in {"actual", "history", "safety", "forecast", "forecast_share"}:
+        raise ValueError(
+            "stock_basis 必须是 actual / history / safety / forecast / forecast_share"
+        )
     if lookback_weeks <= 0:
         raise ValueError("lookback_weeks 必须为正")
     if safety_z < 0:
@@ -238,7 +241,7 @@ def build_fulfillment_instance(
     demand = np.bincount(line_sku, weights=line_qty, minlength=n_skus)
     order_scale = 1.0
     forecast_scale = 1.0
-    if stock_basis in {"history", "safety", "forecast"}:
+    if stock_basis in {"history", "safety", "forecast", "forecast_share"}:
         target_week = pd.Timestamp(week) if week is not None else pd.to_datetime(
             clean["week"]
         ).max()
@@ -293,6 +296,29 @@ def build_fulfillment_instance(
                 target_demand = target_demand.fillna(mean_demand)
             else:
                 target_demand = target_demand.fillna(0.0)
+        elif stock_basis == "forecast_share":
+            predictions = pd.read_csv(forecast_path, parse_dates=["week"])
+            selected = predictions[
+                (predictions["model"] == forecast_model)
+                & (predictions["week"] == target_week)
+            ]
+            if selected.empty:
+                raise ValueError(
+                    f"forecast_share 没有 {forecast_model} 在 "
+                    f"{target_week.date()} 的预测"
+                )
+            predicted = (
+                selected.drop_duplicates("sku", keep="last")
+                .set_index("sku")["pred"]
+                .reindex(sku_names)
+                .clip(lower=0.0)
+            )
+            base = predicted.fillna(mean_demand)
+            total = float(mean_demand.sum())
+            if base.sum() > 0 and total > 0:
+                target_demand = base / base.sum() * total
+            else:
+                target_demand = mean_demand
         else:
             target_demand = mean_demand
         # The benchmark instance holds stock for a sampled number of orders,
@@ -375,8 +401,12 @@ def build_fulfillment_instance(
             "stock_basis": stock_basis,
             "stock_lookback_weeks": int(lookback_weeks),
             "stock_safety_z": float(safety_z) if stock_basis == "safety" else None,
-            "stock_forecast_path": forecast_path if stock_basis == "forecast" else None,
-            "stock_forecast_model": forecast_model if stock_basis == "forecast" else None,
+            "stock_forecast_path": forecast_path
+            if stock_basis in {"forecast", "forecast_share"}
+            else None,
+            "stock_forecast_model": forecast_model
+            if stock_basis in {"forecast", "forecast_share"}
+            else None,
             "stock_forecast_scale": float(forecast_scale)
             if stock_basis == "forecast"
             else None,
@@ -403,7 +433,7 @@ def build_fulfillment_instance(
             "assumptions": [
                 "订单/行/数量/目的国来自 Online Retail II 真实发票",
                 "DC 库存、产能、转运天数、SLA 承诺与费率是显式假设",
-                "库存按 stock_basis（actual=目标周需求，history=前 N 周均值，safety=均值+z×标准差，forecast=滚动预测）× stock_factor 分配并加入确定性偏斜",
+                "库存按 stock_basis（actual=目标周需求，history=前 N 周均值，safety=均值+z×标准差，forecast=滚动预测，forecast_share=预测结构+历史总量）× stock_factor 分配并加入确定性偏斜",
             ],
         },
     )

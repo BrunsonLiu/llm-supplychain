@@ -115,9 +115,9 @@ def main() -> None:
     parser.add_argument("--stock-factor", type=float, default=1.0)
     parser.add_argument(
         "--stock-basis",
-        choices=("actual", "history", "safety", "forecast"),
+        choices=("actual", "history", "safety", "forecast", "forecast_share"),
         default="actual",
-        help="actual=目标周需求；history=前 N 周均值；safety=均值+z×标准差；forecast=滚动预测",
+        help="actual=目标周需求；history=前 N 周均值；safety=均值+z×标准差；forecast=滚动预测；forecast_share=预测结构+历史总量",
     )
     parser.add_argument(
         "--safety-z",
@@ -395,8 +395,12 @@ def main() -> None:
         stock_basis_text = (
             f"前 {args.lookback_weeks} 周 SKU 均值 + {args.safety_z:.3f}×标准差"
         )
-    else:
+    elif args.stock_basis == "forecast":
         stock_basis_text = f"{args.forecast_model} 目标周滚动预测"
+    else:
+        stock_basis_text = (
+            f"{args.forecast_model} 目标周预测结构 × 历史总量"
+        )
     limitations = [
         f"固定总量：每个 SKU 的总库存 = {args.stock_factor:.0%} × {stock_basis_text}，"
         "只允许 DC→DC 重摆位；增加总库存的臂是情景外推，不建模采购、在途、仓储成本、COGS、持有成本、过期/跌价。",
@@ -425,6 +429,12 @@ def main() -> None:
             f"校准={args.forecast_calibrate}（仅用目标周之前的实际/预测总量），"
             f"缺失 SKU 补法={args.forecast_fill}，按历史采样订单比例缩放，"
             "未重训模型/未调参，未建模前置期/补货。"
+        )
+    if args.stock_basis == "forecast_share":
+        limitations.append(
+            f"forecast_share 只用 {args.forecast_model} 的 SKU 结构，总量仍取"
+            f"前 {args.lookback_weeks} 周历史均值；不使用目标周需求，但预测只覆盖"
+            "200 个主 SKU，缺失 SKU 用历史均值份额补齐；不是完整需求预测。"
         )
     if args.load_aware:
         basis_text = (
@@ -482,8 +492,12 @@ def main() -> None:
             "stock_factor": args.stock_factor,
             "stock_basis": args.stock_basis,
             "safety_z": args.safety_z if args.stock_basis == "safety" else None,
-            "forecast_path": args.forecast_path if args.stock_basis == "forecast" else None,
-            "forecast_model": args.forecast_model if args.stock_basis == "forecast" else None,
+            "forecast_path": args.forecast_path
+            if args.stock_basis in {"forecast", "forecast_share"}
+            else None,
+            "forecast_model": args.forecast_model
+            if args.stock_basis in {"forecast", "forecast_share"}
+            else None,
             "forecast_calibrate": args.forecast_calibrate
             if args.stock_basis == "forecast"
             else None,

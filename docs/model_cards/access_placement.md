@@ -310,12 +310,34 @@ Week45–48 的每 SKU 库存 = `stock_factor × 目标周实际需求`，是 **
 
 完整报告：[`benchmarks/ACCESS_STOCK_MIX_REPORT.md`](../../benchmarks/ACCESS_STOCK_MIX_REPORT.md)。
 
+## 5m. 预测 SKU 结构（Week 53）
+
+固定历史总量，只把 SKU 结构换成 LightGBM 预测份额：
+
+| 政策 | 库存 | target | all | 积压 |
+|---|---:|---:|---:|---:|
+| 实际结构 | 44,824 | 100.0% | 99.9% | 1.3 |
+| 历史结构 | 44,824 | 70.0% | 93.9% | 2,123 |
+| 预测结构 | 44,826 | 70.0% | 87.3% | 1,740 |
+| 预测结构 | 51,221 | 74.2% | 90.0% | 1,261 |
+| 历史结构 | 64,039 | 82.5% | 97.2% | 1,281 |
+| 预测点值 | 55,776 | 85.0% | 91.6% | 945 |
+
+结论：
+
+- **同总量预测结构 target 70.0% = 历史结构 70.0%**，all 反而 87.3% vs 93.9%；预测份额不是更好的结构。
+- 预测结构加到 51,221 也只 74.2%，仍远低于实际结构 100%。
+- Week51 点值 85.0% 不能解释为“结构更好”：点值还多 4,555 单位且分配不同；更一致的解释是更多总量。
+- 只覆盖 200 个主 SKU，缺失用历史份额；没有 SKU×DC 需求模型。一周、400 单、30 种子 ×3。
+
+完整报告：[`benchmarks/ACCESS_FORECAST_SHARE_REPORT.md`](../../benchmarks/ACCESS_FORECAST_SHARE_REPORT.md)。
+
 ## 6. 效度威胁
 
 - oracle 使用本周实际订单；history 使用前 6 周数量但仍用本周 destination/transit 矩阵，二者都不是完整因果策略。
 - 调拨假设周前完成、无前置期/费用/批次；真实 DC 调拨需要运输时间、装载与成本。
 - 库存按 SKU 总量 + 确定性 jitter 分配；target 只替换 stock 矩阵，jitter 已经包含在 current 中。
-- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互；Week45 的 125%/135%/140%/150% 是库存情景，Week46 的 `h=€0.10` 与缺货惩罚比是示例，Week47 只验证一个 holdout 周且没有 135%/150%，Week48 的 90 格只变到达/拣选噪声、不是 90 个独立需求周；Week49 证明 Week45–48 的库存是目标周需求 oracle，历史均值 140% 只有 target 70%；Week50 的 z=2.326 安全库存用 223% 覆盖也只到 target 79.2%；Week51 的 LightGBM 预测 160% 用 55,776 单位到 target 85.0%，all 仍只有 91.6%；Week52 同总量对照显示实际/历史 SKU 结构差 30pp target，八者都不是成本最优补货决策。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
+- 单周、单布局、单班次；Week44 只把每 DC 拣货员从 1 人换到 2 人，没有排班/波次释放交互；Week45 的 125%/135%/140%/150% 是库存情景，Week46 的 `h=€0.10` 与缺货惩罚比是示例，Week47 只验证一个 holdout 周且没有 135%/150%，Week48 的 90 格只变到达/拣选噪声、不是 90 个独立需求周；Week49 证明 Week45–48 的库存是目标周需求 oracle，历史均值 140% 只有 target 70%；Week50 的 z=2.326 安全库存用 223% 覆盖也只到 target 79.2%；Week51 的 LightGBM 预测 160% 用 55,776 单位到 target 85.0%，all 仍只有 91.6%；Week52 同总量对照显示实际/历史 SKU 结构差 30pp target；Week53 固定总量换成预测结构仍只有 70.0%，九者都不是成本最优补货决策。布点 MILP 单线程固定 seed，但端到端分单 MILP 仍是 2 workers/8s 时间受限，跨臂重解会带来 1–3pp 差异；重复运行总波动约 2.5–5pp。
 - 目标客群是样本内收入 Top10；没有 COGS/退货/履约成本，OTIF 不是利润。
 
 ## 7. 复现
@@ -334,6 +356,7 @@ PYTHONPATH=src;. python scripts/run_e2e_access.py --repeats 3
 # 安全库存：--stock-basis safety --safety-z 1.645/2.326 + build_access_stock_policy.py
 # 预测库存：--stock-basis forecast --forecast-model lightgbm + build_access_stock_forecast.py
 # 结构分解：build_access_stock_mix.py（同总量实际/历史结构）
+# 预测结构：--stock-basis forecast_share + build_access_forecast_share.py
 
 # 负荷 cap 扩展（Week 42）
 PYTHONPATH=src;. python scripts/run_e2e_access.py --load-aware --repeats 3 \
