@@ -3,7 +3,7 @@
 使用 Pydantic 进行配置验证
 """
 import os
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 from typing import Optional, Literal
 from pathlib import Path
 import yaml
@@ -19,11 +19,12 @@ class LLMConfig(BaseModel):
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: int = Field(default=2000, ge=1, le=4096)
     
-    @validator('api_key')
-    def validate_api_key(cls, v, values):
-        # api_key 可为空：允许从环境变量回退（OPENAI_API_KEY / DEEPSEEK_API_KEY），
-        # 二者都没有时才报错。这样 config.yaml 可以安全提交而不含密钥。
-        if values.get('provider') == 'openai' and not v:
+    @field_validator('api_key')
+    @classmethod
+    def validate_api_key(cls, v, info: ValidationInfo):
+        # api_key can be empty only when an environment fallback exists;
+        # this keeps config.yaml safe to commit without a secret.
+        if info.data.get('provider') == 'openai' and not v:
             if not os.environ.get('OPENAI_API_KEY') and not os.environ.get('DEEPSEEK_API_KEY'):
                 raise ConfigurationError(
                     "OpenAI API key is required when using openai provider "
@@ -55,9 +56,10 @@ class TextSplitterConfig(BaseModel):
     chunk_size: int = Field(default=1000, ge=100, le=10000)
     chunk_overlap: int = Field(default=200, ge=0)
     
-    @validator('chunk_overlap')
-    def validate_overlap(cls, v, values):
-        if v >= values.get('chunk_size', 1000):
+    @field_validator('chunk_overlap')
+    @classmethod
+    def validate_overlap(cls, v, info: ValidationInfo):
+        if v >= info.data.get('chunk_size', 1000):
             raise ConfigurationError(
                 "chunk_overlap must be less than chunk_size",
                 config_key='text_splitter.chunk_overlap'
