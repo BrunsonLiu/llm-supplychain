@@ -1,0 +1,45 @@
+{
+  "week": 52,
+  "rows": [
+    {
+      "label": "actual mix @ 46,281",
+      "stock_units": 46281,
+      "coverage": 1.3999092558983666,
+      "target": 1.0,
+      "all": 0.9991666666666668,
+      "backlog": 0.6666666666666666
+    },
+    {
+      "label": "actual mix @ 44,824",
+      "stock_units": 44824,
+      "coverage": 1.355837870538415,
+      "target": 1.0,
+      "all": 0.9991666666666668,
+      "backlog": 1.3333333333333333
+    },
+    {
+      "label": "history mix @ 44,824",
+      "stock_units": 44824,
+      "coverage": 1.355837870538415,
+      "target": 0.7,
+      "all": 0.9391666666666664,
+      "backlog": 2123.0
+    },
+    {
+      "label": "history mix @ 46,288",
+      "stock_units": 46288,
+      "coverage": 1.400120992135511,
+      "target": 0.7249999999999996,
+      "all": 0.9516666666666668,
+      "backlog": 1980.0
+    },
+    {
+      "label": "history mix @ 64,039",
+      "stock_units": 64039,
+      "coverage": 1.9370538415003025,
+      "target": 0.825,
+      "all": 0.9724999999999997,
+      "backlog": 1281.3333333333333
+    }
+  ]
+}
