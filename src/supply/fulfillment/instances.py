@@ -178,9 +178,17 @@ def build_fulfillment_instance(
         raise ValueError("sample_orders 必须为正")
     if not 0.0 < stock_factor <= 2.0:
         raise ValueError("stock_factor 必须在 (0, 2] 内")
-    if stock_basis not in {"actual", "history", "safety", "forecast", "forecast_share"}:
+    if stock_basis not in {
+        "actual",
+        "history",
+        "safety",
+        "forecast",
+        "forecast_share",
+        "last_week_share",
+    }:
         raise ValueError(
-            "stock_basis 必须是 actual / history / safety / forecast / forecast_share"
+            "stock_basis 必须是 actual / history / safety / forecast / "
+            "forecast_share / last_week_share"
         )
     if lookback_weeks <= 0:
         raise ValueError("lookback_weeks 必须为正")
@@ -241,7 +249,13 @@ def build_fulfillment_instance(
     demand = np.bincount(line_sku, weights=line_qty, minlength=n_skus)
     order_scale = 1.0
     forecast_scale = 1.0
-    if stock_basis in {"history", "safety", "forecast", "forecast_share"}:
+    if stock_basis in {
+        "history",
+        "safety",
+        "forecast",
+        "forecast_share",
+        "last_week_share",
+    }:
         target_week = pd.Timestamp(week) if week is not None else pd.to_datetime(
             clean["week"]
         ).max()
@@ -317,6 +331,18 @@ def build_fulfillment_instance(
             total = float(mean_demand.sum())
             if base.sum() > 0 and total > 0:
                 target_demand = base / base.sum() * total
+            else:
+                target_demand = mean_demand
+        elif stock_basis == "last_week_share":
+            prior_week = target_week - pd.Timedelta(weeks=1)
+            if prior_week not in weekly.index:
+                raise ValueError(
+                    f"last_week_share 缺少 {prior_week.date()} 的前一周需求"
+                )
+            prior = weekly.loc[prior_week].reindex(sku_names).fillna(0.0)
+            total = float(mean_demand.sum())
+            if prior.sum() > 0 and total > 0:
+                target_demand = prior / prior.sum() * total
             else:
                 target_demand = mean_demand
         else:

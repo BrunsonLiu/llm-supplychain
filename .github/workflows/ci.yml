@@ -502,6 +502,11 @@ jobs:
           PYTHONPATH: src:.
         run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats 1 --workers 2 --stock-basis forecast_share --forecast-model lightgbm --stock-factor 1.4 --load-aware --load-basis covered --stem ACCESS_FORECAST_SHARE_CI --week 53 --out-dir /tmp/access-forecast-share-ci
 
+      - name: Run last-week-share smoke
+        env:
+          PYTHONPATH: src:.
+        run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats 1 --workers 2 --stock-basis last_week_share --stock-factor 1.4 --load-aware --load-basis covered --stem ACCESS_LAST_WEEK_CI --week 54 --out-dir /tmp/access-last-week-ci
+
       - name: Run Agent v2 benchmark
         env:
           PYTHONPATH: src:.

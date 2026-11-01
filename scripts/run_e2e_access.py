@@ -115,9 +115,16 @@ def main() -> None:
     parser.add_argument("--stock-factor", type=float, default=1.0)
     parser.add_argument(
         "--stock-basis",
-        choices=("actual", "history", "safety", "forecast", "forecast_share"),
+        choices=(
+            "actual",
+            "history",
+            "safety",
+            "forecast",
+            "forecast_share",
+            "last_week_share",
+        ),
         default="actual",
-        help="actual=目标周需求；history=前 N 周均值；safety=均值+z×标准差；forecast=滚动预测；forecast_share=预测结构+历史总量",
+        help="actual=目标周需求；history=前 N 周均值；safety=均值+z×标准差；forecast=滚动预测；forecast_share=预测结构+历史总量；last_week_share=前一周结构+历史总量",
     )
     parser.add_argument(
         "--safety-z",
@@ -397,10 +404,12 @@ def main() -> None:
         )
     elif args.stock_basis == "forecast":
         stock_basis_text = f"{args.forecast_model} 目标周滚动预测"
-    else:
+    elif args.stock_basis == "forecast_share":
         stock_basis_text = (
             f"{args.forecast_model} 目标周预测结构 × 历史总量"
         )
+    else:
+        stock_basis_text = "前一周 SKU 结构 × 历史总量"
     limitations = [
         f"固定总量：每个 SKU 的总库存 = {args.stock_factor:.0%} × {stock_basis_text}，"
         "只允许 DC→DC 重摆位；增加总库存的臂是情景外推，不建模采购、在途、仓储成本、COGS、持有成本、过期/跌价。",
@@ -435,6 +444,12 @@ def main() -> None:
             f"forecast_share 只用 {args.forecast_model} 的 SKU 结构，总量仍取"
             f"前 {args.lookback_weeks} 周历史均值；不使用目标周需求，但预测只覆盖"
             "200 个主 SKU，缺失 SKU 用历史均值份额补齐；不是完整需求预测。"
+        )
+    if args.stock_basis == "last_week_share":
+        limitations.append(
+            "last_week_share 只用目标周前一周的实际 SKU 结构，总量取前 N 周"
+            "历史均值；不使用目标周需求，但前一周结构是确定性 replay，"
+            "未建模促销/新品/缺货导致的结构突变。"
         )
     if args.load_aware:
         basis_text = (
