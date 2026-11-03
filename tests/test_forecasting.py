@@ -94,7 +94,7 @@ def test_etl_cleaning_and_aggregation():
     assert stats["dropped_non_positive"] == 1
     assert stats["clean_rows"] == 3, clean
     assert set(clean["sku"]) == {"10001", "10002", "10005"}
-    assert clean["week"].dt.weekday.eq(0).all()
+    assert clean["week"].dt.day_of_week.eq(0).all()
 
     # A non-zero-demand SKU that is absent in a later week must be filled with zero.
     panel = aggregate_weekly(clean)

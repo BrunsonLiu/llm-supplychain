@@ -167,8 +167,8 @@ def weekly_hourly_counts(
     total = int(len(block))
     weekday_share = 0.0
     if total and weekdays_only:
-        weekday_share = float((block["invoice_date"].dt.weekday >= 5).mean())
-        block = block.loc[block["invoice_date"].dt.weekday < 5]
+        weekday_share = float((block["invoice_date"].dt.day_of_week >= 5).mean())
+        block = block.loc[block["invoice_date"].dt.day_of_week < 5]
     hour = block["invoice_date"].dt.hour + block["invoice_date"].dt.minute / 60.0
     in_window = (hour >= start_hour) & (hour < end_hour)
     used = block.loc[in_window]

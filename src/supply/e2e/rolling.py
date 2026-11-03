@@ -62,7 +62,7 @@ def order_day_map(instance: E2EInstance, clean: pd.DataFrame) -> np.ndarray:
         stamp = dates.get(str(invoice))
         if stamp is None or pd.isna(stamp):
             continue
-        days[index] = min(int(pd.Timestamp(stamp).dayofweek), FLOW_DAYS - 1)
+        days[index] = min(int(pd.Timestamp(stamp).day_of_week), FLOW_DAYS - 1)
     return days
 
 

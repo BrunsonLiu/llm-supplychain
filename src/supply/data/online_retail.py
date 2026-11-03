@@ -215,7 +215,7 @@ def clean_transactions(raw: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]
     clean["revenue"] = clean["quantity"] * clean["price"]
     clean["week"] = (
         clean["invoice_date"].dt.normalize()
-        - pd.to_timedelta(clean["invoice_date"].dt.weekday, unit="D")
+        - pd.to_timedelta(clean["invoice_date"].dt.day_of_week, unit="D")
     )
     clean = clean.rename(columns={"stock_code": "sku"})
 
