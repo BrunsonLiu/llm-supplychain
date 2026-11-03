@@ -111,7 +111,7 @@ pytest -q
 - RAG：`src/rag/`
 - 基准脚本：`scripts/`
 
-测试在 `tests/`，结果和 JSON 在 `benchmarks/`，旧文档在 `docs/archive/`。
+测试在 `tests/`；脚本默认读的 JSON 在 `benchmarks/`，早期报告在 `docs/archive/benchmarks/`。
 
 ## 边界
 
