@@ -1,304 +1,296 @@
 name: CI
-
 on:
   push:
-    branches: [ main, master, portfolio-llm-supplychain ]
+    branches:
+    - main
+    - master
+    - portfolio-llm-supplychain
   pull_request:
-    branches: [ main, master ]
-
+    branches:
+    - main
+    - master
 jobs:
-  test:
+  unit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run unit tests
-        run: python -m pytest -q --ignore=tests/test_ui_smoke.py
-
-      - name: Run agent evaluation
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_agent_eval.py --out-dir benchmarks
-
-      - name: Run retrieval evaluation
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_retrieval_eval.py --out-dir benchmarks
-
-      - name: Run fulfillment benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_fulfillment_benchmark.py --orders 60 --milp-time 5 --out-dir /tmp/fulfillment-bench
-
-      - name: Run wave picking benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_wave_benchmark.py --orders 60 --milp-time 5 --skip-sensitivity --out-dir /tmp/wave-bench
-
-      - name: Run wave scheduling benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_wave_schedule_benchmark.py --orders 60 --milp-time 5 --schedule-time 3 --skip-sensitivity --out-dir /tmp/wave-schedule-bench
-
-      - name: Run online wave benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_dynamic_wave_benchmark.py --orders 60 --loads 60 --tuning-waits 0 15 --tuning-fills 4 6 --out-dir /tmp/dynamic-wave-bench
-
-      - name: Run end-to-end benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_benchmark.py --orders 100 --milp-time 5 --workers 4 --pickers 1 --picker-sweep 2 3 --out-dir /tmp/e2e-bench
-
-      - name: Run end-to-end robustness benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_robustness.py --orders 80 --seeds 3 --milp-time 5 --workers 4 --out-dir /tmp/e2e-robustness-bench
-
-      - name: Run stock deployment benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_deployment.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --plans baseline,balanced --out-dir /tmp/stock-deployment-bench
-
-      - name: Run mid-shift recovery benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_recovery.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --placements baseline,balanced --skip-review-sweep --out-dir /tmp/recovery-bench
-
-      - name: Run joint allocation/placement benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_joint.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir /tmp/joint-bench
-
-      - name: Run stochastic placement benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_stochastic.py --orders 80 --seeds 2 --reps 1 --milp-time 3 --service-time 2 --scenario-time 5 --score-time 3 --workers 4 --sweep-lambdas 0 0.5 --out-dir /tmp/stochastic-bench
-
-      - name: Run empirical intraday arrivals benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_empirical_arrivals.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir /tmp/empirical-arrivals-bench
-
-      - name: Run outbound dispatch benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_dispatch.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir /tmp/dispatch-bench
-
-      - name: Run dock-door benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_dock.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir /tmp/dock-bench
-
-      - name: Run promise-quoting benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_quote.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir /tmp/quote-bench
-
-      - name: Run rolling-allocation benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_rolling.py --orders 80 --milp-time 2 --service-time 1 --workers 2 --baseline-milp-time 3 --baseline-service-time 2 --out-dir /tmp/rolling-bench
-
-      - name: Run rolling end-to-end benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_rolling_e2e.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time 3 --baseline-service-time 2 --workers 2 --out-dir /tmp/rolling-e2e-bench
-
-      - name: Run rolling dock benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_rolling_dock.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time 3 --baseline-service-time 2 --workers 2 --out-dir /tmp/rolling-dock-bench
-
-      - name: Run rolling quote benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_rolling_quote.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time 3 --baseline-service-time 2 --workers 2 --out-dir /tmp/rolling-quote-bench
-
-      - name: Run promise frontier benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_promise_frontier.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time 3 --baseline-service-time 2 --workers 2 --out-dir /tmp/promise-frontier-bench
-
-      - name: Run order acceptance benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_order_acceptance.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time 3 --baseline-service-time 2 --workers 2 --out-dir /tmp/order-acceptance-bench
-
-      - name: Run promise-door benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_promise_door.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time 3 --baseline-service-time 2 --workers 2 --out-dir /tmp/promise-door-bench
-
-      - name: Run same-day consolidation benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_consolidation.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir /tmp/consolidation-bench
-
-      - name: Run revenue-acceptance benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_revenue_acceptance.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time 3 --baseline-service-time 2 --workers 2 --out-dir /tmp/revenue-bench
-
-      - name: Run value-acceptance benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_value_acceptance.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time 3 --baseline-service-time 2 --workers 2 --out-dir /tmp/value-bench
-
-      - name: Run value-frontier benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_value_frontier.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time 3 --baseline-service-time 2 --workers 2 --out-dir /tmp/value-frontier-bench
-
-      - name: Run service-upgrade benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_service_upgrade.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time 3 --baseline-service-time 2 --workers 2 --out-dir /tmp/service-upgrade-bench
-
-      - name: Run value-priority benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_value_priority.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time 3 --baseline-service-time 2 --workers 2 --out-dir /tmp/value-priority-bench
-
-      - name: Run dispatch-priority benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_dispatch_priority.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir /tmp/dispatch-priority-bench
-
-      - name: Run pick-priority benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_pick_priority.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir /tmp/pick-priority-bench
-
-      - name: Run capacity benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_capacity.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir /tmp/capacity-bench
-
-      - name: Run arrival benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_arrival.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir /tmp/arrival-bench
-
-      - name: Run stock benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_stock.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir /tmp/stock-bench
-
-      - name: Run DC capacity benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_dc_capacity.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir /tmp/dc-capacity-bench
-
-      - name: Run transit benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_transit.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir /tmp/transit-bench
-
-      - name: Run local-stock benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_local_stock.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir /tmp/local-stock-bench
-
-      - name: Run fixed-total placement benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_placement.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --placements baseline,balanced --workers 2 --out-dir /tmp/placement-bench
-
-      - name: Run placement MILP benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_access.py --orders 80 --seeds 2 --milp-time 2 --service-time 1 --solver-time 2 --repeats 1 --workers 2 --out-dir /tmp/access-bench
-
-      - name: Run pick-load-aware placement benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_access.py --orders 80 --seeds 2 --milp-time 2 --service-time 1 --solver-time 2 --repeats 1 --workers 2 --load-aware --stem ACCESS_LOAD --week 42 --out-dir /tmp/access-load-bench
-
-      - name: Run covered-demand placement benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_access.py --orders 80 --seeds 2 --milp-time 2 --service-time 1 --solver-time 2 --repeats 1 --workers 2 --load-aware --load-basis covered --stem ACCESS_LOAD_COVERED --week 43 --out-dir /tmp/access-load-covered-bench
-
-      - name: Run two-picker covered placement benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_access.py --orders 80 --seeds 2 --milp-time 2 --service-time 1 --solver-time 2 --repeats 1 --workers 2 --pickers 2 --load-aware --load-basis covered --stem ACCESS_LOAD_COVERED_P2 --week 44 --out-dir /tmp/access-load-covered-p2-bench
-
-      - name: Run stock-total service frontier benchmark (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_access.py --orders 80 --seeds 2 --milp-time 2 --service-time 1 --solver-time 2 --repeats 1 --workers 2 --stock-factor 1.5 --load-aware --load-basis covered --stem ACCESS_STOCK15 --week 45 --out-dir /tmp/access-stock15-bench
-
-      - name: Build stock-cost decision report (small)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/build_access_stock_cost.py --out-dir /tmp/access-stock-cost-bench
-
-      - name: Run out-of-sample target-week smoke
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats 1 --workers 2 --target-week 2011-11-21 --stock-factor 1.0 --load-aware --load-basis covered --stem ACCESS_OOS_CI --week 47 --out-dir /tmp/access-oos-ci
-
-      - name: Build seed-level stock-cost report
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/build_access_seed_cost.py --out-dir /tmp/access-seed-cost-bench
-
-      - name: Run history-stock smoke
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats 1 --workers 2 --stock-basis history --stock-factor 1.4 --load-aware --load-basis covered --stem ACCESS_HIST_CI --week 49 --out-dir /tmp/access-hist-ci
-
-      - name: Run safety-stock smoke
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats 1 --workers 2 --stock-basis safety --safety-z 1.645 --load-aware --load-basis covered --stem ACCESS_SAFETY_CI --week 50 --out-dir /tmp/access-safety-ci
-
-      - name: Run forecast-stock smoke
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats 1 --workers 2 --stock-basis forecast --forecast-model lightgbm --forecast-calibrate --stock-factor 1.4 --load-aware --load-basis covered --stem ACCESS_FORECAST_CI --week 51 --out-dir /tmp/access-forecast-ci
-
-      - name: Run forecast-share smoke
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats 1 --workers 2 --stock-basis forecast_share --forecast-model lightgbm --stock-factor 1.4 --load-aware --load-basis covered --stem ACCESS_FORECAST_SHARE_CI --week 53 --out-dir /tmp/access-forecast-share-ci
-
-      - name: Run last-week-share smoke
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats 1 --workers 2 --stock-basis last_week_share --stock-factor 1.4 --load-aware --load-basis covered --stem ACCESS_LAST_WEEK_CI --week 54 --out-dir /tmp/access-last-week-ci
-
-      - name: Run DC-mix smoke
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats 1 --workers 2 --stock-basis dc_mix --stock-factor 1.4 --load-aware --load-basis covered --stem ACCESS_DC_MIX_CI --week 55 --out-dir /tmp/access-dc-mix-ci
-
-      - name: Run Agent v2 benchmark
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/run_agent_v2_benchmark.py --out-dir /tmp/agent-v2-bench
-
-      - name: Install optional UI dependency
-        run: pip install "streamlit>=1.49"
-
-      - name: Run Streamlit UI smoke tests
-        env:
-          PYTHONPATH: src:.
-        run: python tests/test_ui_smoke.py
-
-      - name: Run demo (mock mode)
-        env:
-          PYTHONPATH: src:.
-        run: python scripts/demo.py
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    - name: Install package and dev dependencies
+      run: python -m pip install --upgrade pip && pip install -e ".[dev]"
+    - name: Run unit tests
+      run: python -m pytest -q
+  benchmarks:
+    runs-on: ubuntu-latest
+    needs: unit
+    timeout-minutes: 45
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    - name: Install package
+      run: python -m pip install --upgrade pip && pip install -e .
+    - name: Run agent evaluation
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_agent_eval.py --out-dir benchmarks
+    - name: Run retrieval evaluation
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_retrieval_eval.py --out-dir benchmarks
+    - name: Run fulfillment benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_fulfillment_benchmark.py --orders 60 --milp-time 5 --out-dir /tmp/fulfillment-bench
+    - name: Run wave picking benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_wave_benchmark.py --orders 60 --milp-time 5 --skip-sensitivity --out-dir /tmp/wave-bench
+    - name: Run wave scheduling benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_wave_schedule_benchmark.py --orders 60 --milp-time 5 --schedule-time 3 --skip-sensitivity --out-dir
+        /tmp/wave-schedule-bench
+    - name: Run online wave benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_dynamic_wave_benchmark.py --orders 60 --loads 60 --tuning-waits 0 15 --tuning-fills 4 6 --out-dir
+        /tmp/dynamic-wave-bench
+    - name: Run end-to-end benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_benchmark.py --orders 100 --milp-time 5 --workers 4 --pickers 1 --picker-sweep 2 3 --out-dir
+        /tmp/e2e-bench
+    - name: Run end-to-end robustness benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_robustness.py --orders 80 --seeds 3 --milp-time 5 --workers 4 --out-dir /tmp/e2e-robustness-bench
+    - name: Run stock deployment benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_deployment.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --plans baseline,balanced
+        --out-dir /tmp/stock-deployment-bench
+    - name: Run mid-shift recovery benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_recovery.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --placements
+        baseline,balanced --skip-review-sweep --out-dir /tmp/recovery-bench
+    - name: Run joint allocation/placement benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_joint.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir /tmp/joint-bench
+    - name: Run stochastic placement benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_stochastic.py --orders 80 --seeds 2 --reps 1 --milp-time 3 --service-time 2 --scenario-time
+        5 --score-time 3 --workers 4 --sweep-lambdas 0 0.5 --out-dir /tmp/stochastic-bench
+    - name: Run empirical intraday arrivals benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_empirical_arrivals.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir
+        /tmp/empirical-arrivals-bench
+    - name: Run outbound dispatch benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_dispatch.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir /tmp/dispatch-bench
+    - name: Run dock-door benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_dock.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir /tmp/dock-bench
+    - name: Run promise-quoting benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_quote.py --orders 80 --seeds 2 --milp-time 3 --service-time 2 --workers 4 --out-dir /tmp/quote-bench
+    - name: Run rolling-allocation benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_rolling.py --orders 80 --milp-time 2 --service-time 1 --workers 2 --baseline-milp-time 3
+        --baseline-service-time 2 --out-dir /tmp/rolling-bench
+    - name: Run rolling end-to-end benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_rolling_e2e.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time
+        3 --baseline-service-time 2 --workers 2 --out-dir /tmp/rolling-e2e-bench
+    - name: Run rolling dock benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_rolling_dock.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time
+        3 --baseline-service-time 2 --workers 2 --out-dir /tmp/rolling-dock-bench
+    - name: Run rolling quote benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_rolling_quote.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time
+        3 --baseline-service-time 2 --workers 2 --out-dir /tmp/rolling-quote-bench
+    - name: Run promise frontier benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_promise_frontier.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time
+        3 --baseline-service-time 2 --workers 2 --out-dir /tmp/promise-frontier-bench
+    - name: Run order acceptance benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_order_acceptance.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time
+        3 --baseline-service-time 2 --workers 2 --out-dir /tmp/order-acceptance-bench
+    - name: Run promise-door benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_promise_door.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time
+        3 --baseline-service-time 2 --workers 2 --out-dir /tmp/promise-door-bench
+    - name: Run same-day consolidation benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_consolidation.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir
+        /tmp/consolidation-bench
+    - name: Run revenue-acceptance benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_revenue_acceptance.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time
+        3 --baseline-service-time 2 --workers 2 --out-dir /tmp/revenue-bench
+    - name: Run value-acceptance benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_value_acceptance.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time
+        3 --baseline-service-time 2 --workers 2 --out-dir /tmp/value-bench
+    - name: Run value-frontier benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_value_frontier.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time
+        3 --baseline-service-time 2 --workers 2 --out-dir /tmp/value-frontier-bench
+    - name: Run service-upgrade benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_service_upgrade.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time
+        3 --baseline-service-time 2 --workers 2 --out-dir /tmp/service-upgrade-bench
+    - name: Run value-priority benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_value_priority.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --baseline-milp-time
+        3 --baseline-service-time 2 --workers 2 --out-dir /tmp/value-priority-bench
+    - name: Run dispatch-priority benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_dispatch_priority.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir
+        /tmp/dispatch-priority-bench
+    - name: Run pick-priority benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_pick_priority.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir
+        /tmp/pick-priority-bench
+    - name: Run capacity benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_capacity.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir /tmp/capacity-bench
+    - name: Run arrival benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_arrival.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir /tmp/arrival-bench
+    - name: Run stock benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_stock.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir /tmp/stock-bench
+    - name: Run DC capacity benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_dc_capacity.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir
+        /tmp/dc-capacity-bench
+    - name: Run transit benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_transit.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir /tmp/transit-bench
+    - name: Run local-stock benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_local_stock.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --workers 2 --out-dir
+        /tmp/local-stock-bench
+    - name: Run fixed-total placement benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_placement.py --orders 80 --seeds 3 --milp-time 2 --service-time 1 --placements baseline,balanced
+        --workers 2 --out-dir /tmp/placement-bench
+    - name: Run placement MILP benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_access.py --orders 80 --seeds 2 --milp-time 2 --service-time 1 --solver-time 2 --repeats
+        1 --workers 2 --out-dir /tmp/access-bench
+    - name: Run pick-load-aware placement benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_access.py --orders 80 --seeds 2 --milp-time 2 --service-time 1 --solver-time 2 --repeats
+        1 --workers 2 --load-aware --stem ACCESS_LOAD --week 42 --out-dir /tmp/access-load-bench
+    - name: Run covered-demand placement benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_access.py --orders 80 --seeds 2 --milp-time 2 --service-time 1 --solver-time 2 --repeats
+        1 --workers 2 --load-aware --load-basis covered --stem ACCESS_LOAD_COVERED --week 43 --out-dir /tmp/access-load-covered-bench
+    - name: Run two-picker covered placement benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_access.py --orders 80 --seeds 2 --milp-time 2 --service-time 1 --solver-time 2 --repeats
+        1 --workers 2 --pickers 2 --load-aware --load-basis covered --stem ACCESS_LOAD_COVERED_P2 --week 44 --out-dir /tmp/access-load-covered-p2-bench
+    - name: Run stock-total service frontier benchmark (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_access.py --orders 80 --seeds 2 --milp-time 2 --service-time 1 --solver-time 2 --repeats
+        1 --workers 2 --stock-factor 1.5 --load-aware --load-basis covered --stem ACCESS_STOCK15 --week 45 --out-dir /tmp/access-stock15-bench
+    - name: Build stock-cost decision report (small)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/build_access_stock_cost.py --out-dir /tmp/access-stock-cost-bench
+    - name: Run out-of-sample target-week smoke
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats
+        1 --workers 2 --target-week 2011-11-21 --stock-factor 1.0 --load-aware --load-basis covered --stem ACCESS_OOS_CI --week
+        47 --out-dir /tmp/access-oos-ci
+    - name: Build seed-level stock-cost report
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/build_access_seed_cost.py --out-dir /tmp/access-seed-cost-bench
+    - name: Run history-stock smoke
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats
+        1 --workers 2 --stock-basis history --stock-factor 1.4 --load-aware --load-basis covered --stem ACCESS_HIST_CI --week
+        49 --out-dir /tmp/access-hist-ci
+    - name: Run safety-stock smoke
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats
+        1 --workers 2 --stock-basis safety --safety-z 1.645 --load-aware --load-basis covered --stem ACCESS_SAFETY_CI --week
+        50 --out-dir /tmp/access-safety-ci
+    - name: Run forecast-stock smoke
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats
+        1 --workers 2 --stock-basis forecast --forecast-model lightgbm --forecast-calibrate --stock-factor 1.4 --load-aware
+        --load-basis covered --stem ACCESS_FORECAST_CI --week 51 --out-dir /tmp/access-forecast-ci
+    - name: Run forecast-share smoke
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats
+        1 --workers 2 --stock-basis forecast_share --forecast-model lightgbm --stock-factor 1.4 --load-aware --load-basis
+        covered --stem ACCESS_FORECAST_SHARE_CI --week 53 --out-dir /tmp/access-forecast-share-ci
+    - name: Run last-week-share smoke
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats
+        1 --workers 2 --stock-basis last_week_share --stock-factor 1.4 --load-aware --load-basis covered --stem ACCESS_LAST_WEEK_CI
+        --week 54 --out-dir /tmp/access-last-week-ci
+    - name: Run DC-mix smoke
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_e2e_access.py --orders 40 --seeds 1 --milp-time 1 --service-time 1 --solver-time 1 --repeats
+        1 --workers 2 --stock-basis dc_mix --stock-factor 1.4 --load-aware --load-basis covered --stem ACCESS_DC_MIX_CI --week
+        55 --out-dir /tmp/access-dc-mix-ci
+    - name: Run Agent v2 benchmark
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/run_agent_v2_benchmark.py --out-dir /tmp/agent-v2-bench
+    - name: Run demo (mock mode)
+      env:
+        PYTHONPATH: src:.
+      run: python scripts/demo.py
