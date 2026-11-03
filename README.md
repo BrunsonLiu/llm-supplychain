@@ -1,183 +1,115 @@
 # 供应链智能体
 
-> 在真实电商交易数据上，把**需求预测 → 库存政策 → 仓网布点 → 订单分单 → 波次拣选 → 发车**串成一条可复现的履约链路，并用 **Agent v2** 把预测、优化和诊断工具组织成可校验的决策流程。
+这个项目用 UCI Online Retail II 的真实交易数据，做了一条供应链履约的链路：先把交易聚合成 SKU 周需求并做预测，再决定每个 SKU 的库存水平和 DC 布点，然后把订单分到 DC，生成拣选波次和发车计划，最后用 OTIF、成本和积压衡量结果。
 
-一页版：[`PORTFOLIO.md`](PORTFOLIO.md)　·　5 分钟演示：`python scripts/demo.py`
+数据是 2009 到 2011 年一家英国在线零售商的发票。清洗后是 1,014,625 行、4,707 个 SKU、104 周。端到端实验取 2011-11-28 这一周，400 张发票、3 个 DC、189 个 SKU，跑 30 个种子，每个种子重复 3 次。库存、DC 产能、运输时效、承诺和拣选工时都是代码里写明的假设，不是数据里的真实字段。
 
-## 30 秒了解
+项目默认不依赖 API Key。Agent 用确定性 planner，重点在工具调用、校验和失败重规划；接真实 LLM 是另一个配置，也需要单独报告方差和成本。
 
-- **真实数据**：UCI Online Retail II，1,067,371 行原始交易，清洗后 1,014,625 行、4,707 个 SKU、104 周面板。
-- **端到端**：400 张真实发票、3 个 DC、189 个 SKU、30 个种子 × 3 次重复；分单、库存、波次、拣选、发车在同一实例里联动。
-- **可复现**：所有指标由仓库脚本生成，固定 seed；345 个测试通过。
-- **不依赖 API Key**：默认 Agent 使用确定性 planner + 工具运行时；真实模型可切换。
-
-## 架构
+## 结构
 
 ```text
 UCI Online Retail II
         │
         ▼
-  需求预测（LightGBM / 基线）
-        │  SKU 周需求
-        ▼
-  库存政策（历史均值 / 安全库存 / 预测）
-        │  SKU × DC 库存
-        ▼
-  布点 MILP（CP-SAT：份额、产能、拣选负荷）
-        │  DC 初始库存
-        ▼
-  分单 MILP（订单 → DC → 履约承诺）
-        │  运单 / 票据
-        ▼
-  波次 + 拣选 + 发车（EDF / CP-SAT / 集批）
+  需求预测
         │
         ▼
-  OTIF · 成本 · 积压 · 尾部风险
+  库存政策 → DC 布点
         │
-        └──► 指标 / 报告 / 诊断工具
-                    │
-                    ▼
-        Agent v2（Plan DAG + Verifier + Replan）
+        ▼
+  订单分单
+        │
+        ▼
+  波次拣选 → 发车
+        │
+        ▼
+  OTIF / 成本 / 积压
+        │
+        └──► 指标与诊断工具 → Agent v2
 ```
 
-## 核心模块
+## 需求预测
 
-### 1. 需求预测
+周需求面板按 SKU 聚合，滚动起点回测。LightGBM 是全局模型，另外还有 6 个基线：ma8、ma4、croston_sba、seasonal_naive、naive、holt。
 
-- SKU 周需求面板，滚动起点回测；LightGBM 全局模型 + 6 个基线。
-- 特征：滞后、滚动均值/方差、价格、季节、SKU/国家统计。
-- 两个口径都评估：
-  - **SKU 级**：LightGBM WMAPE **73.34%**，Naive **89.44%**。
-  - **仓库总量**：Seasonal Naive **21.08%**，LightGBM **31.93%**。
-- 结论：SKU 级用 LightGBM，仓库总量用季节基线；不强行一个模型打所有粒度。
+| 模型 | SKU WMAPE | 偏差 |
+|---|---:|---:|
+| LightGBM | 73.34% | +8.53% |
+| Seasonal Naive | 86.75% | +2.13% |
+| Naive | 89.44% | +0.30% |
 
-### 2. 库存与布点
+SKU 级 LightGBM 最好。仓库总量是另一回事，Seasonal Naive 的 21.08% 反而优于 LightGBM 的 31.93%，所以系统里两个粒度用了不同模型。
 
-- 库存基准：历史均值、安全库存 `mean + z×std`、LightGBM 预测、预测结构。
-- 布点：CP-SAT 固定总量 MILP，10%–60% DC 份额，DC 产能，拣选分钟负荷。
-- 分单：逐 DC 分配 MILP，服务/成本/拣选容量三种目标。
-- 评价：400 发票 × 30 种子 × 3 重复，报告 target/rest/all OTIF、积压、调拨量。
+## 库存与布点
 
-### 3. 履约执行
+库存政策有三种：历史均值、`mean + z×std` 安全库存、LightGBM 预测。每个 SKU 先定总库存，再用 CP-SAT 布点 MILP 分到 DC。布点约束包括 10%–60% 的 DC 份额、DC 产能和拣选分钟负荷。
 
-- 波次拣选、订单合并、截单时间、班中插单、在线释放。
-- 承运商发车截止、月台门位、装车资源、同日集批。
-- 承诺报价与 ATP、订单接受、价值分层、滚动补货。
-- 统一用事件驱动仿真执行，优化结果落到票据/波次/发车。
+分单是逐 DC 的 MILP，目标可以选服务、成本或拣选容量。400 张发票、30 个种子、3 次重复，结果取平均。
 
-### 4. Agent v2
+库存对比里，历史均值 ×1.4 是 44,824 单位，覆盖 135.6%，目标 OTIF 70.0%，全量 93.9%，积压 2,123。LightGBM ×1.6 是 55,776 单位，覆盖 168.7%，目标 OTIF 85.0%，全量 91.6%，积压 945。预测把目标服务拉高了 15 个百分点，积压少了约 1,200 单位，但覆盖率多了 33 个百分点，全量服务略降。
 
-- **Plan DAG**：`submit_plan` 只接受带 `id/tool/args/depends_on` 的 DAG。
-- **Verifier**：执行前校验 allowlist、JSON Schema、依赖、环、预算。
-- **Replan**：工具失败或验证不通过时，带结构化错误重规划。
-- **工具层**：预测、库存、布点、分单、诊断、报告、RAG 检索。
-- 30 个任务、3 种策略：raw / verified / adaptive；adaptive **30/30**，raw 有 1 个 false success，verified 为 0。
+## 分单与履约
 
-### 5. 工程
+分单之后，订单行会变成按发票和 DC 拆分的票据。每个 DC 用事件驱动仿真处理到达、波次、拣选和发车；释放策略可以选 EDF、节省重批或等待凑波，发车侧还有承运商截止、月台门位和装车资源。
 
-- Python 3.9+，`from __future__ import annotations`。
-- OR-Tools CP-SAT、LightGBM、pandas/numpy、FastAPI、Streamlit。
-- 46 个 `test_*.py` + quick_test，**345 passed**；CI 覆盖核心 smoke。
-- 输出同时写 Markdown + JSON，报告中的每个数字都可回溯到脚本。
-
-## 最终基准
-
-完整报告：[`benchmarks/FINAL_SUMMARY.md`](benchmarks/FINAL_SUMMARY.md)
-
-### 需求预测（UCI Online Retail II，52 周滚动回测）
-
-| 模型 | SKU WMAPE | 偏差 | 周数 |
-|---|---:|---:|---:|
-| **LightGBM** | **73.34%** | +8.53% | 52 |
-| Seasonal Naive | 86.75% | +2.13% | 52 |
-| Naive | 89.44% | +0.30% | 52 |
-
-仓库总量口径：Seasonal Naive **21.08%**，LightGBM **31.93%**。
-
-### 库存政策（400 发票、3 DC、30 种子 × 3 重复）
-
-| 政策 | 库存单位 | 覆盖率 | 目标 OTIF | 全量 OTIF | 积压 |
-|---|---:|---:|---:|---:|---:|
-| 历史均值 ×1.4 | 44,824 | 135.6% | 70.0% | 93.9% | 2,123 |
-| **LightGBM 预测 ×1.6** | **55,776** | **168.7%** | **85.0%** | **91.6%** | **945** |
-
-预测库存把目标 OTIF 从 **70.0% → 85.0%**，积压从 **2,123 → 945**；代价是覆盖率从 135.6% 升到 168.7%，全量 OTIF 从 93.9% 降到 91.6%。
-
-### 波次释放（400 发票、3 DC、1 拣货员/DC）
+同一分单下只改释放策略，400 张发票、每 DC 1 名拣货员：
 
 | 释放策略 | 波次 | 拣选准时 | 迟到票据 | 端到端 OTIF | 总成本 |
 |---|---:|---:|---:|---:|---:|
 | EDF 即时装满 | 84 | 79.1% | 129 | 39.0% | 62,194 |
-| **节省重批** | 92 | **81.8%** | **112** | **43.0%** | **62,189** |
+| 节省重批 | 92 | 81.8% | 112 | 43.0% | 62,189 |
 
-同一分单下，只改释放策略：端到端 OTIF **+4.0pp**，迟到票据 **−17**，成本基本不变。
+节省重批把端到端 OTIF 从 39.0% 提到 43.0%，迟到票据少 17 张，成本几乎不变。
 
-### Agent v2（30 任务）
+## Agent v2
+
+Agent 的入口是一个 `submit_plan` 工具，只接受带 `id`、`tool`、`args`、`depends_on` 的 DAG。执行前会检查工具白名单、参数 Schema、依赖和环；失败时带结构化错误重规划。
+
+30 个任务、三种策略：
 
 | 策略 | 成功 | 验证通过 | False success | Abstain | 重规划 |
 |---|---:|---:|---:|---:|---:|
 | raw | 27/30 | 100.0% | 1 | 0 | 0 |
 | verified | 27/30 | 76.7% | 0 | 7 | 0 |
-| **adaptive** | **30/30** | **86.7%** | **0** | 4 | 3 |
+| adaptive | 30/30 | 86.7% | 0 | 4 | 3 |
 
-完整报告：[`benchmarks/FINAL_SUMMARY.md`](benchmarks/FINAL_SUMMARY.md)。
+raw 会有一个任务在工具返回错误数字时仍然报成功，Verifier 能把它拦下来。adaptive 多了重规划，把 recovery 类任务从 0/3 做到 3/3。
 
-## 快速开始
+## 运行
 
 ```bash
-# 1) 安装
 pip install -e ".[dev]"
-
-# 2) 5 分钟演示：数据 → 预测 → 库存 → 报告 → RAG → Function Calling
 python scripts/demo.py
-
-# 3) 预测回测
 python scripts/run_backtest.py
-
-# 4) 端到端履约基准
 python scripts/run_e2e_benchmark.py
-
-# 5) Agent v2 评测
 python scripts/run_agent_v2_benchmark.py
-
-# 6) 检索评测
 python scripts/run_retrieval_eval.py
-
-# 7) 测试
 pytest -q
 ```
 
-Windows 设置 `PYTHONPATH`：
+Windows 下先设：
 
 ```powershell
 $env:PYTHONPATH='src;.'
 ```
 
-## 目录
+测试是 46 个 `test_*.py` 加 `quick_test.py`，当前 345 个通过。
+
+## 代码结构
 
 ```text
-src/
-  supply/
-    forecasting/     需求预测、回测
-    inventory/       库存政策、补货
-    network/         仓网、路径
-    fulfillment/     分单、波次、拣选、发车、门位
-    e2e/             端到端实例、流水线、报告
-  agent/             Plan DAG、Verifier、Replan、工具
-  rag/               文档、嵌入、检索、RAG
-scripts/             基准与演示入口
-tests/               46 个 test_*.py + quick_test
-benchmarks/          最终报告 + JSON
-docs/model_cards/    模型卡
+src/supply/       预测、库存、网络、履约、端到端仿真
+src/agent/        Plan DAG、Verifier、Replan、工具
+src/rag/          文档、嵌入、检索
+scripts/          基准和演示入口
+tests/            测试
+benchmarks/       结果和 JSON
+docs/             模型卡、归档
 ```
 
-## 范围与边界
+## 说明
 
-- 这是**仿真基准**，不是生产系统：库存、网络、时效、门位、报价参数是显式声明假设。
-- 默认 Agent planner 是确定性 DAG，用来验证运行时、护栏和工具边界；真实 LLM 规划需单独配置 API Key 并报告方差/成本。
-- 单数据集、单 season；跨行业、跨仓网推广前需要重新校准。
-- 所有结果可由本仓库脚本复现；报告中的绝对值不应直接当作业务承诺。
+这是仿真基准，不是生产系统。库存、网络、时效、门位和报价参数都是假设；单数据集、单 season，换行业或换仓网需要重新校准。默认 Agent 的 planner 是脚本 DAG，真实模型规划还没有纳入这份报告。
 
-## License
-
-MIT，见 [`LICENSE`](LICENSE)。
+一页版在 [`PORTFOLIO.md`](PORTFOLIO.md)，结果汇总在 [`benchmarks/FINAL_SUMMARY.md`](benchmarks/FINAL_SUMMARY.md)。
