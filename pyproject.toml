@@ -25,6 +25,13 @@ dependencies = [
 dev = ["pytest>=7.0.0", "streamlit>=1.49.0"]
 ui = ["streamlit>=1.49.0"]
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["rag*", "supply*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "."]
@@ -32,6 +39,3 @@ pythonpath = ["src", "."]
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools.packages.find]
-include = ["rag*", "supply*", "app*"]
