@@ -87,22 +87,17 @@ raw 会有一个任务在工具返回错误数字时仍然报成功，Verifier �
 
 ## 怎么跑
 
-先装依赖，再按下面的顺序跑。测试是 46 个 `test_*.py` 加 `quick_test.py`，当前 345 个通过。
+先装依赖。`demo.py` 用的是合成需求，直接能跑；后面的真实数据基准要先执行一次 `prepare_data.py`，已有 `data/raw` 和 `data/processed` 时可以跳过。测试是 46 个 `test_*.py` 加 `quick_test.py`，当前 345 个通过。
 
 ```bash
 pip install -e ".[dev]"
-python scripts/demo.py
+python scripts/demo.py           # 用合成需求，不需要数据
+python scripts/prepare_data.py   # 跑真实数据基准前执行一次，下载约 45 MB
 python scripts/run_backtest.py
 python scripts/run_e2e_benchmark.py
 python scripts/run_agent_v2_benchmark.py
 python scripts/run_retrieval_eval.py
 pytest -q
-```
-
-Windows 下先设：
-
-```powershell
-$env:PYTHONPATH='src;.'
 ```
 
 ## 代码入口

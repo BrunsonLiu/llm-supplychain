@@ -33,6 +33,7 @@
 ```bash
 pip install -e ".[dev]"
 python scripts/demo.py
+python scripts/prepare_data.py
 python scripts/run_backtest.py
 python scripts/run_e2e_benchmark.py
 python scripts/run_agent_v2_benchmark.py
