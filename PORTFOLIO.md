@@ -28,6 +28,16 @@
 
 库存和分单拆成两层：先按政策定 SKU 总量，再用 CP-SAT 分到 DC；分单用一个分配 MILP，目标可选服务、成本或拣选容量。拆开能分开看两层的影响，但合起来不是联合最优。分单结果落成票据，后面用事件驱动仿真跑波次、拣选、发车、门位和报价。Agent 这层是 Plan DAG + Verifier + Replan。
 
+## 前沿层（实验）
+
+因果、随机联合、在线和 RL-0 已经接成最小实现：SCM + AIPW/DML 因果 benchmark、bootstrap/copula 场景 + 成本感知 CVaR 联合、UCB/Thompson 策略选择 + receding-horizon 接口、bandit + IPS/DR。真实数据没有随机化，所以因果只报模型内效应；在线/RL 是离线回放，不是线上结论。
+
+```bash
+python scripts/run_frontier_bench.py --quick
+```
+
+最新文献和边界见 [`docs/research/FRONTIER_RESEARCH_2026.md`](docs/research/FRONTIER_RESEARCH_2026.md)。
+
 ## 运行
 
 ```bash

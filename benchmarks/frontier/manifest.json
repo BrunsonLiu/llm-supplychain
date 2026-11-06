@@ -1,0 +1,86 @@
+{
+  "generated_at": "2026-11-06T19:40:34.991703+00:00",
+  "git_sha": "c4afe97bd23acbcdd03238913ef6616705450bf4",
+  "git_dirty": true,
+  "script": "scripts/run_frontier_bench.py",
+  "stages": [
+    "causal",
+    "scenarios",
+    "joint",
+    "online",
+    "rl"
+  ],
+  "limitations": [
+    "因果阶段是 SCM 合成结果，不是 UCI 观测数据的真实因果效应。",
+    "在线/RL 阶段是按订单日离线回放，不是实时上线。",
+    "联合优化只跑一个小规模真实实例；不是 30-seed 全量结论。"
+  ],
+  "dataset": {
+    "clean_rows": 1014625,
+    "skus": 4707,
+    "weeks": 104,
+    "target_week": "2011-11-28",
+    "weekly_demand_mean": 32595.278846153848,
+    "weekly_demand_sd": 13571.25016560421
+  },
+  "instance": {
+    "orders": 30,
+    "skus": 11,
+    "units": 1522,
+    "stock": 1295,
+    "order_days": {
+      "0": 3,
+      "1": 7,
+      "2": 9,
+      "3": 3,
+      "4": 8
+    }
+  },
+  "rolling": {
+    "42": {
+      "none": {
+        "otif_rate": 0.5666666666666667,
+        "backlog_units": 246
+      },
+      "daily_1d": {
+        "otif_rate": 0.9,
+        "backlog_units": 19
+      },
+      "daily_2d": {
+        "otif_rate": 0.7333333333333333,
+        "backlog_units": 99
+      },
+      "daily_1d_safety": {
+        "otif_rate": 0.9,
+        "backlog_units": 19
+      },
+      "batch_2d": {
+        "otif_rate": 0.7666666666666667,
+        "backlog_units": 51
+      }
+    },
+    "43": {
+      "none": {
+        "otif_rate": 0.6,
+        "backlog_units": 198
+      },
+      "daily_1d": {
+        "otif_rate": 0.9,
+        "backlog_units": 41
+      },
+      "daily_2d": {
+        "otif_rate": 0.8333333333333334,
+        "backlog_units": 114
+      },
+      "daily_1d_safety": {
+        "otif_rate": 0.9333333333333333,
+        "backlog_units": 31
+      },
+      "batch_2d": {
+        "otif_rate": 0.8666666666666667,
+        "backlog_units": 90
+      }
+    }
+  },
+  "online_repeats": 2
+}

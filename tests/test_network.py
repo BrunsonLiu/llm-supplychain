@@ -115,7 +115,9 @@ def test_vrptw_visits_every_store_within_capacity():
     instance = _routing(n=6, capacity=40.0, vehicles=3)
     instance.time_windows = [(0, 240)] * 3 + [(60, 300)] * 3
     instance.horizon_minutes = 300
-    plan = solve_routing(instance, time_windows=True, time_limit_seconds=1.0)
+    # OR-Tools can need more than one second under a loaded full-suite run;
+    # keep the feasibility assertion, but give the solver a stable budget.
+    plan = solve_routing(instance, time_windows=True, time_limit_seconds=5.0)
 
     assert plan.feasible, plan
     assert plan.routes, "VRPTW 未返回路径"

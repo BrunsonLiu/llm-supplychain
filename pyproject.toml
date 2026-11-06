@@ -1,7 +1,7 @@
 [project]
 name = "supply-chain-agent"
-version = "5.0.0"
-description = "供应链决策智能体：真实电商数据的需求预测、库存与布点、订单分单、波次拣选和发车仿真，含 Agent v2 与 RAG。"
+version = "5.1.0"
+description = "供应链决策智能体：真实电商数据的需求预测、库存与布点、订单分单、波次拣选、发车仿真，以及因果/随机联合/在线/RL 前沿实验层。"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [

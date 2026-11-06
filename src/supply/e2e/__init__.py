@@ -60,6 +60,11 @@ from .joint import (
     with_stock,
 )
 from .joint_report import build_joint_report, write_joint_report
+from .scenarios import (
+    ScenarioConfig,
+    build_calibrated_scenarios,
+    scenario_diagnostics,
+)
 from .stochastic import (
     DEFAULT_CVAR_ALPHA,
     DEFAULT_CVAR_WEIGHT,
@@ -76,6 +81,7 @@ from .stochastic import (
     stochastic_placement,
 )
 from .stochastic_report import build_stochastic_report, write_stochastic_report
+from .stochastic_joint import JointPlan, solve_stochastic_joint
 from .arrival import (
     DEFAULT_END_HOUR,
     DEFAULT_LOOKBACK_WEEKS as ARRIVAL_LOOKBACK_WEEKS,
@@ -153,6 +159,15 @@ from .rolling import (
     single_week_baseline,
 )
 from .rolling_report import build_rolling_report, write_rolling_report
+from .online import (
+    OnlineResult,
+    RecedingHorizonResult,
+    evaluate_rolling_policies,
+    policy_matrix,
+    reward_from_result,
+    run_online_bandit,
+    run_receding_horizon,
+)
 from .rolling_e2e import (
     E2E_ROLLING_POLICIES,
     paired_e2e_delta,
@@ -397,6 +412,11 @@ __all__ = [
     "planned_stock_totals",
     "score_placement",
     "stochastic_placement",
+    "ScenarioConfig",
+    "build_calibrated_scenarios",
+    "scenario_diagnostics",
+    "JointPlan",
+    "solve_stochastic_joint",
     "build_stochastic_report",
     "write_stochastic_report",
     "DEFAULT_START_HOUR",
@@ -440,6 +460,13 @@ __all__ = [
     "rolling_cells",
     "run_rolling_policy",
     "single_week_baseline",
+    "OnlineResult",
+    "RecedingHorizonResult",
+    "evaluate_rolling_policies",
+    "policy_matrix",
+    "reward_from_result",
+    "run_online_bandit",
+    "run_receding_horizon",
     "build_rolling_report",
     "write_rolling_report",
     "E2E_ROLLING_POLICIES",

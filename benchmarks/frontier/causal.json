@@ -1,0 +1,301 @@
+{
+  "truth": 0.1484,
+  "config": {
+    "n_units": 1200,
+    "n_replicates": 2,
+    "confounding": 1.0,
+    "seed": 42
+  },
+  "dag": {
+    "nodes": [
+      "seasonality",
+      "demand",
+      "forecast",
+      "capacity",
+      "inventory",
+      "promise",
+      "otif",
+      "cost"
+    ],
+    "edges": [
+      [
+        "seasonality",
+        "demand"
+      ],
+      [
+        "seasonality",
+        "forecast"
+      ],
+      [
+        "demand",
+        "forecast"
+      ],
+      [
+        "forecast",
+        "inventory"
+      ],
+      [
+        "capacity",
+        "inventory"
+      ],
+      [
+        "forecast",
+        "otif"
+      ],
+      [
+        "inventory",
+        "otif"
+      ],
+      [
+        "demand",
+        "otif"
+      ],
+      [
+        "capacity",
+        "otif"
+      ],
+      [
+        "promise",
+        "otif"
+      ],
+      [
+        "inventory",
+        "cost"
+      ],
+      [
+        "demand",
+        "cost"
+      ]
+    ],
+    "topological_order": [
+      "seasonality",
+      "capacity",
+      "promise",
+      "demand",
+      "forecast",
+      "inventory",
+      "otif",
+      "cost"
+    ]
+  },
+  "rows": [
+    {
+      "method": "naive",
+      "estimate": 0.13630941783826722,
+      "std_error": 0.007891361622629859,
+      "ci_low": 0.1208423490579127,
+      "ci_high": 0.15177648661862175,
+      "n": 1200,
+      "treated": 127,
+      "control": 1073,
+      "diagnostics": {
+        "bias_risk": "confounding"
+      },
+      "replicate": 0,
+      "truth": 0.1484,
+      "bias": -0.012090582161732782,
+      "abs_bias": 0.012090582161732782,
+      "covered": true
+    },
+    {
+      "method": "ipw",
+      "estimate": 0.16096499552658278,
+      "std_error": 0.009302046618311147,
+      "ci_low": 0.14273298415469293,
+      "ci_high": 0.17919700689847262,
+      "n": 1200,
+      "treated": 127,
+      "control": 1073,
+      "diagnostics": {
+        "propensity_min": 0.016722406693026427,
+        "propensity_max": 0.39784262886840827,
+        "propensity_mean": 0.10583333333333336,
+        "overlap_share": 0.9033333333333333,
+        "treated_share": 0.10583333333333333,
+        "max_weight": 59.800004769470156
+      },
+      "replicate": 0,
+      "truth": 0.1484,
+      "bias": 0.012564995526582773,
+      "abs_bias": 0.012564995526582773,
+      "covered": true
+    },
+    {
+      "method": "aipw",
+      "estimate": 0.15384338522238825,
+      "std_error": 0.006165663259496521,
+      "ci_low": 0.14175868523377508,
+      "ci_high": 0.1659280852110014,
+      "n": 1200,
+      "treated": 127,
+      "control": 1073,
+      "diagnostics": {
+        "propensity_min": 0.016722406693026427,
+        "propensity_max": 0.39784262886840827,
+        "propensity_mean": 0.10583333333333336,
+        "overlap_share": 0.9033333333333333,
+        "treated_share": 0.10583333333333333,
+        "max_weight": 59.800004769470156,
+        "outcome_r2": {
+          "treated": 0.5253263745319099,
+          "control": 0.42922449121097006
+        }
+      },
+      "replicate": 0,
+      "truth": 0.1484,
+      "bias": 0.005443385222388242,
+      "abs_bias": 0.005443385222388242,
+      "covered": true
+    },
+    {
+      "method": "dml",
+      "estimate": 0.1531683782102226,
+      "std_error": 0.005663114481780669,
+      "ci_low": 0.1420686738259325,
+      "ci_high": 0.16426808259451273,
+      "n": 1200,
+      "treated": 127,
+      "control": 1073,
+      "diagnostics": {
+        "n_folds": 2,
+        "residual_t_sd": 0.3063992157535742,
+        "residual_y_sd": 0.07840666707877642
+      },
+      "replicate": 0,
+      "truth": 0.1484,
+      "bias": 0.004768378210222607,
+      "abs_bias": 0.004768378210222607,
+      "covered": true
+    },
+    {
+      "method": "naive",
+      "estimate": 0.11462924528783502,
+      "std_error": 0.006945753041529954,
+      "ci_low": 0.10101556932643632,
+      "ci_high": 0.12824292124923373,
+      "n": 1200,
+      "treated": 150,
+      "control": 1050,
+      "diagnostics": {
+        "bias_risk": "confounding"
+      },
+      "replicate": 1,
+      "truth": 0.1484,
+      "bias": -0.03377075471216498,
+      "abs_bias": 0.03377075471216498,
+      "covered": false
+    },
+    {
+      "method": "ipw",
+      "estimate": 0.13809045460008423,
+      "std_error": 0.0084131133415356,
+      "ci_low": 0.12160075245067446,
+      "ci_high": 0.15458015674949402,
+      "n": 1200,
+      "treated": 150,
+      "control": 1050,
+      "diagnostics": {
+        "propensity_min": 0.012941065137975303,
+        "propensity_max": 0.48793057000726625,
+        "propensity_mean": 0.125,
+        "overlap_share": 0.8891666666666667,
+        "treated_share": 0.125,
+        "max_weight": 77.27339205375912
+      },
+      "replicate": 1,
+      "truth": 0.1484,
+      "bias": -0.01030954539991577,
+      "abs_bias": 0.01030954539991577,
+      "covered": true
+    },
+    {
+      "method": "aipw",
+      "estimate": 0.13491753830438802,
+      "std_error": 0.005304431527992702,
+      "ci_low": 0.12452085250952233,
+      "ci_high": 0.1453142240992537,
+      "n": 1200,
+      "treated": 150,
+      "control": 1050,
+      "diagnostics": {
+        "propensity_min": 0.012941065137975303,
+        "propensity_max": 0.48793057000726625,
+        "propensity_mean": 0.125,
+        "overlap_share": 0.8891666666666667,
+        "treated_share": 0.125,
+        "max_weight": 77.27339205375912,
+        "outcome_r2": {
+          "treated": 0.4337771683499144,
+          "control": 0.4547908976954421
+        }
+      },
+      "replicate": 1,
+      "truth": 0.1484,
+      "bias": -0.013482461695611986,
+      "abs_bias": 0.013482461695611986,
+      "covered": false
+    },
+    {
+      "method": "dml",
+      "estimate": 0.1390139367673696,
+      "std_error": 0.005466062678178285,
+      "ci_low": 0.12830045391814016,
+      "ci_high": 0.14972741961659902,
+      "n": 1200,
+      "treated": 150,
+      "control": 1050,
+      "diagnostics": {
+        "n_folds": 2,
+        "residual_t_sd": 0.32506160302121856,
+        "residual_y_sd": 0.07636211532621458
+      },
+      "replicate": 1,
+      "truth": 0.1484,
+      "bias": -0.009386063232630415,
+      "abs_bias": 0.009386063232630415,
+      "covered": true
+    }
+  ],
+  "summary": [
+    {
+      "method": "dml",
+      "mean_estimate": 0.1460911574887961,
+      "mean_bias": -0.002308842511203904,
+      "mean_abs_bias": 0.007077220721426511,
+      "rmse": 0.007444313728029678,
+      "coverage": 1.0,
+      "mean_ci_width": 0.02181318723351955
+    },
+    {
+      "method": "aipw",
+      "mean_estimate": 0.14438046176338815,
+      "mean_bias": -0.004019538236611872,
+      "mean_abs_bias": 0.009462923459000114,
+      "rmse": 0.01028122599822023,
+      "coverage": 0.5,
+      "mean_ci_width": 0.022481385783478858
+    },
+    {
+      "method": "ipw",
+      "mean_estimate": 0.1495277250633335,
+      "mean_bias": 0.0011277250633335012,
+      "mean_abs_bias": 0.011437270463249272,
+      "rmse": 0.01149273333319732,
+      "coverage": 1.0,
+      "mean_ci_width": 0.03472171352129962
+    },
+    {
+      "method": "naive",
+      "mean_estimate": 0.12546933156305112,
+      "mean_bias": -0.02293066843694888,
+      "mean_abs_bias": 0.02293066843694888,
+      "rmse": 0.025363813305956422,
+      "coverage": 0.5,
+      "mean_ci_width": 0.029080744741753227
+    }
+  ],
+  "limitations": [
+    "因果效应是 SCM 模型内的，不是 UCI 观测数据的真实因果效应。",
+    "估计器依赖无未观测混杂/正确 nuisance 设定；基准只检验实现和诊断。"
+  ]
+}
