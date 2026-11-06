@@ -181,6 +181,20 @@
 | 在线 | GAPSI 2411.19269 / ICGPS 2605.14840 | bandit 策略选择 + receding-horizon 接口 | 无 inventory-specific learner |
 | RL | Offline inventory 2504.09831 / OR-Transformer 2609.01933 | RL-0 bandit + OPE | 无 FQE/CQL/IQL / deep RL |
 
+### 5.1 当前 smoke 结果（不是研究结论）
+
+`python scripts/run_frontier_bench.py --quick` 生成 `benchmarks/frontier/`：
+
+| 阶段 | 结果 | 说明 |
+|---|---|---|
+| 因果 SCM | true ATE 0.1484；DML 平均绝对偏差 0.0071 | 合成数据，3 次重复 |
+| 场景 | 6 场景 × 11 SKU；目标 1,522 单位 | 真实小实例 |
+| 随机联合 | status OPTIMAL；期望成本 2,200.09；CVaR 2,397.43；gap 0 | 单实例，非 30-seed |
+| 在线 UCB1 | 10 轮累计 reward 8.638；hindsight regret 0.561 | 2 个 seed × 5 订单日，离线回放 |
+| RL-0 LinUCB | 10 轮累计 reward 8.088；regret 1.111 | 样本太少，不能证明优于 UCB |
+
+这些数字只用于确认链路能跑通，不是论文级结果。
+
 ---
 
 ## 6. 诚实边界
