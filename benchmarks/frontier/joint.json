@@ -1,6 +1,6 @@
 {
   "status": "OPTIMAL",
-  "solve_seconds": 0.18440700000000002,
+  "solve_seconds": 0.24380310000000002,
   "expected_unmet": 541.1666666666666,
   "cvar_unmet": 591.0,
   "expected_cost": 2200.09,

@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-11-06T19:40:34.991703+00:00",
-  "git_sha": "c4afe97bd23acbcdd03238913ef6616705450bf4",
-  "git_dirty": true,
+  "generated_at": "2026-11-06T19:58:23.942130+00:00",
+  "git_sha": "865fe064b040ae05d5c18f53623fbca102931b84",
+  "git_dirty": false,
   "script": "scripts/run_frontier_bench.py",
   "stages": [
     "causal",
@@ -66,7 +66,7 @@
       },
       "daily_1d": {
         "otif_rate": 0.9,
-        "backlog_units": 41
+        "backlog_units": 44
       },
       "daily_2d": {
         "otif_rate": 0.8333333333333334,
@@ -74,11 +74,11 @@
       },
       "daily_1d_safety": {
         "otif_rate": 0.9333333333333333,
-        "backlog_units": 31
+        "backlog_units": 26
       },
       "batch_2d": {
         "otif_rate": 0.8666666666666667,
-        "backlog_units": 90
+        "backlog_units": 101
       }
     }
   },
