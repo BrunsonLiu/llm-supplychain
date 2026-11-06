@@ -61,7 +61,14 @@ def _git_dirty() -> bool:
         value = subprocess.check_output(
             ["git", "status", "--porcelain"], cwd=ROOT, text=True
         )
-        return bool(value.strip())
+        # The benchmark writes its own manifest; don't call that code dirty.
+        ignored = ("benchmarks/frontier/", "__pycache__/", ".pytest_cache/")
+        changed = [
+            line
+            for line in value.splitlines()
+            if line.strip() and not any(token in line for token in ignored)
+        ]
+        return bool(changed)
     except Exception:  # noqa: BLE001
         return True
 
