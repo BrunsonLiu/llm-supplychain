@@ -653,6 +653,7 @@ Real data → forecast/conformal → scenarios
 - Decision-focused learning: https://arxiv.org/abs/1703.04529
 - 现有项目：`src/supply/e2e/stochastic.py`、`joint.py`、`rolling.py`、`recovery.py`
 - V1 蓝图：`FRONTIER_INTEGRATION_BLUEPRINT.md`
+- 2026 最新文献与代码落地对照：`FRONTIER_RESEARCH_2026.md`
 
 ---
 
