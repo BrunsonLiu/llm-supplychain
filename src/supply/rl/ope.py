@@ -7,7 +7,7 @@ provides IPS and doubly robust (DR) estimates with a normal-approximation CI.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 import pandas as pd

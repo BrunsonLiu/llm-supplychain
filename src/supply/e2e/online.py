@@ -144,20 +144,34 @@ def evaluate_rolling_policies(
     order_day: np.ndarray,
     policies: Sequence[str] = ROLLING_POLICIES,
     metric: str = "otif_rate",
+    raise_errors: bool = True,
     **kwargs: Any,
 ) -> Dict[str, Dict[str, Any]]:
-    """Evaluate existing rolling policies; returns the full metric payload."""
+    """Evaluate existing rolling policies; returns the full metric payload.
+
+    A policy solve can hit the MILP time limit and return ``UNKNOWN``. The
+    default keeps that loud (``raise_errors=True``); benchmark harnesses can set
+    it to ``False`` and report the failed arm instead of hiding it.
+    """
     unknown = [policy for policy in policies if policy not in ROLLING_POLICIES]
     if unknown:
         raise ValueError(f"未知 rolling 策略: {unknown}")
     results: Dict[str, Dict[str, Any]] = {}
     for policy in policies:
-        results[policy] = run_rolling_policy(
-            instance,
-            order_day,
-            policy,
-            **kwargs,
-        )
+        try:
+            results[policy] = run_rolling_policy(
+                instance,
+                order_day,
+                policy,
+                **kwargs,
+            )
+        except Exception as exc:  # noqa: BLE001 - report the failed arm
+            if raise_errors:
+                raise
+            results[policy] = {
+                "policy": policy,
+                "error": f"{type(exc).__name__}: {exc}",
+            }
     return results
 
 

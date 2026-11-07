@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from supply.e2e.online import (  # noqa: E402
+    evaluate_rolling_policies,
     policy_matrix,
     reward_from_result,
     run_online_bandit,
@@ -98,6 +99,21 @@ def test_reward_adapter() -> None:
     assert reward_from_result({"otif_rate": 0.4}) == 0.4
     assert reward_from_result({"fill_rate": 0.6}, metric="fill_rate") == 0.6
     assert reward_from_result({"backlog_units": 7}, metric="negative_backlog") == -7.0
+
+
+def test_rolling_policy_errors_can_be_reported(monkeypatch) -> None:
+    def fail(*args, **kwargs):
+        raise RuntimeError("UNKNOWN")
+
+    monkeypatch.setattr("supply.e2e.online.run_rolling_policy", fail)
+    results = evaluate_rolling_policies(
+        object(),
+        np.zeros(1, dtype=int),
+        policies=("daily_1d",),
+        raise_errors=False,
+    )
+    assert "error" in results["daily_1d"]
+    assert "UNKNOWN" in results["daily_1d"]["error"]
 
 
 def test_off_policy_evaluation_recovers_target_value() -> None:

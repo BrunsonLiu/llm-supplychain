@@ -104,7 +104,7 @@ python scripts/run_frontier_bench.py --quick
 
 ## 怎么跑
 
-先装依赖。`demo.py` 用的是合成需求，直接能跑；后面的真实数据基准要先执行一次 `prepare_data.py`，已有 `data/raw` 和 `data/processed` 时可以跳过。测试在 `tests/`，当前 364 个通过。
+先装依赖。`demo.py` 用的是合成需求，直接能跑；后面的真实数据基准要先执行一次 `prepare_data.py`，已有 `data/raw` 和 `data/processed` 时可以跳过。测试在 `tests/`，当前 365 个通过。
 
 ```bash
 pip install -e ".[dev]"

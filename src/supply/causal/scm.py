@@ -337,8 +337,10 @@ class SupplyChainSCM:
         seed: int = 123,
     ) -> float:
         """Monte-Carlo truth under the SCM; useful as a sanity check."""
+        # Same seed for both arms pairs covariates and noise, so the difference
+        # estimates the total effect instead of adding Monte-Carlo noise.
         treated = self.sample_interventional(1, n_units=n_units, seed=seed)
-        control = self.sample_interventional(0, n_units=n_units, seed=seed + 1)
+        control = self.sample_interventional(0, n_units=n_units, seed=seed)
         return float(treated["otif"].mean() - control["otif"].mean())
 
     def do(self, treatment: int, n_units: int = 2000) -> pd.DataFrame:

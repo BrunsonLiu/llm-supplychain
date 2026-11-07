@@ -43,7 +43,7 @@ from supply.e2e import (  # noqa: E402
     solve_stochastic_joint,
 )
 from supply.e2e.online import run_online_bandit  # noqa: E402
-from supply.rl import LinUCB, ThompsonSampling, UCB1  # noqa: E402
+from supply.rl import LinUCB, UCB1  # noqa: E402
 
 
 def _git_sha() -> str:
@@ -148,10 +148,15 @@ def main() -> None:
         args.max_lines = min(args.max_lines, 4)
         args.scenarios = min(args.scenarios, 6)
         args.causal_replicates = min(args.causal_replicates, 2)
-        args.milp_time = min(args.milp_time, 0.5)
+        # A 0.5s CP-SAT budget can return UNKNOWN under load; keep the smoke
+        # benchmark noisy only in the metric, not in an unhandled exception.
+        args.milp_time = max(1.0, args.milp_time)
 
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
+    stale_online = out / "online.json"
+    if stale_online.exists():
+        stale_online.unlink()
     manifest: Dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "git_sha": _git_sha(),
@@ -275,6 +280,7 @@ def main() -> None:
         policies = list(ROLLING_POLICIES)
         matrices = []
         rolling_payload: Dict[str, Any] = {}
+        online_failed = False
         for offset in range(max(1, args.online_repeats)):
             if offset == 0:
                 replay_instance, replay_days = instance, order_day
@@ -299,7 +305,18 @@ def main() -> None:
                 metric="otif_rate",
                 milp_time=args.milp_time,
                 workers=1,
+                raise_errors=False,
             )
+            errors = {
+                policy: result["error"]
+                for policy, result in rolling.items()
+                if "error" in result
+            }
+            if errors:
+                online_failed = True
+                manifest["online_errors"] = errors
+                print(f"[online] skipped: {errors}")
+                break
             matrices.append(_daily_matrix(rolling, policies).T)
             rolling_payload[str(args.seed + offset)] = {
                 policy: {
@@ -308,34 +325,39 @@ def main() -> None:
                 }
                 for policy in policies
             }
-        matrix = np.vstack(matrices)
-        online = _online_stage(
-            matrix,
-            policies,
-            UCB1(len(policies), exploration=1.0),
-            "UCB1 replay over order days",
-        )
-        rl = _online_stage(
-            matrix,
-            policies,
-            LinUCB(len(policies), n_features=2, alpha=0.2),
-            "LinUCB RL-0 replay over order days",
-        )
-        (out / "online.json").write_text(
-            json.dumps({"online": online, "rl": rl}, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-        manifest["stages"].extend(["online", "rl"])
-        manifest["rolling"] = rolling_payload
-        manifest["online_repeats"] = max(1, args.online_repeats)
-        print(
-            f"[online] UCB1 reward {online['cumulative_reward']:.3f} "
-            f"regret {online['regret']:.3f}"
-        )
-        print(
-            f"[rl] LinUCB reward {rl['cumulative_reward']:.3f} "
-            f"regret {rl['regret']:.3f}"
-        )
+        if not online_failed:
+            matrix = np.vstack(matrices)
+            online = _online_stage(
+                matrix,
+                policies,
+                UCB1(len(policies), exploration=1.0),
+                "UCB1 replay over order days",
+            )
+            rl = _online_stage(
+                matrix,
+                policies,
+                LinUCB(len(policies), n_features=2, alpha=0.2),
+                "LinUCB RL-0 replay over order days",
+            )
+            (out / "online.json").write_text(
+                json.dumps(
+                    {"online": online, "rl": rl},
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            manifest["stages"].extend(["online", "rl"])
+            manifest["rolling"] = rolling_payload
+            manifest["online_repeats"] = max(1, args.online_repeats)
+            print(
+                f"[online] UCB1 reward {online['cumulative_reward']:.3f} "
+                f"regret {online['regret']:.3f}"
+            )
+            print(
+                f"[rl] LinUCB reward {rl['cumulative_reward']:.3f} "
+                f"regret {rl['regret']:.3f}"
+            )
 
     (out / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2),
