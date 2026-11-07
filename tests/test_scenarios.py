@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from supply.e2e.scenarios import (  # noqa: E402
     ScenarioConfig,
     build_calibrated_scenarios,
+    build_conformal_scenarios,
     scenario_diagnostics,
 )
 
@@ -69,6 +70,32 @@ def test_copula_preserves_shape_and_diagnostics() -> None:
     assert diagnostics["weight_sum"] == 1.0
     assert diagnostics["mean_units"] == 250.0
     assert len(diagnostics["mean_per_sku"]) == 3
+
+
+def test_conformal_scenarios_use_intervals_and_keep_total() -> None:
+    base = build_calibrated_scenarios(
+        _clean(),
+        ["A", "B", "C"],
+        "2025-02-17",
+        300,
+        config=ScenarioConfig(method="bootstrap", n_scenarios=6, seed=5),
+    )
+    forecast = pd.DataFrame(
+        {
+            "sku": ["A", "B", "C"],
+            "pred": [100.0, 120.0, 80.0],
+            "lower": [80.0, 100.0, 60.0],
+            "upper": [120.0, 140.0, 100.0],
+        }
+    )
+    scenarios = build_conformal_scenarios(
+        forecast, base, n_scenarios=10, seed=3, target_units=300
+    )
+    assert scenarios.demand.shape == (10, 3)
+    assert np.all(scenarios.demand.sum(axis=1) == 300)
+    assert np.all(scenarios.serviceable <= scenarios.demand[:, None, :])
+    assert len(set(scenarios.weeks)) == 10
+    assert np.isclose(scenarios.weights.sum(), 1.0)
 
 
 def test_invalid_config_is_rejected() -> None:

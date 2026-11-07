@@ -1,6 +1,14 @@
 """滚动回测与需求预测：指标、基线、特征、LightGBM、回测编排。"""
 from .backtest import BacktestConfig, BacktestResult, Fold, make_folds, run_backtest
 from .baselines import BASELINES, BASELINE_LABELS
+from .conformal import (
+    ConformalCalibrator,
+    ConformalConfig,
+    ConformalError,
+    ConformalInterval,
+    evaluate_conformal,
+    fit_conformal,
+)
 from .features import build_prediction_frame, build_training_frame, calendar_features
 from .lgbm import DEFAULT_PARAMS, feature_importance, predict_model, train_model
 from .metrics import (
@@ -25,6 +33,12 @@ __all__ = [
     "run_backtest",
     "BASELINES",
     "BASELINE_LABELS",
+    "ConformalCalibrator",
+    "ConformalConfig",
+    "ConformalError",
+    "ConformalInterval",
+    "evaluate_conformal",
+    "fit_conformal",
     "build_prediction_frame",
     "build_training_frame",
     "calendar_features",

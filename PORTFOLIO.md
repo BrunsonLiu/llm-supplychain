@@ -30,7 +30,7 @@
 
 ## 前沿层（实验）
 
-因果、随机联合、在线和 RL-0 已经接成最小实现：SCM + AIPW/DML 因果 benchmark、bootstrap/copula 场景 + 成本感知 CVaR 联合、UCB/Thompson 策略选择 + receding-horizon 接口、bandit + IPS/DR。真实数据没有随机化，所以因果只报模型内效应；在线/RL 是离线回放，不是线上结论。
+因果、Conformal、随机联合、在线和 RL-0 已经接成最小实现：SCM + AIPW/DML 因果 benchmark、split/Mondrian conformal 覆盖率评估、bootstrap/copula/conformal 场景 + 成本感知 CVaR 联合、UCB/Thompson 策略选择 + receding-horizon 接口、bandit + IPS/DR。真实数据没有随机化，所以因果只报模型内效应；在线/RL 是离线回放，不是线上结论。
 
 ```bash
 python scripts/run_frontier_bench.py --quick

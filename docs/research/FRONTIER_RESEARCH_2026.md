@@ -71,14 +71,17 @@
 
 代码：
 
-- `src/supply/e2e/scenarios.py`：bootstrap / Gaussian copula 场景生成，输出兼容现有 `ScenarioSet`；
+- `src/supply/forecasting/conformal.py`：split/Mondrian conformal 区间与经验覆盖评估；
+- `src/supply/e2e/scenarios.py`：bootstrap / Gaussian copula / conformal 场景生成，输出兼容现有 `ScenarioSet`；
 - `src/supply/e2e/stochastic_joint.py`：第一阶段布点 + 第二阶段分配 + handling/shortage/holding 成本 + CVaR；
-- `tests/test_scenarios.py`、`tests/test_stochastic_joint.py`：形状、权重、库存守恒、目标一致性；
-- 真实小实例已跑通（`benchmarks/frontier_quick2/joint.json`）。
+- `tests/test_conformal.py`、`tests/test_scenarios.py`、`tests/test_stochastic_joint.py`：覆盖、形状、权重、库存守恒、目标一致性；
+- 真实小实例已跑通（`benchmarks/frontier/`）。
 
 已做到的：
 
 - 场景从“过去 6 周等权”升级为可配置的 bootstrap/copula；
+- 真实回测预测上的 split/Mondrian conformal 校准，90% 目标经验覆盖约 88.0%（horizon 13）；
+- `build_conformal_scenarios` 把 conformal 区间接进场景，再跑 CVaR 联合；
 - 成本感知的两阶段 CVaR 联合模型；
 - 与现有 `stochastic.py`/`joint.py` 兼容，没有破坏旧测试。
 
@@ -88,7 +91,7 @@
 - 校准覆盖率与决策成本之间的显式 frontier；
 - 场景相关性的正式统计检验。
 
-**下一步**：给场景生成加 conformal 校准层，输出 `alpha` 对应的 ambiguity radius；在联合模型里加“最坏场景”约束，形成 Conformal-DRO 的简化版。
+**下一步**：把 interval 只当“采样截断”升级成 conformal ambiguity radius；在联合模型里加“最坏场景”约束，形成 Conformal-DRO 的简化版。
 
 ---
 
@@ -177,7 +180,7 @@
 | 方向 | 最新代表 | 本项目状态 | 差距 |
 |---|---|---|---|
 | 因果 | Doubly Robust Causal Twins 2610.31706 | SCM + AIPW/DML benchmark | 无 sequential DR / 支持集界 |
-| 随机联合 | Conformal-DRO 2609.11073 | 场景 CVaR + 成本感知联合 | 无 conformal ambiguity set |
+| 随机联合 | Conformal-DRO 2609.11073 | conformal 场景 + 成本感知 CVaR 联合 | 无 conformal ambiguity set / 有限样本证书 |
 | 在线 | GAPSI 2411.19269 / ICGPS 2605.14840 | bandit 策略选择 + receding-horizon 接口 | 无 inventory-specific learner |
 | RL | Offline inventory 2504.09831 / OR-Transformer 2609.01933 | RL-0 bandit + OPE | 无 FQE/CQL/IQL / deep RL |
 
@@ -188,8 +191,10 @@
 | 阶段 | 结果 | 说明 |
 |---|---|---|
 | 因果 SCM | true ATE 0.1484；DML 平均绝对偏差 0.0071 | 合成数据，3 次重复 |
+| Conformal | 90% 目标；经验覆盖 88.0%；平均宽度 11,022.7 | 真实回测，horizon 13，单目标周 |
 | 场景 | 6 场景 × 11 SKU；目标 1,522 单位 | 真实小实例 |
 | 随机联合 | status OPTIMAL；期望成本 2,200.09；CVaR 2,397.43；gap 0 | 单实例，非 30-seed |
+| Conformal 联合 | status OPTIMAL；期望成本 4,852.01；CVaR 5,951.71 | 单实例；conformal 区间更宽，成本更高 |
 | 在线 UCB1 | 10 轮累计 reward 8.638；hindsight regret 0.561 | 2 个 seed × 5 订单日，离线回放 |
 | RL-0 LinUCB | 10 轮累计 reward 8.088；regret 1.111 | 样本太少，不能证明优于 UCB |
 

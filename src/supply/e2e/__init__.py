@@ -63,6 +63,7 @@ from .joint_report import build_joint_report, write_joint_report
 from .scenarios import (
     ScenarioConfig,
     build_calibrated_scenarios,
+    build_conformal_scenarios,
     scenario_diagnostics,
 )
 from .stochastic import (
@@ -414,6 +415,7 @@ __all__ = [
     "stochastic_placement",
     "ScenarioConfig",
     "build_calibrated_scenarios",
+    "build_conformal_scenarios",
     "scenario_diagnostics",
     "JointPlan",
     "solve_stochastic_joint",

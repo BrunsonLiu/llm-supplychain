@@ -90,7 +90,8 @@ raw 会有一个任务在工具返回错误数字时仍然报成功，Verifier �
 这一层不是生产结论，而是把因果、随机联合、在线和 RL 接进现有链路的最小可复现实现：
 
 - **因果**：`src/supply/causal/`；SCM + `do()` + IPW/AIPW/DML benchmark。真实 UCI 数据没有随机化，所以只报模型内效应，不报真实因果。
-- **随机联合**：`src/supply/e2e/scenarios.py` + `stochastic_joint.py`；bootstrap/copula 场景 + 成本感知 CVaR 两阶段布点/分配。
+- **Conformal**：`src/supply/forecasting/conformal.py`；split/Mondrian 校准 + 经验覆盖率/宽度；`build_conformal_scenarios` 把区间接进场景生成。
+- **随机联合**：`src/supply/e2e/scenarios.py` + `stochastic_joint.py`；bootstrap/copula/conformal 场景 + 成本感知 CVaR 两阶段布点/分配。
 - **在线**：`src/supply/e2e/online.py`；UCB/Thompson/SW-UCB/LinUCB 策略选择 + receding-horizon 接口。
 - **RL-0**：`src/supply/rl/`；bandit 策略选择 + IPS/DR off-policy evaluation。
 
@@ -104,7 +105,7 @@ python scripts/run_frontier_bench.py --quick
 
 ## 怎么跑
 
-先装依赖。`demo.py` 用的是合成需求，直接能跑；后面的真实数据基准要先执行一次 `prepare_data.py`，已有 `data/raw` 和 `data/processed` 时可以跳过。测试在 `tests/`，当前 365 个通过。
+先装依赖。`demo.py` 用的是合成需求，直接能跑；后面的真实数据基准要先执行一次 `prepare_data.py`，已有 `data/raw` 和 `data/processed` 时可以跳过。测试在 `tests/`，当前 370 个通过。
 
 ```bash
 pip install -e ".[dev]"

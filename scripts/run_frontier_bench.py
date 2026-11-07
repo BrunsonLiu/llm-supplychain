@@ -36,6 +36,7 @@ from supply.e2e import (  # noqa: E402
     ROLLING_POLICIES,
     ScenarioConfig,
     build_calibrated_scenarios,
+    build_conformal_scenarios,
     build_e2e_instance,
     evaluate_rolling_policies,
     order_day_map,
@@ -43,6 +44,11 @@ from supply.e2e import (  # noqa: E402
     solve_stochastic_joint,
 )
 from supply.e2e.online import run_online_bandit  # noqa: E402
+from supply.forecasting.conformal import (  # noqa: E402
+    ConformalConfig,
+    evaluate_conformal,
+    fit_conformal,
+)
 from supply.rl import LinUCB, UCB1  # noqa: E402
 
 
@@ -130,10 +136,16 @@ def _online_stage(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the four-layer frontier smoke benchmark")
     parser.add_argument("--out-dir", default=str(ROOT / "benchmarks/frontier"))
+    parser.add_argument(
+        "--predictions",
+        default=str(ROOT / "benchmarks/backtest_predictions.csv"),
+        help="out-of-sample backtest predictions for the conformal stage",
+    )
     parser.add_argument("--orders", type=int, default=60)
     parser.add_argument("--max-lines", type=int, default=6)
     parser.add_argument("--top-skus", type=int, default=12)
     parser.add_argument("--scenarios", type=int, default=8)
+    parser.add_argument("--conformal-horizon", type=int, default=13)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--milp-time", type=float, default=1.0)
     parser.add_argument("--joint-time", type=float, default=15.0)
@@ -154,9 +166,10 @@ def main() -> None:
 
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    stale_online = out / "online.json"
-    if stale_online.exists():
-        stale_online.unlink()
+    for stale_name in ("online.json", "conformal.json"):
+        stale = out / stale_name
+        if stale.exists():
+            stale.unlink()
     manifest: Dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "git_sha": _git_sha(),
@@ -165,6 +178,7 @@ def main() -> None:
         "stages": [],
         "limitations": [
             "因果阶段是 SCM 合成结果，不是 UCI 观测数据的真实因果效应。",
+            "Conformal 阶段只报经验覆盖率和宽度；时间序列可交换性并不严格成立。",
             "在线/RL 阶段是按订单日离线回放，不是实时上线。",
             "联合优化只跑一个小规模真实实例；不是 30-seed 全量结论。",
         ],
@@ -208,7 +222,57 @@ def main() -> None:
         f"abs_bias {causal.summary.iloc[0]['mean_abs_bias']:.4f}"
     )
 
-    # 2) Real small instance.
+    # 2) Conformal calibration on real out-of-sample backtest rows.
+    prediction_path = Path(args.predictions)
+    predictions = None
+    calibrator = None
+    if prediction_path.exists():
+        try:
+            predictions = pd.read_csv(prediction_path)
+            calibrator = fit_conformal(
+                predictions,
+                last_week,
+                ConformalConfig(
+                    alpha=0.1,
+                    method="mondrian",
+                    model="lightgbm",
+                    horizon=args.conformal_horizon,
+                    min_samples=80,
+                ),
+            )
+            report = evaluate_conformal(predictions, calibrator, last_week)
+            conformal_payload = {
+                "calibrator": calibrator.as_dict(),
+                "evaluation": {
+                    "overall": report["overall"],
+                    "by_week": report["overall"]["by_week"],
+                },
+                "caveat": "时间序列可交换性不严格；只报经验覆盖，不宣称无条件保证。",
+            }
+            (out / "conformal.json").write_text(
+                json.dumps(conformal_payload, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            manifest["stages"].append("conformal")
+            manifest["conformal"] = {
+                "target_coverage": calibrator.target_coverage,
+                "empirical_coverage": report["overall"]["empirical_coverage"],
+                "mean_width": report["overall"]["mean_width"],
+                "n_calibration": calibrator.n_calibration,
+            }
+            print(
+                "[conformal] target "
+                f"{calibrator.target_coverage:.2f}; empirical "
+                f"{report['overall']['empirical_coverage']:.3f}; "
+                f"mean width {report['overall']['mean_width']:.1f}"
+            )
+        except Exception as exc:  # noqa: BLE001 - keep the rest of the smoke run
+            manifest["conformal_error"] = f"{type(exc).__name__}: {exc}"
+            print(f"[conformal] skipped: {exc}")
+    else:
+        print(f"[conformal] skipped: missing {prediction_path}")
+
+    # 3) Real small instance.
     skus = _top_skus(clean, args.top_skus)
     instance = build_e2e_instance(
         clean,
@@ -275,6 +339,73 @@ def main() -> None:
         f"[joint] {plan.status} expected_cost {plan.expected_cost:.2f} "
         f"CVaR {plan.cvar_cost:.2f} gap {plan.gap:.4f}"
     )
+
+    # 4) Joint optimization on conformal scenarios, when calibration exists.
+    if predictions is not None and calibrator is not None:
+        try:
+            pred_frame = predictions.copy()
+            pred_frame["week"] = pd.to_datetime(pred_frame["week"])
+            selected = pred_frame.loc[
+                (pred_frame["week"] == last_week)
+                & (pred_frame["model"].astype(str) == "lightgbm")
+                & (pred_frame["horizon"].astype(int) == args.conformal_horizon)
+                & (pred_frame["sku"].astype(str).isin(instance.fulfillment.sku_names))
+            ]
+            by_sku = selected.drop_duplicates("sku").set_index("sku")
+            base_mean = scenario_set.demand.mean(axis=0)
+            rows = []
+            for sku_index, sku in enumerate(instance.fulfillment.sku_names):
+                if sku in by_sku.index:
+                    raw = by_sku.loc[sku]
+                    pred = float(raw["pred"])
+                    interval = calibrator.interval(
+                        pred, sku=sku, scale=float(raw.get("scale", 1.0))
+                    )
+                else:
+                    pred = float(base_mean[sku_index])
+                    interval = calibrator.interval(pred, sku=sku, scale=1.0)
+                rows.append(
+                    {
+                        "sku": sku,
+                        "pred": pred,
+                        "lower": interval.lower,
+                        "upper": interval.upper,
+                    }
+                )
+            conformal_set = build_conformal_scenarios(
+                pd.DataFrame(rows),
+                scenario_set,
+                n_scenarios=args.scenarios,
+                seed=args.seed,
+                target_units=int(instance.fulfillment.line_qty.sum()),
+            )
+            conformal_plan = solve_stochastic_joint(
+                instance,
+                conformal_set,
+                cvar_weight=0.5,
+                alpha=0.8,
+                time_limit_seconds=args.joint_time,
+                workers=2,
+            )
+            (out / "joint_conformal.json").write_text(
+                json.dumps(conformal_plan.as_dict(), ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            manifest["stages"].append("joint_conformal")
+            manifest["joint_conformal"] = {
+                "expected_cost": conformal_plan.expected_cost,
+                "cvar_cost": conformal_plan.cvar_cost,
+                "expected_unmet": conformal_plan.expected_unmet,
+                "status": conformal_plan.status,
+            }
+            print(
+                f"[joint-conformal] {conformal_plan.status} "
+                f"expected_cost {conformal_plan.expected_cost:.2f} "
+                f"CVaR {conformal_plan.cvar_cost:.2f}"
+            )
+        except Exception as exc:  # noqa: BLE001 - keep the rest of the smoke run
+            manifest["joint_conformal_error"] = f"{type(exc).__name__}: {exc}"
+            print(f"[joint-conformal] skipped: {exc}")
 
     if not args.skip_online:
         policies = list(ROLLING_POLICIES)

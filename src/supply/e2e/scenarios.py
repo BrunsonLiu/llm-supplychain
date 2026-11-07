@@ -15,7 +15,7 @@ that.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, List, Sequence, Tuple
+from typing import Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -246,6 +246,85 @@ def build_calibrated_scenarios(
         promise_shares=tuple(
             (int(day), float(share)) for day, share in promise_shares
         ),
+    )
+
+
+def build_conformal_scenarios(
+    forecast: pd.DataFrame,
+    base: ScenarioSet,
+    n_scenarios: int = 24,
+    seed: int = 42,
+    target_units: Optional[int] = None,
+) -> ScenarioSet:
+    """Build scenarios from conformal forecast intervals.
+
+    ``forecast`` must contain one row per SKU with ``pred``, ``lower`` and
+    ``upper``. Demand is sampled from a normal density centred at ``pred`` and
+    clipped to the conformal interval, then rescaled to the target total. The
+    serviceable DC shares come from a historical ``ScenarioSet``.
+
+    This is a practical conformal scenario layer, not a full Conformal-DRO
+    ambiguity set; the interval is used as a sampling truncation, not as a
+    finite-sample certificate for the downstream optimization.
+    """
+    if n_scenarios < 2:
+        raise ValueError("n_scenarios 至少为 2")
+    needed = {"sku", "pred", "lower", "upper"}
+    missing = sorted(needed - set(forecast.columns))
+    if missing:
+        raise ValueError(f"forecast 缺少列: {missing}")
+    frame = forecast.loc[:, ["sku", "pred", "lower", "upper"]].copy()
+    frame["sku"] = frame["sku"].astype(str)
+    frame = frame.dropna()
+    if frame.empty:
+        raise ValueError("forecast 没有有效行")
+    if frame["sku"].duplicated().any():
+        raise ValueError("forecast 每个 SKU 只能有一行")
+    if np.any(frame["upper"] < frame["lower"]):
+        raise ValueError("forecast upper 不能小于 lower")
+    target = int(base.target_units if target_units is None else target_units)
+    if target <= 0:
+        raise ValueError("target_units 必须为正")
+    lookup = frame.set_index("sku")
+    rng = np.random.default_rng(seed)
+    base_mean = np.stack([scenario.demand for scenario in base.scenarios]).mean(axis=0)
+    scenarios: List[DemandScenario] = []
+    z = 1.6448536269514722  # two-sided 90% normal
+    for index in range(n_scenarios):
+        demand = np.zeros(len(base.sku_names), dtype=float)
+        for sku_index, sku in enumerate(base.sku_names):
+            if sku in lookup.index:
+                row = lookup.loc[sku]
+                low = max(0.0, float(row["lower"]))
+                high = max(low, float(row["upper"]))
+                pred = float(row["pred"])
+                sigma = max((high - low) / (2.0 * z), 1e-6)
+                demand[sku_index] = np.clip(rng.normal(pred, sigma), low, high)
+            else:
+                demand[sku_index] = float(base_mean[sku_index])
+        if demand.sum() <= 0:
+            demand = base_mean.copy()
+        demand_int = _rescale_to_total(np.rint(demand), target)
+        source = base.scenarios[int(rng.integers(0, len(base.scenarios)))]
+        serviceable = _serviceable_for(source, demand_int)
+        scenarios.append(
+            DemandScenario(
+                week=f"{base.weeks[0]}-conformal-{index:03d}",
+                weight=1.0 / n_scenarios,
+                demand=demand_int,
+                serviceable=serviceable,
+                raw_units=int(source.raw_units),
+                scale=float(source.scale),
+                history_lines=int(source.history_lines),
+                active_skus=int((demand_int > 0).sum()),
+            )
+        )
+    return ScenarioSet(
+        scenarios=tuple(scenarios),
+        sku_names=base.sku_names,
+        dc_names=base.dc_names,
+        target_units=target,
+        promise_shares=base.promise_shares,
     )
 
 
