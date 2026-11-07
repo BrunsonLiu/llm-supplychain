@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-07T06:24:21.997928+00:00",
-  "git_sha": "d5333c3621a8f8b90b2e761f98dbf41497fd9b8b",
+  "generated_at": "2026-11-07T12:47:57.100949+00:00",
+  "git_sha": "85b72dfda504e26b3e3b1caa48aa2d654d8c2f5d",
   "git_dirty": false,
   "script": "scripts/run_frontier_bench.py",
   "stages": [
@@ -30,7 +30,9 @@
     "target_coverage": 0.9,
     "empirical_coverage": 0.88,
     "mean_width": 11022.690172663168,
-    "n_calibration": 545
+    "n_calibration": 545,
+    "adaptive_long_run_coverage": 0.9228070175438596,
+    "adaptive_mean_width": 6813.40432578197
   },
   "instance": {
     "orders": 30,
@@ -46,9 +48,9 @@
     }
   },
   "joint_conformal": {
-    "expected_cost": 4852.006666666666,
-    "cvar_cost": 5951.713333333333,
-    "expected_unmet": 1208.0,
+    "expected_cost": 4942.786666666667,
+    "cvar_cost": 5948.4,
+    "expected_unmet": 1230.8333333333333,
     "status": "OPTIMAL"
   },
   "rolling": {
@@ -81,11 +83,11 @@
       },
       "daily_1d": {
         "otif_rate": 0.9,
-        "backlog_units": 41
+        "backlog_units": 31
       },
       "daily_2d": {
         "otif_rate": 0.8333333333333334,
-        "backlog_units": 107
+        "backlog_units": 102
       },
       "daily_1d_safety": {
         "otif_rate": 0.9333333333333333,
