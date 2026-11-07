@@ -1,0 +1,56 @@
+{
+  "calibrator": {
+    "alpha": 0.1,
+    "target_coverage": 0.9,
+    "method": "mondrian",
+    "q_global": 0.020442590308588617,
+    "bucket_edges": [
+      56.103202264217956,
+      131.53396827263666,
+      221.3747048363321
+    ],
+    "q_buckets": {
+      "0": 0.05440722320575862,
+      "1": 0.024645195443265305,
+      "2": 0.014162338169699352,
+      "3": 0.009230000804849984
+    },
+    "q_skus": {},
+    "n_calibration": 545,
+    "calibration_start": "2011-02-28",
+    "calibration_end": "2011-08-29",
+    "diagnostics": {
+      "n_skus": 187,
+      "score_mean": 0.010641891479040457,
+      "score_p90": 0.01921873927291894,
+      "method": "mondrian"
+    }
+  },
+  "evaluation": {
+    "overall": {
+      "n": 200,
+      "target_coverage": 0.9,
+      "empirical_coverage": 0.88,
+      "mean_width": 11022.690172663168,
+      "median_width": 564.9230985279762,
+      "coverage_gap": -0.020000000000000018,
+      "by_week": [
+        {
+          "week": "2011-11-28",
+          "n": 200,
+          "coverage": 0.88,
+          "mean_width": 11022.690172663168
+        }
+      ]
+    },
+    "by_week": [
+      {
+        "week": "2011-11-28",
+        "n": 200,
+        "coverage": 0.88,
+        "mean_width": 11022.690172663168
+      }
+    ]
+  },
+  "caveat": "时间序列可交换性不严格；只报经验覆盖，不宣称无条件保证。"
+}

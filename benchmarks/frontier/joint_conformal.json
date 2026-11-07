@@ -1,0 +1,74 @@
+{
+  "status": "OPTIMAL",
+  "solve_seconds": 0.15987900000000002,
+  "expected_unmet": 1208.0,
+  "cvar_unmet": 1484.5,
+  "expected_cost": 4852.006666666666,
+  "cvar_cost": 5951.713333333333,
+  "objective": 5401.86,
+  "solver_objective": 5415.14768,
+  "best_bound": 5415.14768,
+  "gap": 0.0,
+  "cvar_weight": 0.5,
+  "alpha": 0.8,
+  "scenario_cost": [
+    3066.13,
+    2438.01,
+    5834.29,
+    5921.93,
+    5957.67,
+    5894.01
+  ],
+  "scenario_unmet": [
+    759.0,
+    601.0,
+    1455.0,
+    1477.0,
+    1486.0,
+    1470.0
+  ],
+  "stock_units": [
+    1108,
+    132,
+    55
+  ],
+  "allocation_units": [
+    [
+      667,
+      96,
+      0
+    ],
+    [
+      789,
+      132,
+      0
+    ],
+    [
+      67,
+      0,
+      0
+    ],
+    [
+      41,
+      4,
+      0
+    ],
+    [
+      36,
+      0,
+      0
+    ],
+    [
+      51,
+      1,
+      0
+    ]
+  ],
+  "handling_cost": [
+    0.02,
+    0.04,
+    0.05
+  ],
+  "shortage_cost": 4.0,
+  "holding_cost": 0.01
+}
