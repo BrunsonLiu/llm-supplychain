@@ -45,9 +45,11 @@ from supply.e2e import (  # noqa: E402
 )
 from supply.e2e.online import run_online_bandit  # noqa: E402
 from supply.forecasting.conformal import (  # noqa: E402
+    AdaptiveConformalConfig,
     ConformalConfig,
     evaluate_conformal,
     fit_conformal,
+    run_adaptive_conformal,
 )
 from supply.rl import LinUCB, UCB1  # noqa: E402
 
@@ -226,6 +228,7 @@ def main() -> None:
     prediction_path = Path(args.predictions)
     predictions = None
     calibrator = None
+    adaptive_result = None
     if prediction_path.exists():
         try:
             predictions = pd.read_csv(prediction_path)
@@ -249,6 +252,26 @@ def main() -> None:
                 },
                 "caveat": "时间序列可交换性不严格；只报经验覆盖，不宣称无条件保证。",
             }
+            try:
+                adaptive_result = run_adaptive_conformal(
+                    predictions,
+                    AdaptiveConformalConfig(
+                        alpha=0.1,
+                        gamma=0.02,
+                        window=52,
+                        min_samples=80,
+                        model="lightgbm",
+                        horizon=args.conformal_horizon,
+                    ),
+                )
+                conformal_payload["adaptive"] = adaptive_result.as_dict()
+            except Exception as adaptive_exc:  # noqa: BLE001
+                conformal_payload["adaptive_error"] = (
+                    f"{type(adaptive_exc).__name__}: {adaptive_exc}"
+                )
+                manifest["conformal_adaptive_error"] = conformal_payload[
+                    "adaptive_error"
+                ]
             (out / "conformal.json").write_text(
                 json.dumps(conformal_payload, ensure_ascii=False, indent=2),
                 encoding="utf-8",
@@ -260,12 +283,26 @@ def main() -> None:
                 "mean_width": report["overall"]["mean_width"],
                 "n_calibration": calibrator.n_calibration,
             }
+            if adaptive_result is not None:
+                manifest["conformal"]["adaptive_long_run_coverage"] = (
+                    adaptive_result.long_run_coverage
+                )
+                manifest["conformal"]["adaptive_mean_width"] = (
+                    adaptive_result.mean_width
+                )
             print(
                 "[conformal] target "
                 f"{calibrator.target_coverage:.2f}; empirical "
                 f"{report['overall']['empirical_coverage']:.3f}; "
                 f"mean width {report['overall']['mean_width']:.1f}"
             )
+            if adaptive_result is not None:
+                print(
+                    "[conformal-adaptive] long-run "
+                    f"{adaptive_result.long_run_coverage:.3f}; "
+                    f"final alpha {adaptive_result.final_alpha:.3f}; "
+                    f"mean width {adaptive_result.mean_width:.1f}"
+                )
         except Exception as exc:  # noqa: BLE001 - keep the rest of the smoke run
             manifest["conformal_error"] = f"{type(exc).__name__}: {exc}"
             print(f"[conformal] skipped: {exc}")
@@ -352,26 +389,50 @@ def main() -> None:
                 & (pred_frame["sku"].astype(str).isin(instance.fulfillment.sku_names))
             ]
             by_sku = selected.drop_duplicates("sku").set_index("sku")
+            adaptive_by_sku = pd.DataFrame()
+            if adaptive_result is not None and not adaptive_result.final_intervals.empty:
+                adaptive_by_sku = (
+                    adaptive_result.final_intervals.drop_duplicates("sku")
+                    .set_index("sku")
+                )
             base_mean = scenario_set.demand.mean(axis=0)
             rows = []
             for sku_index, sku in enumerate(instance.fulfillment.sku_names):
-                if sku in by_sku.index:
+                if sku in adaptive_by_sku.index:
+                    raw = adaptive_by_sku.loc[sku]
+                    rows.append(
+                        {
+                            "sku": sku,
+                            "pred": float(raw["pred"]),
+                            "lower": float(raw["lower"]),
+                            "upper": float(raw["upper"]),
+                        }
+                    )
+                elif sku in by_sku.index:
                     raw = by_sku.loc[sku]
                     pred = float(raw["pred"])
                     interval = calibrator.interval(
                         pred, sku=sku, scale=float(raw.get("scale", 1.0))
                     )
+                    rows.append(
+                        {
+                            "sku": sku,
+                            "pred": pred,
+                            "lower": interval.lower,
+                            "upper": interval.upper,
+                        }
+                    )
                 else:
                     pred = float(base_mean[sku_index])
                     interval = calibrator.interval(pred, sku=sku, scale=1.0)
-                rows.append(
-                    {
-                        "sku": sku,
-                        "pred": pred,
-                        "lower": interval.lower,
-                        "upper": interval.upper,
-                    }
-                )
+                    rows.append(
+                        {
+                            "sku": sku,
+                            "pred": pred,
+                            "lower": interval.lower,
+                            "upper": interval.upper,
+                        }
+                    )
             conformal_set = build_conformal_scenarios(
                 pd.DataFrame(rows),
                 scenario_set,

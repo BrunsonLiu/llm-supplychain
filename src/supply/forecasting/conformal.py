@@ -10,7 +10,7 @@ report empirical coverage and width; we do not claim an unconditional guarantee.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -43,6 +43,34 @@ class ConformalConfig:
             raise ValueError("min_per_sku 至少为 5")
         if self.n_buckets < 2:
             raise ValueError("n_buckets 至少为 2")
+        if self.horizon < 1:
+            raise ValueError("horizon 必须为正")
+
+
+@dataclass(frozen=True)
+class AdaptiveConformalConfig:
+    """Online adaptive conformal inference (ACI) configuration."""
+
+    alpha: float = 0.1
+    gamma: float = 0.02
+    window: int = 52
+    min_samples: int = 80
+    alpha_min: float = 0.001
+    alpha_max: float = 0.5
+    model: Optional[str] = None
+    horizon: int = 13
+
+    def __post_init__(self) -> None:
+        if not 0.0 < self.alpha < 1.0:
+            raise ValueError("alpha 必须在 (0, 1)")
+        if self.gamma <= 0:
+            raise ValueError("gamma 必须为正")
+        if self.window < 4:
+            raise ValueError("window 至少为 4")
+        if self.min_samples < 10:
+            raise ValueError("min_samples 至少为 10")
+        if not 0.0 < self.alpha_min < self.alpha_max < 1.0:
+            raise ValueError("alpha_min/max 必须满足 0 < min < max < 1")
         if self.horizon < 1:
             raise ValueError("horizon 必须为正")
 
@@ -306,3 +334,160 @@ def evaluate_conformal(
         ],
     }
     return {"overall": overall, "detail": detail.to_dict("records")}
+
+
+@dataclass(frozen=True)
+class AdaptiveWeek:
+    week: str
+    alpha: float
+    q: float
+    n: int
+    coverage: float
+    mean_width: float
+
+
+@dataclass
+class AdaptiveConformalResult:
+    config: AdaptiveConformalConfig
+    target_coverage: float
+    weeks: List[AdaptiveWeek]
+    long_run_coverage: float
+    mean_width: float
+    final_alpha: float
+    final_q: float
+    final_intervals: pd.DataFrame
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "config": {
+                "alpha": self.config.alpha,
+                "gamma": self.config.gamma,
+                "window": self.config.window,
+                "model": self.config.model,
+                "horizon": self.config.horizon,
+            },
+            "target_coverage": float(self.target_coverage),
+            "long_run_coverage": float(self.long_run_coverage),
+            "mean_width": float(self.mean_width),
+            "final_alpha": float(self.final_alpha),
+            "final_q": float(self.final_q),
+            "weeks": [
+                {
+                    "week": week.week,
+                    "alpha": float(week.alpha),
+                    "q": float(week.q),
+                    "n": int(week.n),
+                    "coverage": float(week.coverage),
+                    "mean_width": float(week.mean_width),
+                }
+                for week in self.weeks
+            ],
+            "n_final_intervals": int(len(self.final_intervals)),
+            "caveat": "ACI 是长期经验覆盖控制，不是无条件有限样本保证。",
+        }
+
+
+def run_adaptive_conformal(
+    predictions: pd.DataFrame,
+    config: AdaptiveConformalConfig = AdaptiveConformalConfig(),
+) -> AdaptiveConformalResult:
+    """Run ACI over sequential weeks.
+
+    At each week we use only prior weeks to estimate ``q`` for the current
+    ``alpha_t``. After observing the week's coverage we apply the standard ACI
+    update ``alpha_{t+1} = alpha_t + gamma * (alpha - err_t)``, clipped to
+    ``[alpha_min, alpha_max]``. If coverage is too low, alpha decreases and the
+    next interval widens; if too high, it shrinks.
+    """
+    base_config = ConformalConfig(
+        alpha=config.alpha,
+        method="global",
+        min_samples=config.min_samples,
+        horizon=config.horizon,
+        model=config.model,
+    )
+    frame = _normalise(predictions, base_config)
+    weeks = sorted(pd.to_datetime(frame["week"]).unique())
+    if len(weeks) < 4:
+        raise ConformalError("自适应 conformal 至少需要 4 个周")
+    alpha_t = float(config.alpha)
+    target = 1.0 - float(config.alpha)
+    records: List[AdaptiveWeek] = []
+    final_intervals = pd.DataFrame()
+    total_n = 0
+    total_covered = 0
+    width_sum = 0.0
+
+    for week in weeks:
+        week = pd.Timestamp(week)
+        past = frame.loc[frame["week"] < week]
+        past_weeks = sorted(pd.to_datetime(past["week"]).unique())[-config.window :]
+        history = past.loc[past["week"].isin(past_weeks)]
+        if len(history) < config.min_samples:
+            continue
+        scores = (
+            (history["actual"] - history["pred"]).abs()
+            / history["scale"].astype(float)
+        ).to_numpy(dtype=float)
+        q = _quantile(scores, 1.0 - alpha_t)
+        current = frame.loc[frame["week"] == week].copy()
+        if current.empty:
+            continue
+        covered = []
+        widths = []
+        rows = []
+        for row in current.itertuples(index=False):
+            scale = float(row.scale) if np.isfinite(row.scale) else 1.0
+            lower = max(0.0, float(row.pred) - q * scale)
+            upper = float(row.pred) + q * scale
+            hit = bool(lower <= float(row.actual) <= upper)
+            covered.append(hit)
+            widths.append(max(0.0, upper - lower))
+            rows.append(
+                {
+                    "week": week,
+                    "sku": str(row.sku),
+                    "pred": float(row.pred),
+                    "actual": float(row.actual),
+                    "lower": lower,
+                    "upper": upper,
+                    "scale": scale,
+                    "covered": hit,
+                }
+            )
+        coverage = float(np.mean(covered))
+        mean_width = float(np.mean(widths))
+        records.append(
+            AdaptiveWeek(
+                week=str(week.date()),
+                alpha=alpha_t,
+                q=q,
+                n=len(current),
+                coverage=coverage,
+                mean_width=mean_width,
+            )
+        )
+        total_n += len(current)
+        total_covered += int(sum(covered))
+        width_sum += mean_width * len(current)
+        final_intervals = pd.DataFrame(rows)
+        err = 1.0 - coverage
+        alpha_t = float(
+            np.clip(
+                alpha_t + config.gamma * (config.alpha - err),
+                config.alpha_min,
+                config.alpha_max,
+            )
+        )
+    if not records:
+        raise ConformalError("自适应 conformal 没有可评估的周")
+    return AdaptiveConformalResult(
+        config=config,
+        target_coverage=target,
+        weeks=records,
+        long_run_coverage=total_covered / total_n if total_n else float("nan"),
+        mean_width=width_sum / total_n if total_n else float("nan"),
+        final_alpha=float(records[-1].alpha),
+        final_q=float(records[-1].q),
+        final_intervals=final_intervals,
+    )

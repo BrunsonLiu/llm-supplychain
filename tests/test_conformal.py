@@ -11,10 +11,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from supply.forecasting.conformal import (  # noqa: E402
+    AdaptiveConformalConfig,
     ConformalConfig,
     ConformalError,
     evaluate_conformal,
     fit_conformal,
+    run_adaptive_conformal,
 )
 
 
@@ -43,6 +45,63 @@ def _predictions() -> pd.DataFrame:
                 }
             )
     return pd.DataFrame(rows)
+
+
+def _drift_predictions() -> pd.DataFrame:
+    rng = np.random.default_rng(11)
+    rows = []
+    for sku_index in range(20):
+        sku = f"D{sku_index:02d}"
+        scale = 5.0 + sku_index
+        for week_index, week in enumerate(
+            pd.date_range("2025-01-06", periods=24, freq="7D")
+        ):
+            pred = 40.0 + sku_index * 2.0 + week_index
+            noise = 0.5 * scale if week_index < 10 else 2.2 * scale
+            rows.append(
+                {
+                    "model": "lightgbm",
+                    "fold": 0,
+                    "cutoff": week - pd.Timedelta(weeks=1),
+                    "sku": sku,
+                    "horizon": 1,
+                    "week": week,
+                    "actual": pred + rng.normal(0.0, noise),
+                    "pred": pred,
+                    "scale": scale,
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def test_adaptive_conformal_adapts_to_drift() -> None:
+    frame = _drift_predictions()
+    start = pd.Timestamp("2025-03-17")
+    static = fit_conformal(
+        frame,
+        start,
+        ConformalConfig(alpha=0.2, method="global", min_samples=80),
+    )
+    static_report = evaluate_conformal(frame, static, start)
+    adaptive = run_adaptive_conformal(
+        frame,
+        AdaptiveConformalConfig(
+            alpha=0.2,
+            gamma=0.05,
+            window=6,
+            min_samples=80,
+            horizon=1,
+        ),
+    )
+    # The static interval is calibrated before the variance shift; ACI should
+    # recover a markedly higher long-run coverage.
+    assert adaptive.long_run_coverage > static_report["overall"]["empirical_coverage"]
+    assert adaptive.long_run_coverage >= 0.60
+    assert adaptive.weeks
+    assert len(adaptive.final_intervals) > 0
+    assert (adaptive.final_intervals["lower"] >= 0).all()
+    assert (adaptive.final_intervals["upper"] >= adaptive.final_intervals["lower"]).all()
+    assert 0.0 <= adaptive.final_alpha <= 0.5
 
 
 def test_fit_and_evaluate_coverage() -> None:

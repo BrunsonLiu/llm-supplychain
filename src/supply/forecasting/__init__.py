@@ -2,12 +2,16 @@
 from .backtest import BacktestConfig, BacktestResult, Fold, make_folds, run_backtest
 from .baselines import BASELINES, BASELINE_LABELS
 from .conformal import (
+    AdaptiveConformalConfig,
+    AdaptiveConformalResult,
+    AdaptiveWeek,
     ConformalCalibrator,
     ConformalConfig,
     ConformalError,
     ConformalInterval,
     evaluate_conformal,
     fit_conformal,
+    run_adaptive_conformal,
 )
 from .features import build_prediction_frame, build_training_frame, calendar_features
 from .lgbm import DEFAULT_PARAMS, feature_importance, predict_model, train_model
@@ -33,12 +37,16 @@ __all__ = [
     "run_backtest",
     "BASELINES",
     "BASELINE_LABELS",
+    "AdaptiveConformalConfig",
+    "AdaptiveConformalResult",
+    "AdaptiveWeek",
     "ConformalCalibrator",
     "ConformalConfig",
     "ConformalError",
     "ConformalInterval",
     "evaluate_conformal",
     "fit_conformal",
+    "run_adaptive_conformal",
     "build_prediction_frame",
     "build_training_frame",
     "calendar_features",
