@@ -103,6 +103,8 @@ python scripts/run_frontier_bench.py --quick
 
 最新文献与“已实现/未实现”的对照在 [`docs/research/FRONTIER_RESEARCH_2026.md`](docs/research/FRONTIER_RESEARCH_2026.md)。边界见该文档；不要把合成因果或离线回放写成线上结论。
 
+2026 招聘市场扫描（岗位热度、稀缺技能、对项目的含义）在 [`docs/research/TALENT_MARKET_2026.md`](docs/research/TALENT_MARKET_2026.md)。
+
 ## 怎么跑
 
 先装依赖。`demo.py` 用的是合成需求，直接能跑；后面的真实数据基准要先执行一次 `prepare_data.py`，已有 `data/raw` 和 `data/processed` 时可以跳过。测试在 `tests/`，当前 371 个通过。

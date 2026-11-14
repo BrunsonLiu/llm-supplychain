@@ -495,6 +495,10 @@ Agent 部分：
 - Anthropic, Building effective agents：  
   https://www.anthropic.com/engineering/building-effective-agents
 
+### 市场扫描
+
+- 2026 招聘市场：热度、稀缺技能与岗位族对照：`TALENT_MARKET_2026.md`
+
 ### 国内入口
 
 - 阿里巴巴招聘：https://talent.alibaba.com/
