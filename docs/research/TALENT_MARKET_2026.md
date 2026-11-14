@@ -1,191 +1,195 @@
-# 2026 招聘市场扫描：最热、最缺、最想招什么
+# 2026 供应链算法 / 运筹优化招聘市场扫描
 
-日期：2026-11-14  
-范围：供应链决策 / 运筹优化 / Applied AI / Agent  
-方法：Amazon Jobs、OpenAI Ashby 官方招聘 API；NVIDIA 官方 JD；公开岗位要求。  
-注意：这是**岗位需求信号**，不是劳动力市场普查；岗位数量会随招聘周期变化。
+日期：2026-11-15  
+范围：供应链算法、运筹优化、决策科学、库存/网络/履约优化  
+方法：Amazon Jobs、NVIDIA 官方 JD；国内官方招聘入口做定性补充。  
+说明：这是**岗位需求信号**，不是劳动力市场普查；岗位数量会随招聘周期变化。
 
 ---
 
 ## 0. 一句话结论
 
-市场最热的不是“会调一个大模型”，而是三类稀缺组合：
+供应链算法市场最缺的不是“会调模型”的人，而是：
 
-1. **Optimization + ML + 生产落地**（供应链/履约/网络）；
-2. **Agent + evals + 工具调用 + 可靠性**（前沿 AI 产品）；
-3. **Domain + AI + 客户交付**（Forward Deployed / Applied AI）。
+> **能把业务问题写成优化模型，能用 ML 处理不确定性，能把解放进生产系统的人。**
 
-纯预测、纯 Prompt、纯 Agent demo，都不稀缺。  
-**稀缺的是“能把不确定性变成可验证决策，并且能上线”的人。**
+具体是三类组合：
+
+1. **OR + ML + 生产**：LP/MIP、随机/鲁棒优化、预测、Python/Java/C++；
+2. **OR + 供应链 domain**：库存、网络、履约、运输、BOM/产能；
+3. **OR + 因果/实验**：策略评估、A/B、准实验。
+
+AI/Agent 不是这个岗位族的主线；在这个方向里，AI 只是工具。
 
 ---
 
 ## 1. 官方岗位快照
 
-### OpenAI（Ashby 官方 API，838 个在招岗位）
+### Amazon（官方搜索 API）
 
-| 部门 | 岗位数 |
-|---|---:|
-| Go To Market | 194 |
-| Applied AI | 126 |
-| Scaling | 90 |
-| Research | 55 |
-| User Operations | 52 |
-| Forward Deployed Engineering | 38 |
-| Security | 34 |
-| Robotics | 15 |
+| 搜索词 | 命中岗位数 | 说明 |
+|---|---:|---|
+| supply chain optimization | 134 | 供应链优化大类 |
+| inventory optimization | 45 | 库存/补货/计划 |
+| fulfillment optimization | 42 | 履约/分单/网络 |
+| demand planning scientist | 19 | 预测/计划 |
+| supply chain scientist | 3 | 精确标题少，更多藏在 Applied Scientist 里 |
+| operations research scientist | 1 | 标题少，不代表需求少 |
 
-标题含 `agent` 的 17 个，含 `forward deployed` 的 36 个，含 `applied ai` 的 86 个。  
-这说明：**应用型 AI、交付型工程、Agent 可靠性**是当前扩张最快的方向之一。
+这说明：**OR 岗位不总叫“Operations Research”**，更多叫 Applied Scientist / Data Scientist / Optimization / Decision Science。  
+搜标题会低估需求，应该搜技能。
 
-### Amazon（官方搜索 API，按关键词命中数）
+### NVIDIA
 
-| 搜索词 | 命中岗位数 |
-|---|---:|
-| supply chain optimization | 134 |
-| operations research | 202（含噪声） |
-| forward deployed engineer | 65 |
-| applied scientist inventory | 32 |
-| agent reliability | 6（关键词太窄） |
+代表岗位：
 
-Amazon 的供应链岗位不是“研究岗”单一形态，而是：
+- [Modeling Engineer, Supply Chain Optimization (JR2025602)](https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite/job/US-CA-Santa-Clara/Modeling-Engineer--Supply-Chain-Optimization_JR2025602)
 
-- Applied Scientist / Data Scientist：建模、优化、预测；
-- Principal Supply Chain：网络设计、program management；
-- Forward Deployed Engineer：Agent/评测/客户交付；
-- Research Scientist：因果、实验、策略评估。
+要求重点：
+
+- 定量硕士/博士，或同等经验；
+- **8+ 年**建模/工程/数据科学经验；
+- 强 LP/MIP：目标、约束、dual variables；
+- duality、shadow price、sensitivity、degeneracy、数值条件、solver 行为；
+- MATLAB/Julia/R/Python；
+- 供应链：BOM、产能、lead time、yield、分配、多期计划；
+- 加分：Gurobi/CPLEX、半导体/电子供应链、cuOpt/GPU 加速。
+
+这是“运筹建模深度”最高的 JD 之一，不是调包岗。
 
 ---
 
-## 2. 最热的五类岗位
+## 2. 最核心的五类岗位
 
-### 2.1 Agent Post-Training / Computer Use / Evals
-
-代表：[OpenAI Agent Post-Training, Computer Use Research](https://jobs.ashbyhq.com/openai/34c2ed3f-840f-4a68-9a00-0a0606660abf)
-
-要求重点：
-
-- LLM、RL、RLHF/RLAIF、post-training；
-- evals、graders、synthetic data；
-- coding agents、tool-using agents、production ML；
-- 长程任务、computer use、multi-agent coordination；
-- 把模糊行为问题转成假设、实验、分析。
-
-**信号**：这是研究型岗位，不是 Prompt Engineer。  
-**稀缺点**：会做 **agent evals / reward signal / 长程可靠性** 的人，比会写 Agent demo 的人少得多。
-
-### 2.2 Forward Deployed Engineer / Applied AI
+### 2.1 Applied Scientist, Supply Chain Optimization（Amazon SCOT）
 
 代表：
 
-- [OpenAI Forward Deployed Engineer (FDE) - SF](https://jobs.ashbyhq.com/openai/967f94aa-1706-4dba-ac89-bfbc2c38b688)
-- [Amazon Forward Deployed Engineer](https://www.amazon.jobs/en/jobs/10593216)
-- [OpenAI Applied AI Engineer, Codex Core Agent](https://jobs.ashbyhq.com/openai/577e6673-0a4a-491b-9a0d-facbdd3bdf3c)
+- [Applied Scientist, SCOT Specialized Selection](https://www.amazon.jobs/en/jobs/10537551)
+- [Applied Scientist, Modeling and Optimization](https://www.amazon.jobs/en/jobs/10540608)
+- [Applied Scientist, SCOT FO - SnT](https://www.amazon.jobs/en/jobs/10556295)
 
-要求重点：
+典型要求：
 
-- 5+ 年工程/交付经验；production-grade code；
-- full-stack、客户现场、复杂系统；
-- LLM/生成式系统、eval-driven feedback；
-- 把研究能力变成可衡量的生产价值；
-- 能处理模糊需求、scope、交付节奏。
-
-**信号**：这是“AI 落地”最缺的混合型人才：**工程 + 客户 + 产品 + 模型理解**。  
-**对 985 本硕**：不是应届首选，但工作 2–3 年后是很强的转型方向。
-
-### 2.3 Applied Scientist：Optimization + ML + Supply Chain
-
-代表：
-
-- [Amazon Applied Scientist, Modeling and Optimization](https://www.amazon.jobs/en/jobs/10540608)
-- [Amazon Applied Scientist, SCOT Specialized Selection](https://www.amazon.jobs/en/jobs/10537551)
-- [Amazon Senior Applied Scientist, Strategic Sourcing](https://www.amazon.jobs/en/jobs/10569174)
-- [NVIDIA Modeling Engineer, Supply Chain Optimization](https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite/job/US-CA-Santa-Clara/Modeling-Engineer--Supply-Chain-Optimization_JR2025602)
-
-要求重点：
-
-- PhD 或 Master + 4 年；
+- **PhD，或 Master + 4 年**；
 - 顶会/期刊论文或专利；
 - Python/Java/C++；
-- 数值优化、LP/MIP、随机/鲁棒优化；
-- 供应链：inventory、placement、network、fulfillment；
+- 数值优化、算法、数据挖掘、分布式/HPC 之一；
+- 业务建模：库存、选品、履约、网络；
 - 生产级科学代码。
 
-**信号**：这是最匹配你当前项目的岗位族，但门槛是 **论文 + 年限 + 生产影响**。  
-**稀缺点**：既懂 OR 又能写生产代码、还能和业务/工程协作的人。
+**信号**：这是供应链算法最核心的岗位族，也是你当前项目最匹配的方向。  
+**难点**：论文、年限、生产影响，不是“项目完整”就能过。
 
-### 2.4 Data Scientist, SCOT
+### 2.2 Senior Applied Scientist, Optimization（Amazon SCOT / Fulfillment）
 
-代表：[Amazon Data Scientist, SCOT RoW Tech](https://www.amazon.jobs/en/jobs/10554991)
+代表：
 
-要求重点：
+- [Senior Applied Scientist - Optimization, Fulfillment Planning](https://www.amazon.jobs/en/jobs/10559787)
+- [Senior Applied Scientist, Strategic Sourcing](https://www.amazon.jobs/en/jobs/10569174)
+
+典型要求：
+
+- **PhD in OR / Statistics / Applied Math / Engineering / CS**；
+- 5+ 年 LP/非线性优化；
+- 随机优化、库存控制、RL/因果之一；
+- 复杂问题建模、算法设计、复杂度分析；
+- 带团队/带新人。
+
+**信号**：这是 Senior/Principal 路线；对硕士应届不现实，但可以作为技术路线图。
+
+### 2.3 Data Scientist, SCOT
+
+代表：[Data Scientist, SCOT RoW Tech](https://www.amazon.jobs/en/jobs/10554991)
+
+典型要求：
 
 - 2+ 年 data scientist；
 - SQL/Python/R；
 - ML/统计建模、参数影响；
 - 把理论模型应用到业务环境；
--  forecasting、buying、placement、inventory health。
+- 业务：forecasting、buying、placement、inventory health。
 
-**信号**：这是比 Applied Scientist 更现实的入口，尤其对硕士。  
-**稀缺点**：能把模型讲到业务指标，而不是只报 AUC/WMAPE。
+**信号**：这是硕士更现实的入口。  
+**关键差异**：它不要求顶会论文，但要求 SQL、业务指标、跨团队沟通。
 
-### 2.5 Supply Chain Program / Ops for AI Infrastructure
+### 2.4 Optimization / Modeling Engineer（NVIDIA 及制造业）
 
-代表：[OpenAI Supply Chain Operations Program Manager, AI Infrastructure](https://jobs.ashbyhq.com/openai/063d1957-23f0-4976-b8bd-93a0d4a31cfb)
+代表：NVIDIA JR2025602。
 
-要求重点：
+典型要求：
 
-- NPI、production ramp、跨团队推进；
-- 供应商、产能、成本、质量、交付；
-- 在模糊环境中定 operating model；
-- 不是算法岗，但懂 AI 基础设施和供应链。
+- LP/MIP 建模深度；
+- 对偶、敏感性、数值稳定性；
+- 供应链 domain（BOM、产能、lead time、yield）；
+- 生产级模型维护。
 
-**信号**：AI 基础设施本身变成了供应链问题。  
-**稀缺点**：懂 AI infra + 供应链运营的复合型 PM，而不是纯算法。
+**信号**：这是“运筹 + 工程 + domain”的岗位；比纯算法更看重建模正确性和可解释性。
+
+### 2.5 Research Scientist, Causal / Experimentation
+
+代表：[Research Scientist, SCOT First Inbound](https://www.amazon.jobs/en/jobs/10593798)
+
+典型要求：
+
+- PhD；
+- 因果建模、A/B、准实验、潜在结果；
+- ML/统计；
+- 策略仿真与评估。
+
+**信号**：这是供应链策略评估的高端岗位；不是“跑回归”，而是识别因果效应。
 
 ---
 
-## 3. 真正缺什么
+## 3. 市场最缺什么
 
-### 3.1 Optimization + ML + Production
+### 3.1 OR + ML + 生产
 
-岗位要的不是“会调 Gurobi”，而是：
+岗位要的不是：
 
-- 能把业务问题写成 LP/MIP/随机规划；
-- 能解释 dual / sensitivity；
+- 只会调 LightGBM；
+- 只会调 Gurobi；
+- 只会写 notebook。
+
+而是：
+
+- 能把补货/分单/网络问题写成 LP/MIP/随机规划；
+- 能解释 dual、sensitivity、约束；
 - 能用 ML 做预测/场景；
-- 能把模型放进生产，控制时延、成本、失败率。
+- 能把模型放进生产，控制时延、失败率、成本。
 
 这类人比纯 ML 和纯 OR 都少。
 
-### 3.2 Agent evals / reliability
+### 3.2 供应链 domain
 
-Agent 岗位真正稀缺的是：
+JD 反复出现：
 
-- 会设计任务、grader、reward signal；
-- 会测 false success、abstain、long-horizon failure；
-- 会做 tool sandbox、trace、replay；
-- 会控制 token/时延/成本。
+- inventory、placement、fulfillment、network；
+- transportation、last mile、middle mile；
+- BOM、capacity、lead time、yield；
+- forecasting、planning、sourcing。
 
-“会写 LangGraph”不稀缺，“能证明 Agent 可靠”才稀缺。
+**domain 不是加分项，是硬门槛。**  
+只会通用 ML、不懂库存/网络的人，面试很难讲深。
 
-### 3.3 Causal / experimentation
+### 3.3 因果 / 实验
 
 Amazon Research Scientist 明确要：
 
 - causal modeling、A/B、quasi-experiment；
 - 策略评估，而不是相关性。
 
-这是供应链/推荐/履约策略岗位的硬技能，但真正能做干净因果识别的人少。
+这是供应链策略岗位的稀缺技能。
 
-### 3.4 Domain + AI + communication
+### 3.4 生产工程能力
 
-企业最需要的不是“通用 AI 天才”，而是：
+- Python/Java/C++；
+- SQL；
+- 分布式/HPC；
+- 求解器工程；
+- 代码审查、上线、监控。
 
-- 懂库存/网络/履约；
-- 懂模型边界；
-- 能把结果讲给业务；
-- 能落地、能审计、能维护。
+很多 OR 候选人卡在“模型能写，系统上不了”。
 
 ---
 
@@ -193,34 +197,33 @@ Amazon Research Scientist 明确要：
 
 | 岗位族 | 必备 | 加分 | 你当前差距 |
 |---|---|---|---|
-| Applied Scientist OR/ML | 优化、ML、Python、论文 | 供应链、生产、C++/Java | 论文、年限、生产规模 |
+| Applied Scientist SCOT | 优化、ML、Python、论文 | 供应链、生产、C++/Java | 论文、年限、生产规模 |
 | Data Scientist SCOT | SQL/Python、ML/统计、业务 | 因果、实验、OR | SQL/业务指标表达 |
-| Agent Post-Training | LLM/RL/post-training/evals | 长程任务、computer use | 真实 LLM 训练/评测 |
-| FDE / Applied AI | 工程、客户、LLM、eval | full-stack、云 | 客户交付、full-stack |
-| Supply Chain PM | 运营、NPI、跨团队 | AI infra | 运营经验 |
+| Optimization Engineer | LP/MIP、dual、domain | Gurobi/CPLEX、GPU | 对偶/敏感性、行业 domain |
+| Research Scientist | PhD、因果/实验、ML | 策略仿真 | 因果识别、PhD |
+| OR Analyst / Manager | OR、业务、沟通 | 网络/库存 | 业务落地经验 |
 
 ---
 
 ## 5. 对 985 本硕的现实判断
 
-### 不要瞄准
+### 不建议直接瞄准
 
-- OpenAI Agent Post-Training 研究岗：需要 PhD/顶会/RL 训练经验，不是靠一个项目能补；
-- FDE：5+ 年工程 + 客户交付，应届不现实；
-- Principal/ Senior Applied Scientist：年限硬门槛。
+- Senior/Principal Applied Scientist：PhD + 5–10 年硬门槛；
+- NVIDIA Modeling Engineer：8+ 年 + 半导体 domain；
+- Research Scientist：PhD + 因果研究经历。
 
 ### 可以瞄准
 
-- **Data Scientist / Applied Scientist I / 算法工程师**：硕士 + 强项目 + 论文/竞赛可以进面试；
-- **供应链算法 / 运筹优化**：你的项目有真实数据、OR、ML、仿真，匹配度高；
-- **AI 应用 / 解决方案**：如果工程和沟通强，是另一条路。
+- **Data Scientist, SCOT**：硕士 + 强项目 + SQL/业务表达；
+- **Applied Scientist I**：硕士 + 论文/强项目（部分公司接受）；
+- **供应链算法 / 运筹优化算法工程师**：国内大厂更看项目与建模能力；
+- **OR Analyst / Decision Scientist**：企业计划、网络、库存方向。
 
 ### 最现实的定位
 
 > **Decision-centric Applied Scientist / Algorithm Engineer**  
 > 不是“通用 AI 研究员”，而是“能把不确定性、优化、业务指标接起来的人”。
-
-这正好对应 Amazon SCOT / MOP、NVIDIA 供应链优化、国内供应链算法岗。
 
 ---
 
@@ -230,7 +233,7 @@ Amazon Research Scientist 明确要：
 
 > **可验证的决策质量：不确定性 → 服务水平 → 成本。**
 
-所以主线应该是：
+对应技术主线：
 
 - Conformal risk control / DRO；
 - 两阶段库存/布点/分单；
@@ -242,7 +245,7 @@ Agent、RL-0、TSFM 保留为工具/附录，不再扩主线。
 
 ---
 
-## 7. 12 周证明计划（市场版）
+## 7. 12 周证明计划（供应链算法版）
 
 | 周 | 产出 | 对应岗位信号 |
 |---|---|---|
@@ -263,7 +266,7 @@ Agent、RL-0、TSFM 保留为工具/附录，不再扩主线。
 - 运筹优化算法工程师
 - 决策智能算法工程师
 - 履约/配送算法工程师
-- 大模型应用/Agent 工程师
+- 库存/补货算法工程师
 
 为主。  
 官方入口：
@@ -281,10 +284,10 @@ Agent、RL-0、TSFM 保留为工具/附录，不再扩主线。
 
 ## 9. 结论
 
-**市场最热**：Agent 应用、Applied AI、FDE。  
-**市场最缺**：OR + ML + 生产、Agent evals/reliability、因果/实验、domain + AI。  
-**最适合你**：不是追最热，而是占住 **OR + ML + 可验证决策** 这个交集。
+**最热**：供应链优化、履约/网络、库存/计划。  
+**最缺**：OR + ML + 生产、供应链 domain、因果/实验、求解器工程。  
+**最适合你**：不是追 AI 热点，而是占住 **OR + ML + 可验证决策** 这个交集。
 
 一句话：
 
-> 企业不缺会讲 Agent 的人，缺的是**能把服务水平保证写进决策、并且能上线的人**。
+> 企业不缺会讲 AI 的人，缺的是**能把库存/网络/履约问题写成优化模型、证明服务水平、并上线的人**。
