@@ -103,7 +103,7 @@ python scripts/run_frontier_bench.py --quick
 
 最新文献与“已实现/未实现”的对照在 [`docs/research/FRONTIER_RESEARCH_2026.md`](docs/research/FRONTIER_RESEARCH_2026.md)。边界见该文档；不要把合成因果或离线回放写成线上结论。
 
-2026 招聘市场扫描（岗位热度、稀缺技能、对项目的含义）在 [`docs/research/TALENT_MARKET_2026.md`](docs/research/TALENT_MARKET_2026.md)。
+2026 供应链算法/运筹招聘扫描（含京东/腾讯官方 JD、稀缺技能、对项目的含义）在 [`docs/research/TALENT_MARKET_2026.md`](docs/research/TALENT_MARKET_2026.md)。
 
 ## 怎么跑
 
