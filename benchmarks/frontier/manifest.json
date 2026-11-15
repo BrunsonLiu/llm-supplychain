@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-07T12:47:57.100949+00:00",
-  "git_sha": "85b72dfda504e26b3e3b1caa48aa2d654d8c2f5d",
+  "generated_at": "2026-11-15T09:54:11.395915+00:00",
+  "git_sha": "fba85894f54bd6f8e0021247cf10022dc312bcee",
   "git_dirty": false,
   "script": "scripts/run_frontier_bench.py",
   "stages": [
@@ -48,10 +48,23 @@
     }
   },
   "joint_conformal": {
-    "expected_cost": 4942.786666666667,
-    "cvar_cost": 5948.4,
-    "expected_unmet": 1230.8333333333333,
-    "status": "OPTIMAL"
+    "unconstrained": {
+      "expected_cost": 4942.786666666667,
+      "cvar_cost": 5948.4,
+      "expected_unmet": 1230.8333333333333,
+      "status": "OPTIMAL"
+    },
+    "risk_control": {
+      "status": "INFEASIBLE",
+      "error": "RuntimeError: 随机联合 MILP 未找到可行解: INFEASIBLE",
+      "unmet_cap": 1431.0
+    },
+    "calibration": {
+      "cap": 1431.0,
+      "target_coverage": 0.9,
+      "empirical_coverage": 1.0,
+      "n_scenarios": 6
+    }
   },
   "rolling": {
     "42": {

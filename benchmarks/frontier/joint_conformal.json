@@ -1,74 +1,100 @@
 {
-  "status": "OPTIMAL",
-  "solve_seconds": 0.0350906,
-  "expected_unmet": 1230.8333333333333,
-  "cvar_unmet": 1483.6666666666667,
-  "expected_cost": 4942.786666666667,
-  "cvar_cost": 5948.4,
-  "objective": 5445.593333333333,
-  "solver_objective": 5458.59064,
-  "best_bound": 5458.59064,
-  "gap": 0.0,
-  "cvar_weight": 0.5,
-  "alpha": 0.8,
-  "scenario_cost": [
-    3396.19,
-    2716.29,
-    5810.41,
-    5902.05,
-    5957.67,
-    5874.11
-  ],
-  "scenario_unmet": [
-    842.0,
-    671.0,
-    1449.0,
-    1472.0,
-    1486.0,
-    1465.0
-  ],
-  "stock_units": [
-    1119,
-    117,
-    59
-  ],
-  "allocation_units": [
-    [
-      598,
-      82,
-      0
+  "unconstrained": {
+    "status": "OPTIMAL",
+    "solve_seconds": 0.0291215,
+    "expected_unmet": 1230.8333333333333,
+    "cvar_unmet": 1483.6666666666667,
+    "expected_cost": 4942.786666666667,
+    "cvar_cost": 5948.4,
+    "objective": 5445.593333333333,
+    "solver_objective": 5458.59064,
+    "best_bound": 5458.59064,
+    "gap": 0.0,
+    "cvar_weight": 0.5,
+    "alpha": 0.8,
+    "scenario_cost": [
+      3396.19,
+      2716.29,
+      5810.41,
+      5902.05,
+      5957.67,
+      5874.11
     ],
-    [
-      735,
-      116,
-      0
+    "scenario_unmet": [
+      842.0,
+      671.0,
+      1449.0,
+      1472.0,
+      1486.0,
+      1465.0
     ],
-    [
-      73,
-      0,
-      0
+    "stock_units": [
+      1119,
+      117,
+      59
     ],
-    [
-      45,
-      5,
-      0
+    "allocation_units": [
+      [
+        598,
+        82,
+        0
+      ],
+      [
+        735,
+        116,
+        0
+      ],
+      [
+        73,
+        0,
+        0
+      ],
+      [
+        45,
+        5,
+        0
+      ],
+      [
+        36,
+        0,
+        0
+      ],
+      [
+        56,
+        1,
+        0
+      ]
     ],
-    [
-      36,
-      0,
-      0
+    "handling_cost": [
+      0.02,
+      0.04,
+      0.05
     ],
-    [
-      56,
-      1,
-      0
-    ]
-  ],
-  "handling_cost": [
-    0.02,
-    0.04,
-    0.05
-  ],
-  "shortage_cost": 4.0,
-  "holding_cost": 0.01
+    "shortage_cost": 4.0,
+    "holding_cost": 0.01,
+    "unmet_cap": null,
+    "cap_cvar": null
+  },
+  "risk_control": {
+    "status": "INFEASIBLE",
+    "error": "RuntimeError: 随机联合 MILP 未找到可行解: INFEASIBLE",
+    "unmet_cap": 1431.0
+  },
+  "calibration": {
+    "target_coverage": 0.9,
+    "cap": 1431.0,
+    "empirical_coverage": 1.0,
+    "n_scenarios": 6,
+    "expected_unmet": 1099.1666666666667,
+    "cvar_unmet": 1408.8333333333335,
+    "scenario_unmet": [
+      957.0,
+      831.0,
+      1002.0,
+      1298.0,
+      1076.0,
+      1431.0
+    ],
+    "note": "scenario-level split-conformal cap; not a finite-sample policy guarantee"
+  }
 }
