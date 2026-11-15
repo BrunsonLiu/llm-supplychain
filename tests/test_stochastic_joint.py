@@ -145,6 +145,73 @@ def test_adjustable_stock_can_satisfy_tight_cap() -> None:
     assert np.array_equal(plan.stock.sum(axis=0), plan.sku_stock)
 
 
+def test_capacity_expansion_lever_can_satisfy_cap() -> None:
+    instance, scenarios = _problem()
+    plan = solve_stochastic_joint(
+        instance,
+        scenarios,
+        cvar_weight=0.5,
+        alpha=0.8,
+        time_limit_seconds=10,
+        workers=2,
+        unmet_cap=0.0,
+        capacity_expansion_cost=0.5,
+        max_capacity_factor=2.0,
+    )
+    assert plan.dc_capacity is not None
+    assert np.all(plan.dc_capacity >= np.array([20, 20]))
+    assert np.all(plan.dc_capacity <= np.array([40, 40]))
+    assert plan.cap_cvar <= 1e-6
+    assert plan.objective >= 0.0
+
+
+def test_capacity_expansion_is_not_free() -> None:
+    instance, scenarios = _problem()
+    free = solve_stochastic_joint(
+        instance,
+        scenarios,
+        cvar_weight=0.0,
+        alpha=0.8,
+        time_limit_seconds=10,
+        workers=2,
+        capacity_expansion_cost=0.0,
+        max_capacity_factor=2.0,
+    )
+    paid = solve_stochastic_joint(
+        instance,
+        scenarios,
+        cvar_weight=0.0,
+        alpha=0.8,
+        time_limit_seconds=10,
+        workers=2,
+        capacity_expansion_cost=5.0,
+        max_capacity_factor=2.0,
+    )
+    assert paid.dc_capacity is not None
+    assert free.dc_capacity is not None
+    assert int(paid.dc_capacity.sum()) <= int(free.dc_capacity.sum())
+
+
+def test_invalid_capacity_args_are_rejected() -> None:
+    instance, scenarios = _problem()
+    for kwargs in (
+        {"capacity_expansion_cost": -1.0},
+        {"max_capacity_factor": 0.5},
+        {"max_stock_factor": 0.5},
+    ):
+        try:
+            solve_stochastic_joint(
+                instance,
+                scenarios,
+                time_limit_seconds=2,
+                workers=1,
+                **kwargs,
+            )
+        except ValueError:
+            continue
+        raise AssertionError(f"非法参数应拒绝: {kwargs}")
+
+
 def test_invalid_scenario_shape_is_rejected() -> None:
     instance, scenarios = _problem()
     bad = SimpleNamespace(

@@ -59,6 +59,7 @@ class JointPlan:
     unmet_cap: Optional[float] = None
     cap_cvar: Optional[float] = None
     sku_stock: Optional[np.ndarray] = None
+    dc_capacity: Optional[np.ndarray] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -90,6 +91,11 @@ class JointPlan:
                 None
                 if self.sku_stock is None
                 else [int(value) for value in self.sku_stock]
+            ),
+            "dc_capacity": (
+                None
+                if self.dc_capacity is None
+                else [int(value) for value in self.dc_capacity]
             ),
         }
 
@@ -154,11 +160,17 @@ def solve_stochastic_joint(
     unmet_cap: Optional[float] = None,
     adjustable_stock: bool = False,
     max_stock_factor: float = 1.5,
+    capacity_expansion_cost: float = 0.0,
+    max_capacity_factor: float = 1.0,
 ) -> JointPlan:
     """Solve the cost-aware two-stage model.
 
     ``handling_cost`` is per DC per unit shipped. The default is the declared
     three-DC handling cost; longer DC lists fall back to the last value.
+
+    ``capacity_expansion_cost`` is a per-week-per-unit price for expanding a DC's
+    throughput above its declared capacity, up to ``max_capacity_factor``. It is
+    a first-stage cost, so it is added to every scenario cost exactly once.
     """
     if not 0.0 <= cvar_weight <= 1.0:
         raise ValueError("cvar_weight 必须在 [0, 1]")
@@ -174,19 +186,32 @@ def solve_stochastic_joint(
         raise ValueError("unmet_cap 不能为负")
     if max_stock_factor < 1.0:
         raise ValueError("max_stock_factor 必须 >= 1")
+    if capacity_expansion_cost < 0:
+        raise ValueError("capacity_expansion_cost 不能为负")
+    if max_capacity_factor < 1.0:
+        raise ValueError("max_capacity_factor 必须 >= 1")
     _validate(instance, scenarios)
 
     fulfillment = instance.fulfillment
     n_dcs = int(fulfillment.n_dcs)
     n_skus = int(fulfillment.n_skus)
     stock_total = np.asarray(fulfillment.stock, dtype=np.int64).sum(axis=0)
-    max_stock = (
-        np.maximum(stock_total, np.ceil(stock_total * max_stock_factor).astype(np.int64))
-        if adjustable_stock
-        else stock_total.copy()
-    )
-    capacity = np.asarray(fulfillment.dc_capacity, dtype=np.int64)
     demand = np.asarray(scenarios.demand, dtype=np.int64)
+    # An inventory lever must be able to answer "stock up to the worst-case
+    # demand for that SKU". Scaling the *current* stock by a factor cannot, when
+    # the scenario demand is concentrated on a SKU that is currently thin.
+    if adjustable_stock:
+        peak_demand = demand.max(axis=0)
+        max_stock = np.maximum(
+            stock_total,
+            np.maximum(
+                np.ceil(stock_total * max_stock_factor).astype(np.int64),
+                np.ceil(peak_demand * max_stock_factor).astype(np.int64),
+            ),
+        )
+    else:
+        max_stock = stock_total.copy()
+    capacity = np.asarray(fulfillment.dc_capacity, dtype=np.int64)
     serviceable = np.asarray(scenarios.serviceable, dtype=np.int64)
     weights = np.asarray(scenarios.weights, dtype=float)
     n_scenarios = demand.shape[0]
@@ -206,12 +231,24 @@ def solve_stochastic_joint(
     handling_int = np.rint(handling * COST_SCALE).astype(np.int64)
     shortage_int = int(round(shortage_cost * COST_SCALE))
     holding_int = int(round(holding_cost * COST_SCALE))
+    capacity_int = int(round(capacity_expansion_cost * COST_SCALE))
+    max_capacity = np.maximum(
+        capacity, np.ceil(capacity * max_capacity_factor).astype(np.int64)
+    )
 
     model = cp_model.CpModel()
     z: Dict[tuple, Any] = {}
     y: Dict[tuple, Any] = {}
     unmet: Dict[tuple, Any] = {}
     stock_var: Dict[int, Any] = {}
+    capacity_var: Dict[int, Any] = {}
+    for dc in range(n_dcs):
+        if capacity_int > 0 and max_capacity[dc] > capacity[dc]:
+            capacity_var[dc] = model.NewIntVar(
+                int(capacity[dc]), int(max_capacity[dc]), f"cap_{dc}"
+            )
+        else:
+            capacity_var[dc] = model.NewConstant(int(capacity[dc]))
     for sku in range(n_skus):
         upper = int(max_stock[sku])
         if adjustable_stock:
@@ -242,7 +279,7 @@ def solve_stochastic_joint(
         for dc in range(n_dcs):
             model.Add(
                 sum(y[scenario, sku, dc] for sku in range(n_skus))
-                <= int(capacity[dc])
+                <= capacity_var[dc]
             )
 
     # Conformal risk constraint: CVaR_alpha(unmet) <= unmet_cap. This is a
@@ -284,15 +321,21 @@ def solve_stochastic_joint(
             shortage_int * unmet[scenario, sku] for sku in range(n_skus)
         )
         holding = holding_int * sum(stock_var[sku] for sku in range(n_skus))
+        capacity_cost = capacity_int * sum(
+            capacity_var[dc] - int(capacity[dc]) for dc in range(n_dcs)
+        )
         upper = int(
             handling_int.max() * int(demand[scenario].sum())
             + shortage_int * int(demand[scenario].sum())
             + holding_int * int(max_stock.sum())
+            + capacity_int * int((max_capacity - capacity).sum())
             + 1
         )
         max_cost = max(max_cost, upper)
         scenario_cost[scenario] = model.NewIntVar(0, upper, f"cost_{scenario}")
-        model.Add(scenario_cost[scenario] == shipped_cost + unmet_cost + holding)
+        model.Add(
+            scenario_cost[scenario] == shipped_cost + unmet_cost + holding + capacity_cost
+        )
 
     # Keep the objective in integer units of WEIGHT_SCALE * cents. The final
     # solver objective is divided by WEIGHT_SCALE * COST_SCALE to get dollars.
@@ -389,6 +432,10 @@ def solve_stochastic_joint(
         unmet_cap=None if unmet_cap is None else float(unmet_cap),
         cap_cvar=cvar_unmet if unmet_cap is not None else None,
         sku_stock=stock_totals,
+        dc_capacity=np.array(
+            [int(round(solver.Value(capacity_var[dc]))) for dc in range(n_dcs)],
+            dtype=np.int64,
+        ),
     )
 
 

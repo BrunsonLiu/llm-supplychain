@@ -1,0 +1,143 @@
+{
+  "frontier": [
+    {
+      "holding_cost": 0.05,
+      "shortage_cost": 2.0,
+      "cost_unconstrained": 229.96999999999997,
+      "cost_at_target_cap": 229.96999999999997,
+      "price_of_robustness": 0.0,
+      "cvar_unmet_unconstrained": 0.0,
+      "cvar_unmet_at_target": 0.0,
+      "stock_units": 3702
+    },
+    {
+      "holding_cost": 0.25,
+      "shortage_cost": 2.0,
+      "cost_unconstrained": 970.37,
+      "cost_at_target_cap": 970.37,
+      "price_of_robustness": 0.0,
+      "cvar_unmet_unconstrained": 0.0,
+      "cvar_unmet_at_target": 0.0,
+      "stock_units": 3702
+    },
+    {
+      "holding_cost": 1.0,
+      "shortage_cost": 2.0,
+      "cost_unconstrained": 3020.0833333333335,
+      "cost_at_target_cap": 3020.94,
+      "price_of_robustness": 0.8566666666665697,
+      "cvar_unmet_unconstrained": 1474.0,
+      "cvar_unmet_at_target": 1431.0,
+      "stock_units": 166
+    },
+    {
+      "holding_cost": 2.0,
+      "shortage_cost": 2.0,
+      "cost_unconstrained": 3081.4733333333334,
+      "cost_at_target_cap": 3186.94,
+      "price_of_robustness": 105.4666666666667,
+      "cvar_unmet_unconstrained": 1485.0,
+      "cvar_unmet_at_target": 1431.0,
+      "stock_units": 166
+    },
+    {
+      "holding_cost": 4.0,
+      "shortage_cost": 2.0,
+      "cost_unconstrained": 3197.4733333333334,
+      "cost_at_target_cap": 3518.9399999999996,
+      "price_of_robustness": 321.46666666666624,
+      "cvar_unmet_unconstrained": 1485.0,
+      "cvar_unmet_at_target": 1431.0,
+      "stock_units": 166
+    }
+  ],
+  "target_cap": 1431.0,
+  "economics": {
+    "holding_cost": 0.3,
+    "shortage_cost": 2.0
+  },
+  "target_coverage": 0.9,
+  "note": "min_cap 是模型实际能达到的最小 CVaR(unmet)；cap_gap>0 表示物理网络无法满足 conformal 目标，需要更多场景/更大杠杆。price_of_robustness = 满足 cap 的成本 - 无 cap 成本，单位与成本模型一致。",
+  "arms": {
+    "baseline": {
+      "min_cap": 1485.0,
+      "status": "OPTIMAL",
+      "expected_cost": 2856.6699999999996,
+      "cvar_cost": 3356.6166666666663,
+      "expected_unmet": 1230.8333333333333,
+      "cvar_unmet": 1483.6666666666667,
+      "stock_units": 1295,
+      "capacity_units": 1980,
+      "cost_unconstrained": 2856.6699999999996,
+      "cvar_unmet_unconstrained": 1483.6666666666667,
+      "cost_at_target": 2856.6699999999996,
+      "cap_achieved": 1485.0,
+      "price_of_robustness": 0.0,
+      "cap_gap": 54.0
+    },
+    "inventory": {
+      "min_cap": 23.203125,
+      "status": "OPTIMAL",
+      "expected_cost": 1155.47,
+      "cvar_cost": 1155.47,
+      "expected_unmet": 0.0,
+      "cvar_unmet": 0.0,
+      "stock_units": 3702,
+      "capacity_units": 1980,
+      "cost_unconstrained": 1155.47,
+      "cvar_unmet_unconstrained": 0.0,
+      "cost_at_target": 1155.47,
+      "cap_achieved": 1431.0,
+      "price_of_robustness": 0.0,
+      "cap_gap": -1407.796875
+    },
+    "capacity": {
+      "min_cap": 1485.0,
+      "status": "OPTIMAL",
+      "expected_cost": 2856.6699999999996,
+      "cvar_cost": 3356.6166666666663,
+      "expected_unmet": 1230.8333333333333,
+      "cvar_unmet": 1483.6666666666667,
+      "stock_units": 1295,
+      "capacity_units": 1980,
+      "cost_unconstrained": 2856.6699999999996,
+      "cvar_unmet_unconstrained": 1483.6666666666667,
+      "cost_at_target": 2856.6699999999996,
+      "cap_achieved": 1485.0,
+      "price_of_robustness": 0.0,
+      "cap_gap": 54.0
+    },
+    "inventory_plus_capacity": {
+      "min_cap": 23.203125,
+      "status": "OPTIMAL",
+      "expected_cost": 1155.47,
+      "cvar_cost": 1155.47,
+      "expected_unmet": 0.0,
+      "cvar_unmet": 0.0,
+      "stock_units": 3702,
+      "capacity_units": 1980,
+      "cost_unconstrained": 1155.47,
+      "cvar_unmet_unconstrained": 0.0,
+      "cost_at_target": 1155.47,
+      "cap_achieved": 1431.0,
+      "price_of_robustness": 0.0,
+      "cap_gap": -1407.796875
+    },
+    "transit": {
+      "min_cap": 1485.0,
+      "status": "OPTIMAL",
+      "expected_cost": 2856.033333333333,
+      "cvar_cost": 3356.6,
+      "expected_unmet": 1230.8333333333333,
+      "cvar_unmet": 1483.6666666666667,
+      "stock_units": 1295,
+      "capacity_units": 1980,
+      "cost_unconstrained": 2856.033333333333,
+      "cvar_unmet_unconstrained": 1483.6666666666667,
+      "cost_at_target": 2856.033333333333,
+      "cap_achieved": 1485.0,
+      "price_of_robustness": 0.0,
+      "cap_gap": 54.0
+    }
+  }
+}

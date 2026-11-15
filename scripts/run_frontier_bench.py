@@ -136,6 +136,207 @@ def _online_stage(
     }
 
 
+def _solve_with_cap(instance, scenario_set, cap, args, **kwargs):
+    return solve_stochastic_joint(
+        instance,
+        scenario_set,
+        cvar_weight=0.5,
+        alpha=0.8,
+        time_limit_seconds=args.joint_time,
+        workers=2,
+        unmet_cap=cap,
+        **kwargs,
+    )
+
+
+def _min_feasible_cap(
+    instance,
+    scenario_set,
+    args,
+    upper_cap: float,
+    iterations: int = 6,
+    **kwargs,
+) -> Dict[str, Any]:
+    """Bisect the smallest CVaR(unmet) cap the model can actually meet.
+
+    ``upper_cap`` must be feasible (usually the unconstrained CVaR). A cap of 0
+    is the ideal bound; the returned value is the physical floor implied by
+    stock, capacity and serviceability under the chosen levers.
+    """
+    lo, hi = 0.0, float(np.ceil(upper_cap))
+    try:
+        _solve_with_cap(instance, scenario_set, hi, args, **kwargs)
+    except RuntimeError:
+        return {"min_cap": None, "status": "INFEASIBLE_AT_UPPER"}
+    best = _solve_with_cap(instance, scenario_set, hi, args, **kwargs)
+    for _ in range(iterations):
+        if hi - lo <= max(1.0, 0.01 * hi):
+            break
+        mid = 0.5 * (lo + hi)
+        try:
+            plan = _solve_with_cap(instance, scenario_set, mid, args, **kwargs)
+        except RuntimeError:
+            lo = mid
+            continue
+        hi = mid
+        best = plan
+    return {
+        "min_cap": float(hi),
+        "status": best.status,
+        "expected_cost": best.expected_cost,
+        "cvar_cost": best.cvar_cost,
+        "expected_unmet": best.expected_unmet,
+        "cvar_unmet": best.cvar_unmet,
+        "stock_units": int(np.sum(best.sku_stock)) if best.sku_stock is not None else None,
+        "capacity_units": int(np.sum(best.dc_capacity)) if best.dc_capacity is not None else None,
+    }
+
+
+def _lever_stage(
+    instance,
+    clean: pd.DataFrame,
+    last_week,
+    conformal_set,
+    rows: pd.DataFrame,
+    calibration: Dict[str, Any],
+    args,
+    unconstrained_cvar: float,
+) -> Dict[str, Any]:
+    """Compare inventory vs capacity vs transit on the same risk target.
+
+    For every arm we bisect the smallest cap the model can meet. The conformal
+    target is fixed, so ``cap_gap = min_cap - target_cap`` says how far the
+    physical network is from the statistical target; the arm with the smallest
+    gap is the lever that actually relaxes the floor.
+    """
+    target_cap = float(calibration["cap"])
+    target_units = int(instance.fulfillment.line_qty.sum())
+    upper = max(float(unconstrained_cvar) + 1.0, target_cap + 1.0)
+    arms: Dict[str, Any] = {}
+
+    # Realistic unit economics: holding must be comparable to shortage for the
+    # levers to trade off at all. With 0.01 vs 4.0 the trivially optimal policy
+    # is "stock everything" and the price of robustness is meaningless.
+    economics = {"holding_cost": 0.3, "shortage_cost": 2.0}
+
+    def _run(name: str, scenario_set=None, **kwargs) -> None:
+        chosen = conformal_set if scenario_set is None else scenario_set
+        options = {**economics, **kwargs}
+        try:
+            arm = _min_feasible_cap(
+                instance,
+                chosen,
+                args,
+                upper_cap=upper,
+                **options,
+            )
+            if arm.get("min_cap") is not None:
+                free = _solve_with_cap(instance, chosen, upper, args, **options)
+                arm["cost_unconstrained"] = free.expected_cost
+                arm["cvar_unmet_unconstrained"] = free.cvar_unmet
+                # Cost of meeting the statistical target: if the network cannot
+                # reach it, report the cost at the achievable floor instead.
+                achieved = max(target_cap, float(arm["min_cap"]))
+                constrained = _solve_with_cap(instance, chosen, achieved, args, **options)
+                arm["cost_at_target"] = constrained.expected_cost
+                arm["cap_achieved"] = achieved
+                arm["price_of_robustness"] = (
+                    constrained.expected_cost - free.expected_cost
+                )
+            arms[name] = arm
+        except Exception as exc:  # noqa: BLE001
+            arms[name] = {"status": "ERROR", "error": f"{type(exc).__name__}: {exc}"}
+
+    _run("baseline")
+    _run("inventory", adjustable_stock=True, max_stock_factor=3.0)
+    _run("capacity", capacity_expansion_cost=0.5, max_capacity_factor=2.0)
+    _run(
+        "inventory_plus_capacity",
+        adjustable_stock=True,
+        max_stock_factor=3.0,
+        capacity_expansion_cost=0.5,
+        max_capacity_factor=2.0,
+    )
+    try:
+        faster_base = build_calibrated_scenarios(
+            clean,
+            instance.fulfillment.sku_names,
+            last_week,
+            target_units,
+            config=ScenarioConfig(
+                method="gaussian_copula",
+                n_scenarios=args.scenarios,
+                lookback_weeks=6,
+                seed=args.seed,
+                transit_km_per_day=1400.0,
+                handling_days=0,
+            ),
+        )
+        faster_set = build_conformal_scenarios(
+            rows,
+            faster_base,
+            n_scenarios=args.scenarios,
+            seed=args.seed,
+            target_units=target_units,
+        )
+        _run("transit", scenario_set=faster_set)
+    except Exception as exc:  # noqa: BLE001
+        arms["transit"] = {"status": "ERROR", "error": f"{type(exc).__name__}: {exc}"}
+
+    for name, arm in arms.items():
+        if arm.get("min_cap") is not None:
+            arm["cap_gap"] = float(arm["min_cap"]) - target_cap
+
+    # Price-of-robustness frontier: the cap only costs money when holding is
+    # expensive relative to shortage. Sweep that ratio for the inventory lever.
+    frontier: List[Dict[str, Any]] = []
+    for holding in (0.05, 0.25, 1.0, 2.0, 4.0):
+        options = {
+            "holding_cost": holding,
+            "shortage_cost": 2.0,
+            "adjustable_stock": True,
+            "max_stock_factor": 3.0,
+        }
+        try:
+            free = _solve_with_cap(instance, conformal_set, upper, args, **options)
+            constrained = _solve_with_cap(
+                instance, conformal_set, target_cap, args, **options
+            )
+            frontier.append(
+                {
+                    "holding_cost": holding,
+                    "shortage_cost": 2.0,
+                    "cost_unconstrained": free.expected_cost,
+                    "cost_at_target_cap": constrained.expected_cost,
+                    "price_of_robustness": constrained.expected_cost - free.expected_cost,
+                    "cvar_unmet_unconstrained": free.cvar_unmet,
+                    "cvar_unmet_at_target": constrained.cvar_unmet,
+                    "stock_units": int(np.sum(constrained.sku_stock)),
+                }
+            )
+        except RuntimeError as exc:
+            frontier.append(
+                {
+                    "holding_cost": holding,
+                    "status": "INFEASIBLE",
+                    "error": f"{type(exc).__name__}: {exc}",
+                }
+            )
+
+    return {
+        "frontier": frontier,
+        "target_cap": target_cap,
+        "economics": economics,
+        "target_coverage": float(calibration["target_coverage"]),
+        "note": (
+            "min_cap 是模型实际能达到的最小 CVaR(unmet)；cap_gap>0 表示物理网络"
+            "无法满足 conformal 目标，需要更多场景/更大杠杆。"
+            "price_of_robustness = 满足 cap 的成本 - 无 cap 成本，单位与成本模型一致。"
+        ),
+        "arms": arms,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the four-layer frontier smoke benchmark")
     parser.add_argument("--out-dir", default=str(ROOT / "benchmarks/frontier"))
@@ -548,6 +749,52 @@ def main() -> None:
         except Exception as exc:  # noqa: BLE001 - keep the rest of the smoke run
             manifest["joint_conformal_error"] = f"{type(exc).__name__}: {exc}"
             print(f"[joint-conformal] skipped: {exc}")
+
+        # 5) Lever comparison: which spend actually meets the same cap?
+        try:
+            levers = _lever_stage(
+                instance,
+                clean,
+                last_week,
+                conformal_set,
+                pd.DataFrame(rows),
+                calibration,
+                args,
+                unconstrained_cvar=conformal_plan.cvar_unmet,
+            )
+            (out / "levers.json").write_text(
+                json.dumps(levers, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            manifest["stages"].append("levers")
+            manifest["levers"] = {
+                "target_cap": levers["target_cap"],
+                "arms": {
+                    name: {
+                        "min_cap": arm.get("min_cap"),
+                        "cap_gap": arm.get("cap_gap"),
+                        "cap_achieved": arm.get("cap_achieved"),
+                        "cost_unconstrained": arm.get("cost_unconstrained"),
+                        "cost_at_target": arm.get("cost_at_target"),
+                        "price_of_robustness": arm.get("price_of_robustness"),
+                        "status": arm.get("status"),
+                    }
+                    for name, arm in levers["arms"].items()
+                },
+            }
+            summary = ", ".join(
+                (
+                    f"{name}: floor={arm['min_cap']:.1f} "
+                    f"+{arm['price_of_robustness']:.1f}"
+                )
+                if arm.get("min_cap") is not None
+                else f"{name}: {arm.get('status')}"
+                for name, arm in levers["arms"].items()
+            )
+            print(f"[levers] conformal cap {levers['target_cap']:.1f} -> {summary}")
+        except Exception as exc:  # noqa: BLE001
+            manifest["levers_error"] = f"{type(exc).__name__}: {exc}"
+            print(f"[levers] skipped: {exc}")
 
     if not args.skip_online:
         policies = list(ROLLING_POLICIES)

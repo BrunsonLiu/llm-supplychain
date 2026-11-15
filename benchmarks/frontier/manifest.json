@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-11-15T10:03:35.140405+00:00",
-  "git_sha": "fb11569ef9e37944ed7f4ba7373b4123ec9aeb59",
-  "git_dirty": false,
+  "generated_at": "2026-11-15T14:28:04.344623+00:00",
+  "git_sha": "eebfbc880f2f9b30f6fb9c3ceeff520c86539adc",
+  "git_dirty": true,
   "script": "scripts/run_frontier_bench.py",
   "stages": [
     "causal",
@@ -9,6 +9,7 @@
     "scenarios",
     "joint",
     "joint_conformal",
+    "levers",
     "online",
     "rl"
   ],
@@ -55,15 +56,68 @@
       "status": "OPTIMAL"
     },
     "risk_control": {
-      "status": "INFEASIBLE",
-      "error": "RuntimeError: 随机联合 MILP 未找到可行解: INFEASIBLE",
-      "unmet_cap": 1431.0
+      "expected_cost": 81.89000000000001,
+      "cvar_cost": 81.89,
+      "expected_unmet": 0.0,
+      "status": "OPTIMAL",
+      "unmet_cap": 1431.0,
+      "cap_cvar": 0.0
     },
     "calibration": {
       "cap": 1431.0,
       "target_coverage": 0.9,
       "empirical_coverage": 1.0,
       "n_scenarios": 6
+    }
+  },
+  "levers": {
+    "target_cap": 1431.0,
+    "arms": {
+      "baseline": {
+        "min_cap": 1485.0,
+        "cap_gap": 54.0,
+        "cap_achieved": 1485.0,
+        "cost_unconstrained": 2856.6699999999996,
+        "cost_at_target": 2856.6699999999996,
+        "price_of_robustness": 0.0,
+        "status": "OPTIMAL"
+      },
+      "inventory": {
+        "min_cap": 23.203125,
+        "cap_gap": -1407.796875,
+        "cap_achieved": 1431.0,
+        "cost_unconstrained": 1155.47,
+        "cost_at_target": 1155.47,
+        "price_of_robustness": 0.0,
+        "status": "OPTIMAL"
+      },
+      "capacity": {
+        "min_cap": 1485.0,
+        "cap_gap": 54.0,
+        "cap_achieved": 1485.0,
+        "cost_unconstrained": 2856.6699999999996,
+        "cost_at_target": 2856.6699999999996,
+        "price_of_robustness": 0.0,
+        "status": "OPTIMAL"
+      },
+      "inventory_plus_capacity": {
+        "min_cap": 23.203125,
+        "cap_gap": -1407.796875,
+        "cap_achieved": 1431.0,
+        "cost_unconstrained": 1155.47,
+        "cost_at_target": 1155.47,
+        "price_of_robustness": 0.0,
+        "status": "OPTIMAL"
+      },
+      "transit": {
+        "min_cap": 1485.0,
+        "cap_gap": 54.0,
+        "cap_achieved": 1485.0,
+        "cost_unconstrained": 2856.033333333333,
+        "cost_at_target": 2856.033333333333,
+        "price_of_robustness": 0.0,
+        "status": "OPTIMAL"
+      }
     }
   },
   "rolling": {

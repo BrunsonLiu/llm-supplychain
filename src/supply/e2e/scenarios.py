@@ -39,6 +39,10 @@ class ScenarioConfig:
     residual_sd: float = 0.18
     seed: int = 42
     ridge: float = 1e-3
+    # Transit lever: a faster declared speed (km/day) or fewer handling days
+    # enlarges the serviceable share without touching demand.
+    transit_km_per_day: Optional[float] = None
+    handling_days: Optional[int] = None
 
     def __post_init__(self) -> None:
         if self.method not in {"bootstrap", "gaussian_copula"}:
@@ -51,6 +55,10 @@ class ScenarioConfig:
             raise ValueError("residual_sd 不能为负")
         if self.ridge < 0:
             raise ValueError("ridge 不能为负")
+        if self.transit_km_per_day is not None and self.transit_km_per_day <= 0:
+            raise ValueError("transit_km_per_day 必须为正")
+        if self.handling_days is not None and self.handling_days < 0:
+            raise ValueError("handling_days 不能为负")
 
 
 def _rescale_to_total(values: np.ndarray, target: int) -> np.ndarray:
@@ -103,6 +111,11 @@ def _base_scenarios(
     dcs: Sequence[dict],
     promise_shares: Sequence[Tuple[int, float]],
 ) -> ScenarioSet:
+    extra: dict = {}
+    if config.transit_km_per_day is not None:
+        extra["transit_km_per_day"] = float(config.transit_km_per_day)
+    if config.handling_days is not None:
+        extra["handling_days"] = int(config.handling_days)
     return build_demand_scenarios(
         clean,
         skus,
@@ -111,6 +124,7 @@ def _base_scenarios(
         lookback_weeks=config.lookback_weeks,
         dcs=dcs,
         promise_shares=promise_shares,
+        **extra,
     )
 
 

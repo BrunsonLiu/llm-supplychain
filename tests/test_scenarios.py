@@ -98,6 +98,30 @@ def test_conformal_scenarios_use_intervals_and_keep_total() -> None:
     assert np.isclose(scenarios.weights.sum(), 1.0)
 
 
+def test_transit_lever_increases_serviceable_share() -> None:
+    base = build_calibrated_scenarios(
+        _clean(),
+        ["A", "B", "C"],
+        "2025-02-17",
+        300,
+        config=ScenarioConfig(method="bootstrap", n_scenarios=4, seed=5),
+    )
+    faster = build_calibrated_scenarios(
+        _clean(),
+        ["A", "B", "C"],
+        "2025-02-17",
+        300,
+        config=ScenarioConfig(
+            method="bootstrap",
+            n_scenarios=4,
+            seed=5,
+            transit_km_per_day=2000.0,
+        ),
+    )
+    assert np.array_equal(base.demand, faster.demand)
+    assert faster.serviceable.sum() >= base.serviceable.sum()
+
+
 def test_invalid_config_is_rejected() -> None:
     for kwargs in (
         {"method": "unknown"},

@@ -1,7 +1,7 @@
 {
   "unconstrained": {
     "status": "OPTIMAL",
-    "solve_seconds": 0.0254861,
+    "solve_seconds": 0.039079800000000005,
     "expected_unmet": 1230.8333333333333,
     "cvar_unmet": 1483.6666666666667,
     "expected_cost": 4942.786666666667,
@@ -86,12 +86,106 @@
       63,
       58,
       105
+    ],
+    "dc_capacity": [
+      838,
+      609,
+      533
     ]
   },
   "risk_control": {
-    "status": "INFEASIBLE",
-    "error": "RuntimeError: 随机联合 MILP 未找到可行解: INFEASIBLE",
-    "unmet_cap": 1431.0
+    "status": "OPTIMAL",
+    "solve_seconds": 0.038167700000000006,
+    "expected_unmet": 0.0,
+    "cvar_unmet": 0.0,
+    "expected_cost": 81.89000000000001,
+    "cvar_cost": 81.89,
+    "objective": 81.89000000000001,
+    "solver_objective": 82.05378,
+    "best_bound": 82.05378,
+    "gap": 0.0,
+    "cvar_weight": 0.5,
+    "alpha": 0.8,
+    "scenario_cost": [
+      81.89,
+      81.89,
+      81.89,
+      81.89,
+      81.89,
+      81.89
+    ],
+    "scenario_unmet": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "stock_units": [
+      1892,
+      1586,
+      224
+    ],
+    "allocation_units": [
+      [
+        838,
+        609,
+        75
+      ],
+      [
+        838,
+        609,
+        75
+      ],
+      [
+        838,
+        609,
+        75
+      ],
+      [
+        838,
+        609,
+        75
+      ],
+      [
+        838,
+        609,
+        75
+      ],
+      [
+        838,
+        609,
+        75
+      ]
+    ],
+    "handling_cost": [
+      0.02,
+      0.04,
+      0.05
+    ],
+    "shortage_cost": 4.0,
+    "holding_cost": 0.01,
+    "unmet_cap": 1431.0,
+    "cap_cvar": 0.0,
+    "sku_stock": [
+      133,
+      8,
+      349,
+      275,
+      222,
+      1499,
+      592,
+      52,
+      40,
+      2,
+      530
+    ],
+    "dc_capacity": [
+      838,
+      609,
+      533
+    ]
   },
   "calibration": {
     "target_coverage": 0.9,
