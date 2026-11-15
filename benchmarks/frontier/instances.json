@@ -1,0 +1,359 @@
+{
+  "instances": 9,
+  "seeds_per_instance": 10,
+  "holdings": [
+    0.25,
+    1.0,
+    2.0,
+    4.0,
+    8.0
+  ],
+  "relative_width": 0.35,
+  "note": "只变网络结构（SKU 组合/订单量/库存松紧），预测区间相对宽度固定；onset_holding 是最便宜的、在 >=80% seed 上产生正溢价的 holding。",
+  "onsets": [
+    2.0,
+    2.0,
+    2.0,
+    2.0,
+    2.0,
+    2.0,
+    2.0,
+    1.0,
+    4.0
+  ],
+  "summary": [
+    {
+      "instance": "base",
+      "skus": 11,
+      "orders": 30,
+      "stock_factor": 0.85,
+      "shortage_cost": 2.0,
+      "stock_units": 1295,
+      "target_units": 1522,
+      "onset_holding": 2.0,
+      "by_holding": {
+        "0.25": {
+          "n": 10,
+          "mean_premium": 0.0,
+          "share_positive": 0.0
+        },
+        "1.0": {
+          "n": 10,
+          "mean_premium": 0.0,
+          "share_positive": 0.1
+        },
+        "2.0": {
+          "n": 10,
+          "mean_premium": 23.535999999999923,
+          "share_positive": 1.0
+        },
+        "4.0": {
+          "n": 10,
+          "mean_premium": 2038.3359999999993,
+          "share_positive": 1.0
+        },
+        "8.0": {
+          "n": 10,
+          "mean_premium": 6067.936,
+          "share_positive": 1.0
+        }
+      }
+    },
+    {
+      "instance": "tight_stock",
+      "skus": 11,
+      "orders": 30,
+      "stock_factor": 0.7,
+      "shortage_cost": 2.0,
+      "stock_units": 1066,
+      "target_units": 1522,
+      "onset_holding": 2.0,
+      "by_holding": {
+        "0.25": {
+          "n": 10,
+          "mean_premium": 0.0,
+          "share_positive": 0.0
+        },
+        "1.0": {
+          "n": 10,
+          "mean_premium": 6.821210263296962e-14,
+          "share_positive": 0.2
+        },
+        "2.0": {
+          "n": 10,
+          "mean_premium": 18.67199999999998,
+          "share_positive": 1.0
+        },
+        "4.0": {
+          "n": 10,
+          "mean_premium": 1790.2720000000002,
+          "share_positive": 1.0
+        },
+        "8.0": {
+          "n": 10,
+          "mean_premium": 5333.472,
+          "share_positive": 1.0
+        }
+      }
+    },
+    {
+      "instance": "loose_stock",
+      "skus": 11,
+      "orders": 30,
+      "stock_factor": 0.95,
+      "shortage_cost": 2.0,
+      "stock_units": 1446,
+      "target_units": 1522,
+      "onset_holding": 2.0,
+      "by_holding": {
+        "0.25": {
+          "n": 10,
+          "mean_premium": 0.0,
+          "share_positive": 0.0
+        },
+        "1.0": {
+          "n": 10,
+          "mean_premium": -4.5474735088646414e-14,
+          "share_positive": 0.0
+        },
+        "2.0": {
+          "n": 10,
+          "mean_premium": 26.343999999999777,
+          "share_positive": 1.0
+        },
+        "4.0": {
+          "n": 10,
+          "mean_premium": 2181.5439999999994,
+          "share_positive": 1.0
+        },
+        "8.0": {
+          "n": 10,
+          "mean_premium": 6491.9439999999995,
+          "share_positive": 1.0
+        }
+      }
+    },
+    {
+      "instance": "few_skus",
+      "skus": 5,
+      "orders": 30,
+      "stock_factor": 0.85,
+      "shortage_cost": 2.0,
+      "stock_units": 1347,
+      "target_units": 1586,
+      "onset_holding": 2.0,
+      "by_holding": {
+        "0.25": {
+          "n": 10,
+          "mean_premium": 0.0,
+          "share_positive": 0.0
+        },
+        "1.0": {
+          "n": 10,
+          "mean_premium": -2.2737367544323207e-14,
+          "share_positive": 0.0
+        },
+        "2.0": {
+          "n": 10,
+          "mean_premium": 29.128000000000156,
+          "share_positive": 1.0
+        },
+        "4.0": {
+          "n": 10,
+          "mean_premium": 2358.5280000000002,
+          "share_positive": 1.0
+        },
+        "8.0": {
+          "n": 10,
+          "mean_premium": 7017.3279999999995,
+          "share_positive": 1.0
+        }
+      }
+    },
+    {
+      "instance": "small_orders",
+      "skus": 10,
+      "orders": 16,
+      "stock_factor": 0.85,
+      "shortage_cost": 2.0,
+      "stock_units": 512,
+      "target_units": 603,
+      "onset_holding": 2.0,
+      "by_holding": {
+        "0.25": {
+          "n": 10,
+          "mean_premium": 0.0,
+          "share_positive": 0.0
+        },
+        "1.0": {
+          "n": 10,
+          "mean_premium": 0.0,
+          "share_positive": 0.0
+        },
+        "2.0": {
+          "n": 10,
+          "mean_premium": 7.615999999999962,
+          "share_positive": 1.0
+        },
+        "4.0": {
+          "n": 10,
+          "mean_premium": 719.816,
+          "share_positive": 1.0
+        },
+        "8.0": {
+          "n": 10,
+          "mean_premium": 2144.216,
+          "share_positive": 1.0
+        }
+      }
+    },
+    {
+      "instance": "large_orders",
+      "skus": 11,
+      "orders": 48,
+      "stock_factor": 0.85,
+      "shortage_cost": 2.0,
+      "stock_units": 2069,
+      "target_units": 2435,
+      "onset_holding": 2.0,
+      "by_holding": {
+        "0.25": {
+          "n": 10,
+          "mean_premium": 0.0,
+          "share_positive": 0.0
+        },
+        "1.0": {
+          "n": 10,
+          "mean_premium": 0.0,
+          "share_positive": 0.0
+        },
+        "2.0": {
+          "n": 10,
+          "mean_premium": 40.55200000000004,
+          "share_positive": 1.0
+        },
+        "4.0": {
+          "n": 10,
+          "mean_premium": 3408.1519999999996,
+          "share_positive": 1.0
+        },
+        "8.0": {
+          "n": 10,
+          "mean_premium": 10143.351999999999,
+          "share_positive": 1.0
+        }
+      }
+    },
+    {
+      "instance": "mid_popularity",
+      "skus": 11,
+      "orders": 30,
+      "stock_factor": 0.85,
+      "shortage_cost": 2.0,
+      "stock_units": 351,
+      "target_units": 412,
+      "onset_holding": 2.0,
+      "by_holding": {
+        "0.25": {
+          "n": 10,
+          "mean_premium": 0.0,
+          "share_positive": 0.0
+        },
+        "1.0": {
+          "n": 10,
+          "mean_premium": 0.0,
+          "share_positive": 0.0
+        },
+        "2.0": {
+          "n": 10,
+          "mean_premium": 5.532000000000176,
+          "share_positive": 1.0
+        },
+        "4.0": {
+          "n": 10,
+          "mean_premium": 509.1320000000002,
+          "share_positive": 1.0
+        },
+        "8.0": {
+          "n": 10,
+          "mean_premium": 1516.3320000000003,
+          "share_positive": 1.0
+        }
+      }
+    },
+    {
+      "instance": "shortage_1",
+      "skus": 11,
+      "orders": 30,
+      "stock_factor": 0.85,
+      "shortage_cost": 1.0,
+      "stock_units": 1295,
+      "target_units": 1522,
+      "onset_holding": 1.0,
+      "by_holding": {
+        "0.25": {
+          "n": 10,
+          "mean_premium": 0.0,
+          "share_positive": 0.0
+        },
+        "1.0": {
+          "n": 10,
+          "mean_premium": 23.535999999999923,
+          "share_positive": 1.0
+        },
+        "2.0": {
+          "n": 10,
+          "mean_premium": 1030.936,
+          "share_positive": 1.0
+        },
+        "4.0": {
+          "n": 10,
+          "mean_premium": 3045.736,
+          "share_positive": 1.0
+        },
+        "8.0": {
+          "n": 10,
+          "mean_premium": 7075.335999999998,
+          "share_positive": 1.0
+        }
+      }
+    },
+    {
+      "instance": "shortage_4",
+      "skus": 11,
+      "orders": 30,
+      "stock_factor": 0.85,
+      "shortage_cost": 4.0,
+      "stock_units": 1295,
+      "target_units": 1522,
+      "onset_holding": 4.0,
+      "by_holding": {
+        "0.25": {
+          "n": 10,
+          "mean_premium": 0.0,
+          "share_positive": 0.0
+        },
+        "1.0": {
+          "n": 10,
+          "mean_premium": 0.0,
+          "share_positive": 0.0
+        },
+        "2.0": {
+          "n": 10,
+          "mean_premium": -4.5474735088646414e-14,
+          "share_positive": 0.0
+        },
+        "4.0": {
+          "n": 10,
+          "mean_premium": 23.535999999999966,
+          "share_positive": 1.0
+        },
+        "8.0": {
+          "n": 10,
+          "mean_premium": 4053.136,
+          "share_positive": 1.0
+        }
+      }
+    }
+  ]
+}

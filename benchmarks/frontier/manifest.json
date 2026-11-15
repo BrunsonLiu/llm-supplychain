@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-15T14:40:17.231942+00:00",
-  "git_sha": "88b39f6482bea64558728a297f2b2c4b8d14048a",
+  "generated_at": "2026-11-15T15:16:06.162110+00:00",
+  "git_sha": "205c4551a7f1d2a9d0409a61df180e761373502c",
   "git_dirty": true,
   "script": "scripts/run_frontier_bench.py",
   "stages": [
@@ -11,6 +11,7 @@
     "joint_conformal",
     "levers",
     "levers_seeds",
+    "instances",
     "online",
     "rl"
   ],
@@ -167,6 +168,57 @@
       "max_premium": 308.603333333333,
       "share_positive": 1.0
     }
+  },
+  "instances": {
+    "onsets": [
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      1.0,
+      4.0
+    ],
+    "instances": [
+      {
+        "name": "base",
+        "onset_holding": 2.0
+      },
+      {
+        "name": "tight_stock",
+        "onset_holding": 2.0
+      },
+      {
+        "name": "loose_stock",
+        "onset_holding": 2.0
+      },
+      {
+        "name": "few_skus",
+        "onset_holding": 2.0
+      },
+      {
+        "name": "small_orders",
+        "onset_holding": 2.0
+      },
+      {
+        "name": "large_orders",
+        "onset_holding": 2.0
+      },
+      {
+        "name": "mid_popularity",
+        "onset_holding": 2.0
+      },
+      {
+        "name": "shortage_1",
+        "onset_holding": 1.0
+      },
+      {
+        "name": "shortage_4",
+        "onset_holding": 4.0
+      }
+    ]
   },
   "rolling": {
     "42": {

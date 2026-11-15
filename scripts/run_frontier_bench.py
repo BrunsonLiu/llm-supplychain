@@ -18,7 +18,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
 import numpy as np
 import pandas as pd
@@ -189,6 +189,171 @@ def _min_feasible_cap(
         "cvar_unmet": best.cvar_unmet,
         "stock_units": int(np.sum(best.sku_stock)) if best.sku_stock is not None else None,
         "capacity_units": int(np.sum(best.dc_capacity)) if best.dc_capacity is not None else None,
+    }
+
+
+def _instance_configs(clean: pd.DataFrame, base_top: int) -> List[Dict[str, Any]]:
+    """Network variants that differ in assortment, volume and stock tightness."""
+    ranked = (
+        clean.groupby("sku")["quantity"].sum().sort_values(ascending=False).index
+    )
+    ranked = [str(sku) for sku in ranked]
+    mid = ranked[40 : 40 + base_top]
+    top = ranked[:base_top]
+    return [
+        {"name": "base", "skus": top, "orders": 30, "stock_factor": 0.85, "shortage": 2.0},
+        {"name": "tight_stock", "skus": top, "orders": 30, "stock_factor": 0.70, "shortage": 2.0},
+        {"name": "loose_stock", "skus": top, "orders": 30, "stock_factor": 0.95, "shortage": 2.0},
+        {"name": "few_skus", "skus": ranked[: max(4, base_top // 2)], "orders": 30, "stock_factor": 0.85, "shortage": 2.0},
+        {"name": "small_orders", "skus": top, "orders": 16, "stock_factor": 0.85, "shortage": 2.0},
+        {"name": "large_orders", "skus": top, "orders": 48, "stock_factor": 0.85, "shortage": 2.0},
+        {"name": "mid_popularity", "skus": mid, "orders": 30, "stock_factor": 0.85, "shortage": 2.0},
+        # If the onset is a cost-ratio threshold, it must scale with shortage.
+        {"name": "shortage_1", "skus": top, "orders": 30, "stock_factor": 0.85, "shortage": 1.0},
+        {"name": "shortage_4", "skus": top, "orders": 30, "stock_factor": 0.85, "shortage": 4.0},
+    ]
+
+
+def _cross_instance_frontier(
+    clean: pd.DataFrame,
+    last_week,
+    args,
+    relative_width: float,
+    holdings: Sequence[float] = (0.25, 1.0, 2.0, 4.0, 8.0),
+    n_seeds: int = 10,
+) -> Dict[str, Any]:
+    """Repeat the premium sweep across network variants.
+
+    Forecast quality is deliberately held fixed: each instance gets a synthetic
+    interval of the same relative width as the real conformal run, so the only
+    thing that varies is assortment, volume, stock tightness and DC/GMV layout.
+    """
+    configs = _instance_configs(clean, args.top_skus)
+    results: List[Dict[str, Any]] = []
+    for config in configs:
+        try:
+            instance = build_e2e_instance(
+                clean,
+                config["skus"],
+                sample_orders=config["orders"],
+                max_lines=args.max_lines,
+                stock_factor=config["stock_factor"],
+                seed=args.seed,
+                week=last_week,
+                pickers_per_dc=1,
+                shift_minutes=600.0,
+                arrival_seed=1,
+            )
+            target_units = int(instance.fulfillment.line_qty.sum())
+            base_set = build_calibrated_scenarios(
+                clean,
+                instance.fulfillment.sku_names,
+                last_week,
+                target_units,
+                config=ScenarioConfig(
+                    method="gaussian_copula",
+                    n_scenarios=args.scenarios,
+                    lookback_weeks=6,
+                    seed=args.seed,
+                ),
+            )
+        except Exception as exc:  # noqa: BLE001
+            results.append({"instance": config["name"], "status": "BUILD_ERROR", "error": str(exc)})
+            continue
+        mean = base_set.demand.mean(axis=0)
+        half = relative_width * mean
+        rows = pd.DataFrame(
+            {
+                "sku": list(instance.fulfillment.sku_names),
+                "pred": mean.astype(float),
+                "lower": np.clip(mean - half, 0, None),
+                "upper": mean + half,
+            }
+        )
+        per_holding: Dict[str, List[float]] = {str(h): [] for h in holdings}
+        for seed in range(args.seed, args.seed + n_seeds):
+            try:
+                scenario_set = build_conformal_scenarios(
+                    rows, base_set, n_scenarios=args.scenarios, seed=seed, target_units=target_units
+                )
+                holdout = build_conformal_scenarios(
+                    rows, base_set, n_scenarios=args.scenarios, seed=seed + 10_000, target_units=target_units
+                )
+                calibration = calibrate_conformal_unmet_cap(
+                    np.asarray(instance.fulfillment.stock, dtype=np.int64),
+                    holdout,
+                    instance.fulfillment.dc_capacity,
+                    target_delta=0.1,
+                    alpha=0.8,
+                    time_limit_seconds=max(2.0, args.joint_time / 3.0),
+                    workers=2,
+                )
+            except Exception:  # noqa: BLE001
+                continue
+            cap = float(calibration["cap"])
+            for holding in holdings:
+                options = {
+                    "holding_cost": float(holding),
+                    "shortage_cost": float(config["shortage"]),
+                    "adjustable_stock": True,
+                    "max_stock_factor": 3.0,
+                }
+                try:
+                    free = solve_stochastic_joint(
+                        instance, scenario_set, cvar_weight=0.5, alpha=0.8,
+                        time_limit_seconds=args.joint_time, workers=2, **options,
+                    )
+                    capped = solve_stochastic_joint(
+                        instance, scenario_set, cvar_weight=0.5, alpha=0.8,
+                        time_limit_seconds=args.joint_time, workers=2,
+                        unmet_cap=cap, **options,
+                    )
+                    per_holding[str(holding)].append(capped.expected_cost - free.expected_cost)
+                except RuntimeError:
+                    continue
+        summary = {}
+        for holding in holdings:
+            values = per_holding[str(holding)]
+            if values:
+                summary[str(holding)] = {
+                    "n": len(values),
+                    "mean_premium": float(np.mean(values)),
+                    "share_positive": float(np.mean([v > 0 for v in values])),
+                }
+            else:
+                summary[str(holding)] = {"n": 0}
+        # Onset: the cheapest holding at which the premium is positive in most seeds.
+        onset = None
+        for holding in sorted(holdings):
+            stats = summary.get(str(holding), {})
+            if stats.get("n") and stats["share_positive"] >= 0.8:
+                onset = float(holding)
+                break
+        results.append(
+            {
+                "instance": config["name"],
+                "skus": len(instance.fulfillment.sku_names),
+                "orders": int(instance.n_orders),
+                "stock_factor": config["stock_factor"],
+                "shortage_cost": config["shortage"],
+                "stock_units": int(instance.fulfillment.stock.sum()),
+                "target_units": target_units,
+                "onset_holding": onset,
+                "by_holding": summary,
+            }
+        )
+    onsets = [r["onset_holding"] for r in results if r.get("onset_holding") is not None]
+    return {
+        "instances": len(results),
+        "seeds_per_instance": n_seeds,
+        "holdings": list(holdings),
+        "relative_width": relative_width,
+        "note": (
+            "只变网络结构（SKU 组合/订单量/库存松紧），预测区间相对宽度固定；"
+            "onset_holding 是最便宜的、在 >=80% seed 上产生正溢价的 holding。"
+        ),
+        "onsets": onsets,
+        "summary": results,
     }
 
 
@@ -496,6 +661,7 @@ def main() -> None:
     parser.add_argument("--online-repeats", type=int, default=2)
     parser.add_argument("--skip-online", action="store_true")
     parser.add_argument("--lever-seeds", type=int, default=30)
+    parser.add_argument("--cross-instances", type=int, default=0)
     parser.add_argument("--quick", action="store_true")
     args = parser.parse_args()
 
@@ -956,6 +1122,43 @@ def main() -> None:
                     else:
                         parts.append(f"h={holding}: n=0")
                 print(f"[levers-seeds] {repeated['n_seeds']} seeds -> " + ", ".join(parts))
+            if args.cross_instances > 0:
+                # Forecast uncertainty is held fixed on purpose: the real
+                # calibrator's absolute widths live on a different demand scale
+                # than these small instances, so deriving a ratio from them is
+                # a unit error. +/-35% is a stated assumption, not a measured
+                # number.
+                rel_width = 0.35
+                crossed = _cross_instance_frontier(
+                    clean,
+                    last_week,
+                    args,
+                    relative_width=rel_width,
+                    n_seeds=args.cross_instances,
+                )
+                (out / "instances.json").write_text(
+                    json.dumps(crossed, ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
+                manifest["stages"].append("instances")
+                manifest["instances"] = {
+                    "onsets": crossed["onsets"],
+                    "instances": [
+                        {
+                            "name": row["instance"],
+                            "onset_holding": row.get("onset_holding"),
+                        }
+                        for row in crossed["summary"]
+                    ],
+                }
+                detail = ", ".join(
+                    f"{row['instance']}={row.get('onset_holding')}"
+                    for row in crossed["summary"]
+                )
+                print(
+                    f"[instances] {crossed['instances']} networks x "
+                    f"{crossed['seeds_per_instance']} seeds -> onset: {detail}"
+                )
         except Exception as exc:  # noqa: BLE001
             manifest["levers_error"] = f"{type(exc).__name__}: {exc}"
             print(f"[levers] skipped: {exc}")

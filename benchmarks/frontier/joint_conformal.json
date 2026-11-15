@@ -1,7 +1,7 @@
 {
   "unconstrained": {
     "status": "OPTIMAL",
-    "solve_seconds": 0.0530657,
+    "solve_seconds": 0.035186,
     "expected_unmet": 1230.8333333333333,
     "cvar_unmet": 1483.6666666666667,
     "expected_cost": 4942.786666666667,
@@ -95,7 +95,7 @@
   },
   "risk_control": {
     "status": "OPTIMAL",
-    "solve_seconds": 0.07098410000000001,
+    "solve_seconds": 0.0237399,
     "expected_unmet": 0.0,
     "cvar_unmet": 0.0,
     "expected_cost": 81.89000000000001,
