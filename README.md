@@ -105,6 +105,8 @@ python scripts/run_frontier_bench.py --quick
 
 2026 供应链算法/运筹招聘扫描（含京东/腾讯官方 JD、稀缺技能、对项目的含义）在 [`docs/research/TALENT_MARKET_2026.md`](docs/research/TALENT_MARKET_2026.md)。
 
+一页技术报告（conformal 风险控制 + 稳健性溢价）在 [`docs/research/TECH_REPORT_CONFORMAL_RISK.md`](docs/research/TECH_REPORT_CONFORMAL_RISK.md)。
+
 20 个目标岗位与项目证据映射在 [`docs/research/TARGET_JOBS_2026.md`](docs/research/TARGET_JOBS_2026.md)。
 
 ## OR 工程层（JD 对齐）

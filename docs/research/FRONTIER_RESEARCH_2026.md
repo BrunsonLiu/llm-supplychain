@@ -90,7 +90,8 @@
 - 在线自适应 conformal（ACI）：长期覆盖约 92.3%，平均宽度 6,813.4，低于静态版本的 11,022.7；
 - `build_conformal_scenarios` 把 conformal 区间接进场景，再跑 CVaR 联合；
 - 新增 conformal 风险 cap：在 held-out 场景上校准 `CVaR_alpha(unmet)` 的 cap；当前小实例上 cap=1431，而无约束 CVaR unmet=1483.67；
-- 新增 `adjustable_stock=True`（库存总量/补货成为第一阶段变量，最高 3×）后，cap 仍然不可行；说明不只是库存总量，**DC 产能/时效/可服务性**也构成下界；
+- 固定库存总量时 cap 不可行（floor 1485 > cap 1431）；把库存总量变成第一阶段变量后 cap 可行（floor 23.2），见下表；
+- 早期版本把库存上限写成「现有库存 × 3」，对需求集中的 SKU 不够，曾误判 cap 不可行；已改为「按峰值需求给上限」，本页数字为修正后版本；
 
 ### conformal 风险约束的杠杆对比（v5.6）
 
@@ -281,7 +282,7 @@
 | 场景 | 6 场景 × 11 SKU；目标 1,522 单位 | 真实小实例 |
 | 随机联合 | status OPTIMAL；期望成本 2,200.09；CVaR 2,397.43；gap 0 | 单实例，非 30-seed |
 | Conformal 联合 | status OPTIMAL；期望成本 4,942.79；CVaR 5,948.40 | 单实例；区间更保守，成本更高 |
-| Conformal risk cap | cap 1,431；无约束 CVaR unmet 1,483.67；3× 可调库存仍不可行 | 产能/时效/可服务性也是下界 |
+| Conformal risk cap | cap 1,431；固定库存 floor 1,485（不可行）；可调库存 floor 23.2（可行，成本 81.89） | 成本按 holding=0.01 计，见溢价前沿 |
 | 在线 UCB1 | 10 轮累计 reward 8.638；hindsight regret 0.561 | 2 个 seed × 5 订单日，离线回放 |
 | RL-0 LinUCB | 10 轮累计 reward 8.088；regret 1.111 | 样本太少，不能证明优于 UCB |
 
