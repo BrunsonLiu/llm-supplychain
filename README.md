@@ -107,9 +107,24 @@ python scripts/run_frontier_bench.py --quick
 
 20 个目标岗位与项目证据映射在 [`docs/research/TARGET_JOBS_2026.md`](docs/research/TARGET_JOBS_2026.md)。
 
+## OR 工程层（JD 对齐）
+
+面向国内供应链算法/JD 要求补的两个工程能力：
+
+- `src/supply/network/transport.py`：运输网络 LP/MIP；OR-Tools GLOP/SCIP + 可选 Gurobi，LP 输出 demand/supply dual（shadow price）；
+- `src/supply/data/sql.py`：DuckDB SQL 层，读周需求 parquet，支持 weekly/top-SKU/周切片查询。
+
+跑 solver 对比：
+
+```bash
+python scripts/run_solver_benchmark.py --orders 40 --top-skus 12
+```
+
+没有 Gurobi 许可证时会自动跳过 Gurobi，不伪造结果。运输模型是松弛，不是完整履约 MILP。
+
 ## 怎么跑
 
-先装依赖。`demo.py` 用的是合成需求，直接能跑；后面的真实数据基准要先执行一次 `prepare_data.py`，已有 `data/raw` 和 `data/processed` 时可以跳过。测试在 `tests/`，当前 371 个通过。
+先装依赖。`demo.py` 用的是合成需求，直接能跑；后面的真实数据基准要先执行一次 `prepare_data.py`，已有 `data/raw` 和 `data/processed` 时可以跳过。测试在 `tests/`，当前 379 个通过。
 
 ```bash
 pip install -e ".[dev]"

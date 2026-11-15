@@ -17,6 +17,15 @@ from .instances import (
     haversine_km,
 )
 from .report import build_network_report, write_network_report
+from .transport import (
+    TransportInstance,
+    TransportLPResult,
+    TransportMIPResult,
+    TransportSolverError,
+    instance_from_e2e,
+    solve_transport_lp,
+    solve_transport_mip,
+)
 from .routing import (
     RoutePlan,
     RoutingInstance,
@@ -51,6 +60,13 @@ __all__ = [
     "all_open_nearest",
     "fixed_cost_sensitivity",
     "facility_table",
+    "TransportInstance",
+    "TransportLPResult",
+    "TransportMIPResult",
+    "TransportSolverError",
+    "instance_from_e2e",
+    "solve_transport_lp",
+    "solve_transport_mip",
     "RoutingInstance",
     "RoutePlan",
     "naive_dispatch",

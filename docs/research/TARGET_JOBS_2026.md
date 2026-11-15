@@ -65,6 +65,25 @@ BOSS直聘被风控，未抓取；本表不伪造 BOSS 数据。
 | 19 | Amazon | [Applied Scientist, SCOT FO](https://www.amazon.jobs/en/jobs/10556295) | Barcelona | PhD/Master；论文 | 数值优化、预测/ML、履约 | **C+** |
 | 20 | NVIDIA | [Modeling Engineer, Supply Chain Optimization](https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite/job/US-CA-Santa-Clara/Modeling-Engineer--Supply-Chain-Optimization_JR2025602) | Santa Clara | 8+ 年 | LP/MIP、dual、BOM/产能/lead time | **C**（标杆） |
 
+### 1.1 已补的工程证据
+
+- [`src/supply/network/transport.py`](../../src/supply/network/transport.py)：运输 LP/MIP，OR-Tools GLOP/SCIP + 可选 Gurobi，LP 输出 demand/supply dual；
+- [`src/supply/data/sql.py`](../../src/supply/data/sql.py)：DuckDB SQL 层，支持 weekly/top-SKU/周切片；
+- `scripts/run_solver_benchmark.py`：真实小实例上 GLOP vs Gurobi、SCIP vs Gurobi，输出 `benchmarks/solver/solver_benchmark.json`。
+
+这对应 JD 的 **LP/MIP、dual/shadow price、Gurobi、SQL** 证据。
+
+当前 smoke（真实小实例，运输松弛）：
+
+| 项目 | 结果 |
+|---|---|
+| LP GLOP | obj 3,209.78；demand dual 9.83–10.00 |
+| LP Gurobi | obj 3,209.78；dual 与 GLOP 一致 |
+| MIP SCIP | obj 6,209.78；3 DC 全开；gap 0 |
+| MIP Gurobi | obj 6,209.78；与 SCIP 一致 |
+
+这是**运输松弛**，不是完整履约 MILP；它的价值是证明你能解释 LP 对偶/影子价格，并能做求解器对比。
+
 ---
 
 ## 2. 先投哪几个

@@ -1,4 +1,5 @@
 """Public dataset adapters and weekly demand panel construction."""
+from .sql import DemandWarehouse, SQLWarehouseError
 from .online_retail import (
     DATASET_NAME,
     DATASET_URL,
@@ -13,6 +14,8 @@ from .online_retail import (
 )
 
 __all__ = [
+    "DemandWarehouse",
+    "SQLWarehouseError",
     "DATASET_NAME",
     "DATASET_URL",
     "aggregate_weekly",
