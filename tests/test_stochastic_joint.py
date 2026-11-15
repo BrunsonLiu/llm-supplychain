@@ -124,6 +124,27 @@ def test_conformal_cap_and_cvar_constraint() -> None:
     assert plan.as_dict()["unmet_cap"] == calibration["cap"]
 
 
+def test_adjustable_stock_can_satisfy_tight_cap() -> None:
+    instance, scenarios = _problem()
+    plan = solve_stochastic_joint(
+        instance,
+        scenarios,
+        cvar_weight=0.5,
+        alpha=0.8,
+        time_limit_seconds=10,
+        workers=2,
+        unmet_cap=0.0,
+        adjustable_stock=True,
+        max_stock_factor=2.0,
+    )
+    assert plan.unmet_cap == 0.0
+    assert plan.cap_cvar <= 1e-6
+    assert plan.sku_stock is not None
+    assert np.all(plan.sku_stock >= 0)
+    assert np.all(plan.sku_stock <= np.array([20, 20]))
+    assert np.array_equal(plan.stock.sum(axis=0), plan.sku_stock)
+
+
 def test_invalid_scenario_shape_is_rejected() -> None:
     instance, scenarios = _problem()
     bad = SimpleNamespace(

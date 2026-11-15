@@ -478,12 +478,14 @@ def main() -> None:
                     time_limit_seconds=args.joint_time,
                     workers=2,
                     unmet_cap=calibration["cap"],
+                    adjustable_stock=True,
+                    max_stock_factor=3.0,
                 )
                 risk_payload = risk_plan.as_dict()
             except RuntimeError as exc:
-                # The current model fixes per-SKU stock totals. A tight
-                # conformal cap can be infeasible without replenishment; report
-                # that instead of silently relaxing the guarantee.
+                # Even with adjustable stock, a tight cap can be below the
+                # minimum unmet implied by DC capacity/transit/serviceability.
+                # Report infeasibility instead of silently relaxing the cap.
                 risk_payload = {
                     "status": "INFEASIBLE",
                     "error": f"{type(exc).__name__}: {exc}",
@@ -539,7 +541,8 @@ def main() -> None:
             else:
                 print(
                     f"[joint-conformal] conformal cap "
-                    f"{calibration['cap']:.2f} INFEASIBLE under fixed stock totals; "
+                    f"{calibration['cap']:.2f} INFEASIBLE under current "
+                    f"stock/capacity/serviceability; "
                     f"unconstrained CVaR unmet {conformal_plan.cvar_unmet:.2f}"
                 )
         except Exception as exc:  # noqa: BLE001 - keep the rest of the smoke run

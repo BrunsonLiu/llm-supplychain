@@ -58,6 +58,7 @@ class JointPlan:
     holding_cost: float
     unmet_cap: Optional[float] = None
     cap_cvar: Optional[float] = None
+    sku_stock: Optional[np.ndarray] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -85,6 +86,11 @@ class JointPlan:
             "holding_cost": float(self.holding_cost),
             "unmet_cap": None if self.unmet_cap is None else float(self.unmet_cap),
             "cap_cvar": None if self.cap_cvar is None else float(self.cap_cvar),
+            "sku_stock": (
+                None
+                if self.sku_stock is None
+                else [int(value) for value in self.sku_stock]
+            ),
         }
 
 
@@ -146,6 +152,8 @@ def solve_stochastic_joint(
     time_limit_seconds: float = 60.0,
     workers: int = 4,
     unmet_cap: Optional[float] = None,
+    adjustable_stock: bool = False,
+    max_stock_factor: float = 1.5,
 ) -> JointPlan:
     """Solve the cost-aware two-stage model.
 
@@ -164,12 +172,19 @@ def solve_stochastic_joint(
         raise ValueError("workers 必须 >= 1")
     if unmet_cap is not None and unmet_cap < 0:
         raise ValueError("unmet_cap 不能为负")
+    if max_stock_factor < 1.0:
+        raise ValueError("max_stock_factor 必须 >= 1")
     _validate(instance, scenarios)
 
     fulfillment = instance.fulfillment
     n_dcs = int(fulfillment.n_dcs)
     n_skus = int(fulfillment.n_skus)
     stock_total = np.asarray(fulfillment.stock, dtype=np.int64).sum(axis=0)
+    max_stock = (
+        np.maximum(stock_total, np.ceil(stock_total * max_stock_factor).astype(np.int64))
+        if adjustable_stock
+        else stock_total.copy()
+    )
     capacity = np.asarray(fulfillment.dc_capacity, dtype=np.int64)
     demand = np.asarray(scenarios.demand, dtype=np.int64)
     serviceable = np.asarray(scenarios.serviceable, dtype=np.int64)
@@ -196,11 +211,16 @@ def solve_stochastic_joint(
     z: Dict[tuple, Any] = {}
     y: Dict[tuple, Any] = {}
     unmet: Dict[tuple, Any] = {}
+    stock_var: Dict[int, Any] = {}
     for sku in range(n_skus):
-        upper = int(stock_total[sku])
+        upper = int(max_stock[sku])
+        if adjustable_stock:
+            stock_var[sku] = model.NewIntVar(0, upper, f"s_{sku}")
+        else:
+            stock_var[sku] = model.NewConstant(int(stock_total[sku]))
         for dc in range(n_dcs):
             z[sku, dc] = model.NewIntVar(0, upper, f"z_{sku}_{dc}")
-        model.Add(sum(z[sku, dc] for dc in range(n_dcs)) == upper)
+        model.Add(sum(z[sku, dc] for dc in range(n_dcs)) == stock_var[sku])
 
     for scenario in range(n_scenarios):
         for sku in range(n_skus):
@@ -209,7 +229,7 @@ def solve_stochastic_joint(
                 0, quantity, f"u_{scenario}_{sku}"
             )
             for dc in range(n_dcs):
-                upper = int(min(stock_total[sku], serviceable[scenario, dc, sku]))
+                upper = int(min(max_stock[sku], serviceable[scenario, dc, sku]))
                 y[scenario, sku, dc] = model.NewIntVar(
                     0, upper, f"y_{scenario}_{sku}_{dc}"
                 )
@@ -263,11 +283,11 @@ def solve_stochastic_joint(
         unmet_cost = sum(
             shortage_int * unmet[scenario, sku] for sku in range(n_skus)
         )
-        holding = holding_int * int(stock_total.sum())
+        holding = holding_int * sum(stock_var[sku] for sku in range(n_skus))
         upper = int(
             handling_int.max() * int(demand[scenario].sum())
             + shortage_int * int(demand[scenario].sum())
-            + holding
+            + holding_int * int(max_stock.sum())
             + 1
         )
         max_cost = max(max_cost, upper)
@@ -325,7 +345,11 @@ def solve_stochastic_joint(
     for sku in range(n_skus):
         for dc in range(n_dcs):
             stock[dc, sku] = int(round(solver.Value(z[sku, dc])))
-    if not np.array_equal(stock.sum(axis=0), stock_total):
+    stock_totals = np.array(
+        [int(round(solver.Value(stock_var[sku]))) for sku in range(n_skus)],
+        dtype=np.int64,
+    )
+    if not np.array_equal(stock.sum(axis=0), stock_totals):
         raise RuntimeError("联合模型未保持每 SKU 总库存")
 
     scenario_unmet = unmet_values.sum(axis=1).astype(float)
@@ -364,6 +388,7 @@ def solve_stochastic_joint(
         holding_cost=float(holding_cost),
         unmet_cap=None if unmet_cap is None else float(unmet_cap),
         cap_cvar=cvar_unmet if unmet_cap is not None else None,
+        sku_stock=stock_totals,
     )
 
 
