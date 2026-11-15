@@ -1,6 +1,6 @@
 {
   "status": "OPTIMAL",
-  "solve_seconds": 0.1378154,
+  "solve_seconds": 0.062086100000000005,
   "expected_unmet": 541.1666666666666,
   "cvar_unmet": 591.0,
   "expected_cost": 2200.09,
@@ -72,5 +72,18 @@
   "shortage_cost": 4.0,
   "holding_cost": 0.01,
   "unmet_cap": null,
-  "cap_cvar": null
+  "cap_cvar": null,
+  "sku_stock": [
+    20,
+    11,
+    239,
+    81,
+    364,
+    13,
+    286,
+    55,
+    63,
+    58,
+    105
+  ]
 }
