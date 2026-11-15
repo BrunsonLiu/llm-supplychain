@@ -105,6 +105,8 @@ python scripts/run_frontier_bench.py --quick
 
 2026 供应链算法/运筹招聘扫描（含京东/腾讯官方 JD、稀缺技能、对项目的含义）在 [`docs/research/TALENT_MARKET_2026.md`](docs/research/TALENT_MARKET_2026.md)。
 
+20 个目标岗位与项目证据映射在 [`docs/research/TARGET_JOBS_2026.md`](docs/research/TARGET_JOBS_2026.md)。
+
 ## 怎么跑
 
 先装依赖。`demo.py` 用的是合成需求，直接能跑；后面的真实数据基准要先执行一次 `prepare_data.py`，已有 `data/raw` 和 `data/processed` 时可以跳过。测试在 `tests/`，当前 371 个通过。
