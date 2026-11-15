@@ -192,6 +192,145 @@ def _min_feasible_cap(
     }
 
 
+def _repeated_frontier(
+    instance,
+    rows: pd.DataFrame,
+    base_set,
+    target_units: int,
+    args,
+) -> Dict[str, Any]:
+    """Repeat the price-of-robustness sweep over independent scenario seeds.
+
+    A single 6-scenario draw makes CVaR an extreme-value estimate: one lucky or
+    unlucky draw decides the premium. Repeating the draw and reporting mean/sd
+    separates a real effect from sampling noise.
+    """
+    holdings = (0.05, 0.25, 1.0, 2.0, 4.0)
+    seeds = list(range(args.seed, args.seed + args.lever_seeds))
+    records: List[Dict[str, Any]] = []
+    for seed in seeds:
+        try:
+            scenario_set = build_conformal_scenarios(
+                rows,
+                base_set,
+                n_scenarios=args.scenarios,
+                seed=seed,
+                target_units=target_units,
+            )
+            holdout = build_conformal_scenarios(
+                rows,
+                base_set,
+                n_scenarios=args.scenarios,
+                seed=seed + 10_000,
+                target_units=target_units,
+            )
+        except Exception as exc:  # noqa: BLE001
+            records.append({"seed": seed, "status": "ERROR", "error": str(exc)})
+            continue
+        try:
+            calibration = calibrate_conformal_unmet_cap(
+                np.asarray(instance.fulfillment.stock, dtype=np.int64),
+                holdout,
+                instance.fulfillment.dc_capacity,
+                target_delta=0.1,
+                alpha=0.8,
+                time_limit_seconds=max(2.0, args.joint_time / 3.0),
+                workers=2,
+            )
+        except Exception as exc:  # noqa: BLE001
+            records.append({"seed": seed, "status": "CALIBRATION_ERROR", "error": str(exc)})
+            continue
+        cap = float(calibration["cap"])
+        for holding in holdings:
+            options = {
+                "holding_cost": float(holding),
+                "shortage_cost": 2.0,
+                "adjustable_stock": True,
+                "max_stock_factor": 3.0,
+            }
+            try:
+                free = solve_stochastic_joint(
+                    instance,
+                    scenario_set,
+                    cvar_weight=0.5,
+                    alpha=0.8,
+                    time_limit_seconds=args.joint_time,
+                    workers=2,
+                    **options,
+                )
+                capped = solve_stochastic_joint(
+                    instance,
+                    scenario_set,
+                    cvar_weight=0.5,
+                    alpha=0.8,
+                    time_limit_seconds=args.joint_time,
+                    workers=2,
+                    unmet_cap=cap,
+                    **options,
+                )
+                records.append(
+                    {
+                        "seed": seed,
+                        "holding_cost": float(holding),
+                        "cap": cap,
+                        "price_of_robustness": capped.expected_cost - free.expected_cost,
+                        "cost_unconstrained": free.expected_cost,
+                        "cost_capped": capped.expected_cost,
+                        "cvar_unmet_unconstrained": free.cvar_unmet,
+                        "cvar_unmet_capped": capped.cvar_unmet,
+                        "capped_feasible": True,
+                    }
+                )
+            except RuntimeError:
+                records.append(
+                    {
+                        "seed": seed,
+                        "holding_cost": float(holding),
+                        "cap": cap,
+                        "capped_feasible": False,
+                        "price_of_robustness": None,
+                    }
+                )
+
+    summary: Dict[str, Any] = {}
+    for holding in holdings:
+        premiums = [
+            record["price_of_robustness"]
+            for record in records
+            if record.get("holding_cost") == holding
+            and record.get("price_of_robustness") is not None
+        ]
+        infeasible = sum(
+            1
+            for record in records
+            if record.get("holding_cost") == holding
+            and record.get("capped_feasible") is False
+        )
+        if premiums:
+            summary[str(holding)] = {
+                "n": len(premiums),
+                "infeasible": infeasible,
+                "mean_premium": float(np.mean(premiums)),
+                "sd_premium": float(np.std(premiums, ddof=1)) if len(premiums) > 1 else 0.0,
+                "min_premium": float(np.min(premiums)),
+                "max_premium": float(np.max(premiums)),
+                "share_positive": float(np.mean([p > 0 for p in premiums])),
+            }
+        else:
+            summary[str(holding)] = {"n": 0, "infeasible": infeasible}
+    return {
+        "n_seeds": len(seeds),
+        "scenarios_per_seed": int(args.scenarios),
+        "shortage_cost": 2.0,
+        "note": (
+            "每个 seed 独立抽 conformal 场景并在另一批 held-out 场景上校准 cap；"
+            "premium 的 mean/sd 用来判断单次实验的跳变是不是噪声。"
+        ),
+        "summary": summary,
+        "records": records,
+    }
+
+
 def _lever_stage(
     instance,
     clean: pd.DataFrame,
@@ -356,6 +495,7 @@ def main() -> None:
     parser.add_argument("--causal-replicates", type=int, default=3)
     parser.add_argument("--online-repeats", type=int, default=2)
     parser.add_argument("--skip-online", action="store_true")
+    parser.add_argument("--lever-seeds", type=int, default=30)
     parser.add_argument("--quick", action="store_true")
     args = parser.parse_args()
 
@@ -792,6 +932,30 @@ def main() -> None:
                 for name, arm in levers["arms"].items()
             )
             print(f"[levers] conformal cap {levers['target_cap']:.1f} -> {summary}")
+            if args.lever_seeds > 0:
+                repeated = _repeated_frontier(
+                    instance,
+                    pd.DataFrame(rows),
+                    scenario_set,
+                    int(instance.fulfillment.line_qty.sum()),
+                    args,
+                )
+                (out / "levers_seeds.json").write_text(
+                    json.dumps(repeated, ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
+                manifest["stages"].append("levers_seeds")
+                manifest["levers_seeds"] = repeated["summary"]
+                parts = []
+                for holding, stats in repeated["summary"].items():
+                    if stats.get("n"):
+                        parts.append(
+                            f"h={holding}: {stats['mean_premium']:.1f}"
+                            f"±{stats['sd_premium']:.1f}"
+                        )
+                    else:
+                        parts.append(f"h={holding}: n=0")
+                print(f"[levers-seeds] {repeated['n_seeds']} seeds -> " + ", ".join(parts))
         except Exception as exc:  # noqa: BLE001
             manifest["levers_error"] = f"{type(exc).__name__}: {exc}"
             print(f"[levers] skipped: {exc}")

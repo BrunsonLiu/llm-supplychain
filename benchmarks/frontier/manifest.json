@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-15T14:28:04.344623+00:00",
-  "git_sha": "eebfbc880f2f9b30f6fb9c3ceeff520c86539adc",
+  "generated_at": "2026-11-15T14:40:17.231942+00:00",
+  "git_sha": "88b39f6482bea64558728a297f2b2c4b8d14048a",
   "git_dirty": true,
   "script": "scripts/run_frontier_bench.py",
   "stages": [
@@ -10,6 +10,7 @@
     "joint",
     "joint_conformal",
     "levers",
+    "levers_seeds",
     "online",
     "rl"
   ],
@@ -118,6 +119,53 @@
         "price_of_robustness": 0.0,
         "status": "OPTIMAL"
       }
+    }
+  },
+  "levers_seeds": {
+    "0.05": {
+      "n": 30,
+      "infeasible": 0,
+      "mean_premium": 0.0,
+      "sd_premium": 0.0,
+      "min_premium": 0.0,
+      "max_premium": 0.0,
+      "share_positive": 0.0
+    },
+    "0.25": {
+      "n": 30,
+      "infeasible": 0,
+      "mean_premium": 0.0,
+      "sd_premium": 0.0,
+      "min_premium": 0.0,
+      "max_premium": 0.0,
+      "share_positive": 0.0
+    },
+    "1.0": {
+      "n": 30,
+      "infeasible": 0,
+      "mean_premium": 0.2384444444444095,
+      "sd_premium": 0.6691784482913253,
+      "min_premium": 0.0,
+      "max_premium": 3.5466666666661695,
+      "share_positive": 0.4666666666666667
+    },
+    "2.0": {
+      "n": 30,
+      "infeasible": 0,
+      "mean_premium": 37.34255555555536,
+      "sd_premium": 21.233130832924097,
+      "min_premium": 0.7199999999997999,
+      "max_premium": 92.60333333333301,
+      "share_positive": 1.0
+    },
+    "4.0": {
+      "n": 30,
+      "infeasible": 0,
+      "mean_premium": 143.67588888888866,
+      "sd_premium": 64.0319456172265,
+      "min_premium": 52.33666666666704,
+      "max_premium": 308.603333333333,
+      "share_positive": 1.0
     }
   },
   "rolling": {
