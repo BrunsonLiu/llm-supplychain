@@ -11,7 +11,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from supply.e2e.stochastic import DemandScenario, ScenarioSet  # noqa: E402
-from supply.e2e.stochastic_joint import solve_stochastic_joint  # noqa: E402
+from supply.e2e.stochastic_joint import (  # noqa: E402
+    calibrate_conformal_unmet_cap,
+    solve_stochastic_joint,
+)
 
 
 def _problem():
@@ -83,6 +86,42 @@ def test_risk_neutral_and_risk_averse_are_valid() -> None:
         )
         assert plan.cvar_weight == weight
         assert np.isfinite(plan.objective)
+
+
+def test_conformal_cap_and_cvar_constraint() -> None:
+    instance, scenarios = _problem()
+    base = solve_stochastic_joint(
+        instance,
+        scenarios,
+        cvar_weight=0.5,
+        alpha=0.8,
+        time_limit_seconds=10,
+        workers=2,
+    )
+    calibration = calibrate_conformal_unmet_cap(
+        base.stock,
+        scenarios,
+        instance.fulfillment.dc_capacity,
+        target_delta=0.5,
+        alpha=0.8,
+        time_limit_seconds=5,
+        workers=2,
+    )
+    assert calibration["cap"] >= 0.0
+    assert calibration["n_scenarios"] == 2
+    assert calibration["empirical_coverage"] >= 0.5
+    plan = solve_stochastic_joint(
+        instance,
+        scenarios,
+        cvar_weight=0.5,
+        alpha=0.8,
+        time_limit_seconds=10,
+        workers=2,
+        unmet_cap=calibration["cap"],
+    )
+    assert plan.unmet_cap == calibration["cap"]
+    assert plan.cap_cvar <= calibration["cap"] + 1e-6
+    assert plan.as_dict()["unmet_cap"] == calibration["cap"]
 
 
 def test_invalid_scenario_shape_is_rejected() -> None:

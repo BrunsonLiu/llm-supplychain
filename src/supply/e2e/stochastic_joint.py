@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Optional, Sequence
 import numpy as np
 from ortools.sat.python import cp_model
 
-from .stochastic import ScenarioSet, empirical_cvar
+from .stochastic import ScenarioSet, empirical_cvar, score_placement
 
 COST_SCALE = 100
 WEIGHT_SCALE = 1000
@@ -56,6 +56,8 @@ class JointPlan:
     handling_cost: List[float]
     shortage_cost: float
     holding_cost: float
+    unmet_cap: Optional[float] = None
+    cap_cvar: Optional[float] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -81,6 +83,8 @@ class JointPlan:
             "handling_cost": list(self.handling_cost),
             "shortage_cost": float(self.shortage_cost),
             "holding_cost": float(self.holding_cost),
+            "unmet_cap": None if self.unmet_cap is None else float(self.unmet_cap),
+            "cap_cvar": None if self.cap_cvar is None else float(self.cap_cvar),
         }
 
 
@@ -141,6 +145,7 @@ def solve_stochastic_joint(
     holding_cost: float = DEFAULT_HOLDING,
     time_limit_seconds: float = 60.0,
     workers: int = 4,
+    unmet_cap: Optional[float] = None,
 ) -> JointPlan:
     """Solve the cost-aware two-stage model.
 
@@ -157,6 +162,8 @@ def solve_stochastic_joint(
         raise ValueError("time_limit_seconds 必须为正")
     if workers < 1:
         raise ValueError("workers 必须 >= 1")
+    if unmet_cap is not None and unmet_cap < 0:
+        raise ValueError("unmet_cap 不能为负")
     _validate(instance, scenarios)
 
     fulfillment = instance.fulfillment
@@ -217,6 +224,31 @@ def solve_stochastic_joint(
                 sum(y[scenario, sku, dc] for sku in range(n_skus))
                 <= int(capacity[dc])
             )
+
+    # Conformal risk constraint: CVaR_alpha(unmet) <= unmet_cap. This is a
+    # scenario-based risk control, not a full Conformal-DRO ambiguity set.
+    if unmet_cap is not None:
+        max_unmet = int(demand.sum(axis=1).max())
+        cap_eta = model.NewIntVar(0, max_unmet, "cap_eta")
+        cap_excess: Dict[int, Any] = {}
+        cap_scale = 1000
+        for scenario in range(n_scenarios):
+            total_unmet = model.NewIntVar(0, max_unmet, f"total_u_{scenario}")
+            model.Add(
+                total_unmet == sum(unmet[scenario, sku] for sku in range(n_skus))
+            )
+            cap_excess[scenario] = model.NewIntVar(
+                0, max_unmet, f"cap_e_{scenario}"
+            )
+            model.Add(total_unmet <= cap_eta + cap_excess[scenario])
+        cap_terms: List[Any] = [cap_scale * cap_eta]
+        for scenario in range(n_scenarios):
+            coefficient = int(
+                round(cap_scale * weights[scenario] / (1.0 - alpha))
+            )
+            if coefficient:
+                cap_terms.append(coefficient * cap_excess[scenario])
+        model.Add(sum(cap_terms) <= cap_scale * int(np.ceil(unmet_cap)))
 
     # Scenario cost: handling of shipped units + shortage + holding of the
     # first-stage placement. All terms are integer cents.
@@ -330,4 +362,58 @@ def solve_stochastic_joint(
         handling_cost=[float(value) for value in handling],
         shortage_cost=float(shortage_cost),
         holding_cost=float(holding_cost),
+        unmet_cap=None if unmet_cap is None else float(unmet_cap),
+        cap_cvar=cvar_unmet if unmet_cap is not None else None,
     )
+
+
+def calibrate_conformal_unmet_cap(
+    stock: np.ndarray,
+    scenarios: ScenarioSet,
+    dc_capacity: np.ndarray,
+    target_delta: float = 0.1,
+    alpha: float = 0.8,
+    time_limit_seconds: float = 5.0,
+    workers: int = 4,
+) -> Dict[str, Any]:
+    """Calibrate a service cap from held-out scenarios.
+
+    This is a split-conformal style quantile over *scenario outcomes*: the cap
+    is the finite-sample upper quantile of unmet under a fixed placement. It is
+    a calibration heuristic, not a finite-sample guarantee for the downstream
+    joint policy.
+    """
+    if not 0.0 < target_delta < 1.0:
+        raise ValueError("target_delta 必须在 (0, 1)")
+    if not 0.0 < alpha < 1.0:
+        raise ValueError("alpha 必须在 (0, 1)")
+    stock = np.asarray(stock, dtype=np.int64)
+    capacity = np.asarray(dc_capacity, dtype=np.int64)
+    if stock.shape != (len(scenarios.dc_names), len(scenarios.sku_names)):
+        raise ValueError("stock 形状应为 (dcs, skus)")
+    if capacity.shape != (len(scenarios.dc_names),):
+        raise ValueError("dc_capacity 长度应与 DC 数一致")
+    report = score_placement(
+        stock,
+        scenarios,
+        capacity,
+        alpha=alpha,
+        time_limit_seconds=time_limit_seconds,
+        workers=workers,
+    )
+    unmet = np.asarray(report["scenario_unmet"], dtype=float)
+    if unmet.size == 0:
+        raise ValueError("校准场景为空")
+    coverage = 1.0 - float(target_delta)
+    rank = min(1.0, float(np.ceil((unmet.size + 1) * coverage) / unmet.size))
+    cap = float(np.quantile(unmet, rank, method="higher"))
+    return {
+        "target_coverage": coverage,
+        "cap": max(0.0, cap),
+        "empirical_coverage": float(np.mean(unmet <= cap)),
+        "n_scenarios": int(unmet.size),
+        "expected_unmet": float(report["expected_unmet"]),
+        "cvar_unmet": float(report["cvar_unmet"]),
+        "scenario_unmet": [float(value) for value in unmet],
+        "note": "scenario-level split-conformal cap; not a finite-sample policy guarantee",
+    }

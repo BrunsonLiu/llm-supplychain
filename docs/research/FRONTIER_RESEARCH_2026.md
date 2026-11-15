@@ -89,6 +89,7 @@
 - 真实回测预测上的 split/Mondrian conformal 校准，90% 目标经验覆盖约 88.0%（horizon 13）；
 - 在线自适应 conformal（ACI）：长期覆盖约 92.3%，平均宽度 6,813.4，低于静态版本的 11,022.7；
 - `build_conformal_scenarios` 把 conformal 区间接进场景，再跑 CVaR 联合；
+- 新增 conformal 风险 cap：在 held-out 场景上校准 `CVaR_alpha(unmet)` 的 cap；当前小实例上 cap=1431，而固定库存总量下的无约束 CVaR unmet=1483.67，**cap 不可行**，暴露“库存总量固定”这一模型限制；
 - 成本感知的两阶段 CVaR 联合模型；
 - 与现有 `stochastic.py`/`joint.py` 兼容，没有破坏旧测试。
 
@@ -204,6 +205,7 @@
 | 场景 | 6 场景 × 11 SKU；目标 1,522 单位 | 真实小实例 |
 | 随机联合 | status OPTIMAL；期望成本 2,200.09；CVaR 2,397.43；gap 0 | 单实例，非 30-seed |
 | Conformal 联合 | status OPTIMAL；期望成本 4,942.79；CVaR 5,948.40 | 单实例；区间更保守，成本更高 |
+| Conformal risk cap | cap 1,431；无约束 CVaR unmet 1,483.67；cap 不可行 | 暴露固定库存总量的限制 |
 | 在线 UCB1 | 10 轮累计 reward 8.638；hindsight regret 0.561 | 2 个 seed × 5 订单日，离线回放 |
 | RL-0 LinUCB | 10 轮累计 reward 8.088；regret 1.111 | 样本太少，不能证明优于 UCB |
 

@@ -38,6 +38,7 @@ from supply.e2e import (  # noqa: E402
     build_calibrated_scenarios,
     build_conformal_scenarios,
     build_e2e_instance,
+    calibrate_conformal_unmet_cap,
     evaluate_rolling_policies,
     order_day_map,
     scenario_diagnostics,
@@ -448,22 +449,99 @@ def main() -> None:
                 time_limit_seconds=args.joint_time,
                 workers=2,
             )
+            # Held-out conformal scenarios for the risk cap; same forecast
+            # intervals, different sampling seed.
+            validation_set = build_conformal_scenarios(
+                pd.DataFrame(rows),
+                scenario_set,
+                n_scenarios=args.scenarios,
+                seed=args.seed + 100,
+                target_units=int(instance.fulfillment.line_qty.sum()),
+            )
+            calibration = calibrate_conformal_unmet_cap(
+                conformal_plan.stock,
+                validation_set,
+                instance.fulfillment.dc_capacity,
+                target_delta=0.1,
+                alpha=0.8,
+                time_limit_seconds=max(5.0, args.joint_time / 2.0),
+                workers=2,
+            )
+            risk_payload: Dict[str, Any]
+            risk_plan = None
+            try:
+                risk_plan = solve_stochastic_joint(
+                    instance,
+                    conformal_set,
+                    cvar_weight=0.5,
+                    alpha=0.8,
+                    time_limit_seconds=args.joint_time,
+                    workers=2,
+                    unmet_cap=calibration["cap"],
+                )
+                risk_payload = risk_plan.as_dict()
+            except RuntimeError as exc:
+                # The current model fixes per-SKU stock totals. A tight
+                # conformal cap can be infeasible without replenishment; report
+                # that instead of silently relaxing the guarantee.
+                risk_payload = {
+                    "status": "INFEASIBLE",
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "unmet_cap": calibration["cap"],
+                }
             (out / "joint_conformal.json").write_text(
-                json.dumps(conformal_plan.as_dict(), ensure_ascii=False, indent=2),
+                json.dumps(
+                    {
+                        "unconstrained": conformal_plan.as_dict(),
+                        "risk_control": risk_payload,
+                        "calibration": calibration,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
                 encoding="utf-8",
             )
             manifest["stages"].append("joint_conformal")
             manifest["joint_conformal"] = {
-                "expected_cost": conformal_plan.expected_cost,
-                "cvar_cost": conformal_plan.cvar_cost,
-                "expected_unmet": conformal_plan.expected_unmet,
-                "status": conformal_plan.status,
+                "unconstrained": {
+                    "expected_cost": conformal_plan.expected_cost,
+                    "cvar_cost": conformal_plan.cvar_cost,
+                    "expected_unmet": conformal_plan.expected_unmet,
+                    "status": conformal_plan.status,
+                },
+                "risk_control": (
+                    {
+                        "expected_cost": risk_plan.expected_cost,
+                        "cvar_cost": risk_plan.cvar_cost,
+                        "expected_unmet": risk_plan.expected_unmet,
+                        "status": risk_plan.status,
+                        "unmet_cap": risk_plan.unmet_cap,
+                        "cap_cvar": risk_plan.cap_cvar,
+                    }
+                    if risk_plan is not None
+                    else risk_payload
+                ),
+                "calibration": {
+                    "cap": calibration["cap"],
+                    "target_coverage": calibration["target_coverage"],
+                    "empirical_coverage": calibration["empirical_coverage"],
+                    "n_scenarios": calibration["n_scenarios"],
+                },
             }
-            print(
-                f"[joint-conformal] {conformal_plan.status} "
-                f"expected_cost {conformal_plan.expected_cost:.2f} "
-                f"CVaR {conformal_plan.cvar_cost:.2f}"
-            )
+            if risk_plan is not None:
+                print(
+                    f"[joint-conformal] unconstrained cost "
+                    f"{conformal_plan.expected_cost:.2f}; risk cap "
+                    f"{calibration['cap']:.2f}; cost "
+                    f"{risk_plan.expected_cost:.2f}, "
+                    f"CVaR {risk_plan.cvar_cost:.2f}"
+                )
+            else:
+                print(
+                    f"[joint-conformal] conformal cap "
+                    f"{calibration['cap']:.2f} INFEASIBLE under fixed stock totals; "
+                    f"unconstrained CVaR unmet {conformal_plan.cvar_unmet:.2f}"
+                )
         except Exception as exc:  # noqa: BLE001 - keep the rest of the smoke run
             manifest["joint_conformal_error"] = f"{type(exc).__name__}: {exc}"
             print(f"[joint-conformal] skipped: {exc}")

@@ -675,6 +675,7 @@ Real data → forecast/conformal → scenarios
 | IPW / AIPW / DML | `src/supply/causal/estimators.py` | 已实现，含 CI/overlap 诊断 |
 | 因果 benchmark | `src/supply/causal/benchmark.py` | 已实现，已知 ATE 恢复 |
 | Conformal 校准 | `src/supply/forecasting/conformal.py` | split/Mondrian + ACI + 覆盖率/宽度 |
+| Conformal risk cap | `src/supply/e2e/stochastic_joint.py` | held-out CVaR(unmet) cap + 不可行诊断 |
 | 校准场景 | `src/supply/e2e/scenarios.py` | bootstrap + Gaussian copula + conformal |
 | 成本感知随机联合 | `src/supply/e2e/stochastic_joint.py` | 两阶段 CVaR + 成本 |
 | 在线策略选择 | `src/supply/e2e/online.py` | UCB/TS/SW-UCB/LinUCB + regret |

@@ -82,7 +82,11 @@ from .stochastic import (
     stochastic_placement,
 )
 from .stochastic_report import build_stochastic_report, write_stochastic_report
-from .stochastic_joint import JointPlan, solve_stochastic_joint
+from .stochastic_joint import (
+    JointPlan,
+    calibrate_conformal_unmet_cap,
+    solve_stochastic_joint,
+)
 from .arrival import (
     DEFAULT_END_HOUR,
     DEFAULT_LOOKBACK_WEEKS as ARRIVAL_LOOKBACK_WEEKS,
@@ -418,6 +422,7 @@ __all__ = [
     "build_conformal_scenarios",
     "scenario_diagnostics",
     "JointPlan",
+    "calibrate_conformal_unmet_cap",
     "solve_stochastic_joint",
     "build_stochastic_report",
     "write_stochastic_report",
